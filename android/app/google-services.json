@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "121993344266",
+    "project_id": "examinantt-ae432",
+    "storage_bucket": "examinantt-ae432.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:121993344266:android:27ebcee3efe000a251f6f3",
+        "android_client_info": {
+          "package_name": "com.examinantt.studentapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "121993344266-1ieql2e0rmsat18mjrfru73e2vh7o96e.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDvBJvswL2gDxAsVfzoClrUx5SviCXSK7M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "121993344266-1ieql2e0rmsat18mjrfru73e2vh7o96e.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
