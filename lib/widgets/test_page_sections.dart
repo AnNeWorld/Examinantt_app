@@ -128,86 +128,92 @@ class _TestPageSectionsState extends State<TestPageSections> {
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: const Color(0xFF0F172A),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) {
         return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.white24,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Select Target Exam',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Choose your target competitive exam to personalize your practice.',
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
-                ),
-                const SizedBox(height: 16),
-                ...exams.map((exam) {
-                  final isSel = _selectedExam == exam;
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Container(
-                      padding: const EdgeInsets.all(8),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(ctx).size.height * 0.85,
+            ),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
                       decoration: BoxDecoration(
-                        color: isSel ? AppColors.accent.withValues(alpha: 0.2) : Colors.white10,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        isSel ? Icons.check_circle : Icons.school_outlined,
-                        color: isSel ? AppColors.accent : Colors.white70,
-                        size: 18,
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(2),
                       ),
                     ),
-                    title: Text(
-                      exam,
-                      style: TextStyle(
-                        color: isSel ? AppColors.accent : Colors.white,
-                        fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
-                      ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Select Target Exam',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
                     ),
-                    trailing: isSel
-                        ? Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: AppColors.accent,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: const Text('Active', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                          )
-                        : null,
-                    onTap: () {
-                      setState(() => _selectedExam = exam);
-                      Provider.of<UserProvider>(context, listen: false).updateTargetExam(exam);
-                      widget.onExamChanged?.call(exam);
-                      Navigator.pop(ctx);
-                      AppTheme.showSuccessSnackBar(context, 'Exam switched to $exam');
-                    },
-                  );
-                }),
-              ],
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Choose your target competitive exam to personalize your practice.',
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                  const SizedBox(height: 16),
+                  ...exams.map((exam) {
+                    final isSel = _selectedExam == exam;
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: isSel ? AppColors.accent.withValues(alpha: 0.2) : Colors.white10,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          isSel ? Icons.check_circle : Icons.school_outlined,
+                          color: isSel ? AppColors.accent : Colors.white70,
+                          size: 18,
+                        ),
+                      ),
+                      title: Text(
+                        exam,
+                        style: TextStyle(
+                          color: isSel ? AppColors.accent : Colors.white,
+                          fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                      trailing: isSel
+                          ? Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.accent,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text('Active', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                            )
+                          : null,
+                      onTap: () {
+                        setState(() => _selectedExam = exam);
+                        Provider.of<UserProvider>(context, listen: false).updateTargetExam(exam);
+                        widget.onExamChanged?.call(exam);
+                        Navigator.pop(ctx);
+                        AppTheme.showSuccessSnackBar(context, 'Exam switched to $exam');
+                      },
+                    );
+                  }),
+                ],
+              ),
             ),
           ),
         );
