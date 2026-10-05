@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';  
 import '../providers/user_provider.dart';
+import '../providers/theme_provider.dart';
 import '../widgets/quick_access_widget.dart';
 import '../widgets/locked_home_sections.dart';
 import '../widgets/unlocked_home_sections.dart';
@@ -22,7 +23,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
-  Color get _getBackgroundColor => _isDark ? AppColors.backgroundDark : const Color(0xFFF8FAFC);
   Color get _getCardColor => _isDark ? AppColors.surfaceDark : Colors.white;
   Color get _getBorderColor => _isDark ? AppColors.greyDark : Colors.grey.shade200;
   Color get _getTextColor => _isDark ? AppColors.textDark : AppColors.text;
@@ -57,16 +57,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<UserProvider>(
-      builder: (context, userProvider, child) {
+    return Consumer2<UserProvider, ThemeProvider>(
+      builder: (context, userProvider, themeProvider, child) {
         final user = userProvider.user;
         final name = user?.name ?? 'Student';
         final initial = name.isNotEmpty ? name[0].toUpperCase() : 'S';
+        final isDark = themeProvider.isDarkMode;
+        final bgColor = isDark ? AppColors.backgroundDark : const Color(0xFFF8FAFC);
 
         return Scaffold(
-              backgroundColor: _getBackgroundColor,
+              backgroundColor: bgColor,
               appBar: AppBar(
-                backgroundColor: _getBackgroundColor,
+                backgroundColor: bgColor,
                 elevation: 0,
                 scrolledUnderElevation: 0,
                 toolbarHeight: 52,

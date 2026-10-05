@@ -11,6 +11,8 @@ import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 
 
+import '../providers/theme_provider.dart';
+
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
@@ -31,8 +33,9 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<UserProvider>(
-      builder: (context, userProvider, child) {
+    return Consumer2<UserProvider, ThemeProvider>(
+      builder: (context, userProvider, themeProvider, child) {
+        final isDark = themeProvider.isDarkMode;
         return PopScope(
           canPop: _currentIndex == 0,
           onPopInvokedWithResult: (didPop, result) {
@@ -44,7 +47,7 @@ class _MainScreenState extends State<MainScreen> {
             }
           },
           child: Scaffold(
-            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            backgroundColor: isDark ? AppColors.backgroundDark : Colors.white,
             body: SlideIndexedStack(
               index: _currentIndex,
               children: _screens,
@@ -57,9 +60,9 @@ class _MainScreenState extends State<MainScreen> {
                 });
               },
               type: BottomNavigationBarType.fixed,
-              selectedItemColor: Theme.of(context).brightness == Brightness.dark ? AppColors.accent : AppTheme.primaryColor,
-              unselectedItemColor: Theme.of(context).brightness == Brightness.dark ? Colors.white60 : Colors.grey,
-              backgroundColor: Theme.of(context).brightness == Brightness.dark ? AppColors.surfaceDark : Colors.white,
+              selectedItemColor: isDark ? AppColors.accent : AppTheme.primaryColor,
+              unselectedItemColor: isDark ? Colors.white60 : Colors.grey.shade600,
+              backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
               items: const [
                 BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home), label: 'Home'),
                 BottomNavigationBarItem(icon: Icon(Icons.school_outlined), activeIcon: Icon(Icons.school), label: 'Batches'),

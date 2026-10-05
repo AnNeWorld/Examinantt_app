@@ -24,14 +24,14 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode;
     final cardBg = isDark ? const Color(0xFF0E1A3D) : Colors.white;
     final textColor = isDark ? Colors.white : Colors.black87;
     final subColor = isDark ? Colors.white54 : Colors.black54;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0A122C) : Colors.grey.shade50,
+      backgroundColor: isDark ? const Color(0xFF0A122C) : Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -49,7 +49,13 @@ class ProfileScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: isDark ? const Color(0xFF0E1A3D) : Colors.white,
                         shape: BoxShape.circle,
-                        border: Border.all(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade200),
+                        border: Border.all(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade300),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+                            blurRadius: 4,
+                          ),
+                        ],
                       ),
                       child: Icon(Icons.arrow_back_ios_new_rounded, color: textColor, size: 14),
                     ),
@@ -64,28 +70,37 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   Row(
                     children: [
-                      Consumer<ThemeProvider>(
-                        builder: (context, themeProvider, child) {
-                          final isDarkMode = themeProvider.isDarkMode;
-                          return GestureDetector(
-                            onTap: () {
-                              themeProvider.toggleTheme(!isDarkMode);
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF0E1A3D) : Colors.white,
-                                shape: BoxShape.circle,
-                                border: Border.all(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade200),
-                              ),
-                              child: Icon(
-                                isDarkMode ? Icons.wb_sunny_rounded : Icons.dark_mode_rounded,
-                                color: isDarkMode ? const Color(0xFFFFA000) : const Color(0xFF0F172A),
-                                size: 16,
-                              ),
+                      Tooltip(
+                        message: isDark ? 'Switch to White Mode' : 'Switch to Dark Mode',
+                        child: GestureDetector(
+                          onTap: () {
+                            final nextModeIsDark = !isDark;
+                            themeProvider.toggleTheme(nextModeIsDark);
+                            AppTheme.showSuccessSnackBar(
+                              context,
+                              nextModeIsDark ? 'Dark Mode Activated 🌙' : 'White Mode Activated ☀️',
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF0E1A3D) : Colors.white,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade300),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
+                                  blurRadius: 4,
+                                ),
+                              ],
                             ),
-                          );
-                        },
+                            child: Icon(
+                              isDark ? Icons.dark_mode_rounded : Icons.wb_sunny_rounded,
+                              color: isDark ? const Color(0xFFFFA000) : const Color(0xFFF59E0B),
+                              size: 16,
+                            ),
+                          ),
+                        ),
                       ),
                       const SizedBox(width: 8),
                       Stack(
@@ -772,7 +787,7 @@ class ProfileScreen extends StatelessWidget {
     IconData icon,
     Color color,
   ) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
     final textColor = isDark ? Colors.white : Colors.black87;
     final subColor = isDark ? Colors.white54 : Colors.black54;
 
@@ -813,7 +828,7 @@ class ProfileScreen extends StatelessWidget {
     required Color color,
     required Widget destination,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
     final cardBg = isDark ? const Color(0xFF0E1A3D) : Colors.white;
     final textColor = isDark ? Colors.white : Colors.black87;
     final subColor = isDark ? Colors.white54 : Colors.black54;
