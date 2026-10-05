@@ -13,6 +13,17 @@ import '../models/notification_model.dart';
 import '../services/firestore_service.dart';
 import 'courses_screen.dart';
 import '../constants/app_colors.dart';
+import '../models/content_models.dart';
+import '../services/content_service.dart';
+import '../services/test_service.dart';
+import '../models/test_model.dart';
+import '../utils/app_theme.dart';
+import 'live_classes_screen.dart';
+import 'test_series_screen.dart';
+import 'resources_screen.dart';
+import 'doubts_screen.dart';
+import 'pyqs_screen.dart';
+import 'test_series_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -224,19 +235,22 @@ class _HomeScreenState extends State<HomeScreen> {
                         ).animate().fadeIn(delay: 50.ms, duration: 400.ms),
                         const SizedBox(height: 10),
 
-                        // 2. If student has NOT purchased batch: show ALL pages of locked home.pdf
-                        if (!hasPurchasedBatch) ...[
-                          LockedHomeSections(
-                            onExploreBatches: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const CoursesScreen()),
-                              );
-                            },
-                          ).animate().fadeIn(delay: 50.ms, duration: 400.ms),
+                        // 2. Sections: If dark mode, render Locked/Unlocked sections. If light mode, render clean white sections.
+                        if (isDark) ...[
+                          if (!hasPurchasedBatch) ...[
+                            LockedHomeSections(
+                              onExploreBatches: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const CoursesScreen()),
+                                );
+                              },
+                            ).animate().fadeIn(delay: 50.ms, duration: 400.ms),
+                          ] else ...[
+                            const UnlockedHomeSections().animate().fadeIn(delay: 50.ms, duration: 400.ms),
+                          ],
                         ] else ...[
-                          // 3. If student HAS purchased batch: show ALL pages of unlocked home.pdf
-                          const UnlockedHomeSections().animate().fadeIn(delay: 50.ms, duration: 400.ms),
+                          _buildLightHomeSections(context, userProvider.selectedExam),
                         ],
                         const SizedBox(height: 36),
                       ],
@@ -585,6 +599,444 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         );
       },
+    );
+  }
+
+  // ===========================================================================
+  // LIGHT-MODE CLEAN HOME SECTIONS (Zero dark mode elements when theme is light)
+  // ===========================================================================
+  Widget _buildLightHomeSections(BuildContext context, String selectedExam) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 1. Live Session Card (If any live class active)
+          StreamBuilder<List<LiveClass>>(
+            stream: ContentService().getLiveClasses(),
+            builder: (context, snapshot) {
+              final classes = snapshot.data ?? [];
+              final liveNow = classes.where((c) => c.isLive).toList();
+              if (liveNow.isEmpty) return const SizedBox.shrink();
+
+              final hero = liveNow.first;
+              return Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.3)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFEF4444).withValues(alpha: 0.08),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEF4444),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.circle, color: Colors.white, size: 7),
+                              SizedBox(width: 4),
+                              Text('LIVE NOW', style: TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.w900)),
+                            ],
+                          ),
+                        ),
+                        Text(hero.instructor, style: const TextStyle(color: Color(0xFF64748B), fontSize: 11.5, fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      hero.title,
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppTheme.darkSlate),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${hero.subject} • ${hero.chapter}',
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const LiveClassesScreen(initialTab: 0),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.play_circle_fill, size: 16),
+                        label: const Text('Join Live Interactive Stream', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFEF4444),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 11),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+
+          // 2. Featured Batches Section
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Featured Batches ($selectedExam)',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                  color: AppTheme.darkSlate,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const CoursesScreen()),
+                  );
+                },
+                child: const Text('View All →', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+
+          StreamBuilder<List<TestCategory>>(
+            stream: TestService().getCategoriesStream(),
+            builder: (context, snapshot) {
+              final courses = snapshot.data ?? [];
+              final topCourses = courses.take(2).toList();
+              if (topCourses.isEmpty) {
+                return Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: const Center(
+                    child: Text('Explore latest batches in the Batches tab', style: TextStyle(color: Color(0xFF64748B), fontSize: 13)),
+                  ),
+                );
+              }
+
+              return Column(
+                children: topCourses.map((c) {
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey.shade200),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.03),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0070F3).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.school_rounded, color: Color(0xFF0070F3), size: 24),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                c.title,
+                                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppTheme.darkSlate),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                c.badge.isNotEmpty ? c.badge.toUpperCase() : 'PREMIUM BATCH',
+                                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFFFF7A00)),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                c.price == 0 ? 'FREE' : '₹${c.price.toInt()} Complete Course',
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
+                              ),
+                            ],
+                          ),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => TestSeriesDetailScreen(
+                                  categoryId: c.id,
+                                  title: c.title,
+                                  badge: c.badge.isNotEmpty ? c.badge : 'PREMIUM',
+                                  price: c.price.toStringAsFixed(0),
+                                  originalPrice: c.originalPrice.toStringAsFixed(0),
+                                  features: c.features.isEmpty
+                                      ? ['Chapter-wise Tests', 'Full Length Mocks']
+                                      : c.features,
+                                  badgeColor: const Color(0xFFFF7A00),
+                                  imageUrl: c.iconUrl,
+                                ),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryColor,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          child: const Text('Explore', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              );
+            },
+          ),
+          const SizedBox(height: 14),
+
+          // 3. Practice & Test Series Banner
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFEFF6FF), Color(0xFFDBEAFE)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFBFDBFE)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF3B82F6),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.assignment_turned_in_rounded, color: Colors.white, size: 22),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'All-India Mock Test Series',
+                        style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14.5, color: Color(0xFF1E3A8A)),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Practice chapter tests with instant percentile analytics',
+                        style: TextStyle(fontSize: 11.5, color: Colors.blue.shade900.withValues(alpha: 0.8)),
+                      ),
+                    ],
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const TestSeriesScreen()),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1D4ED8),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text('Practice', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5)),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // 4. Quick Study Tools Grid (PYQs & Notes)
+          Row(
+            children: [
+              Expanded(
+                child: InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const PyqsScreen()),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.grey.shade200),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.02),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 16,
+                          backgroundColor: Color(0xFFEDE9FE),
+                          child: Icon(Icons.history_edu_rounded, color: Color(0xFF8B5CF6), size: 16),
+                        ),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('15+ Yrs PYQs', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5, color: AppTheme.darkSlate)),
+                              Text('Solved Papers', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ResourcesScreen()),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.grey.shade200),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.02),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 16,
+                          backgroundColor: Color(0xFFD1FAE5),
+                          child: Icon(Icons.picture_as_pdf_rounded, color: Color(0xFF10B981), size: 16),
+                        ),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Formula PDFs', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5, color: AppTheme.darkSlate)),
+                              Text('Revision Sheets', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // 5. Ask Doubts & Community Banner
+          InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const DoubtsScreen()),
+              );
+            },
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade200),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: const Row(
+                children: [
+                  CircleAvatar(
+                    radius: 20,
+                    backgroundColor: Color(0xFFFFF7ED),
+                    child: Icon(Icons.help_outline_rounded, color: Color(0xFFFF7A00), size: 22),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Have a Doubt in any Question?', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5, color: AppTheme.darkSlate)),
+                        SizedBox(height: 2),
+                        Text('Ask expert faculty & get step-by-step solutions under 15 mins', style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B))),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFFFF7A00), size: 14),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

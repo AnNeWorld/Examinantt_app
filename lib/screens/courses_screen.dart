@@ -89,42 +89,43 @@ class _CoursesScreenState extends State<CoursesScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = _isDark;
     return Scaffold(
-      backgroundColor: const Color(0xFF050F1E),
+      backgroundColor: _getBackgroundColor,
       appBar: AppBar(
         title: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: const Color(0xFF0070F3).withValues(alpha: 0.2),
+                color: (isDark ? const Color(0xFF0070F3) : AppTheme.primaryColor).withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.school, color: Color(0xFF38BDF8), size: 18),
+              child: Icon(Icons.school, color: isDark ? const Color(0xFF38BDF8) : AppTheme.primaryColor, size: 18),
             ),
             const SizedBox(width: 8),
-            const Text(
+            Text(
               'Batches & Programs',
               style: TextStyle(
                 fontWeight: FontWeight.w900,
-                color: Colors.white,
+                color: _getTextColor,
                 fontSize: 17,
                 letterSpacing: -0.3,
               ),
             ),
           ],
         ),
-        backgroundColor: const Color(0xFF071326),
+        backgroundColor: isDark ? const Color(0xFF071326) : Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.add_circle_outline_rounded, color: Color(0xFF38BDF8), size: 22),
+            icon: Icon(Icons.add_circle_outline_rounded, color: isDark ? const Color(0xFF38BDF8) : AppTheme.primaryColor, size: 22),
             tooltip: 'Create Batch',
             onPressed: () => CreateEditBatchSheet.show(context),
           ),
           IconButton(
-            icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 20),
+            icon: Icon(Icons.notifications_outlined, color: _getTextColor, size: 20),
             onPressed: () {
               Navigator.push(
                 context,
@@ -133,6 +134,24 @@ class _CoursesScreenState extends State<CoursesScreen>
             },
           ),
         ],
+        bottom: !isDark
+            ? TabBar(
+                controller: _tabController,
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
+                indicatorColor: AppColors.accent,
+                indicatorWeight: 3,
+                labelColor: AppTheme.primaryColor,
+                unselectedLabelColor: Colors.grey.shade600,
+                labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                tabs: const [
+                  Tab(text: 'ALL BATCHES'),
+                  Tab(text: 'FULL PREPARATION'),
+                  Tab(text: 'CRASH COURSES'),
+                  Tab(text: 'MY BATCHES'),
+                ],
+              )
+            : null,
       ),
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'fab_create_batch',
@@ -142,7 +161,53 @@ class _CoursesScreenState extends State<CoursesScreen>
         icon: const Icon(Icons.add_rounded),
         label: const Text('Create Batch', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
       ),
-      body: const BatchPageSections(),
+      body: isDark
+          ? const BatchPageSections()
+          : StreamBuilder<List<TestCategory>>(
+              stream: _testService.getCategoriesStream(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                final courses = snapshot.data ?? [];
+                final fullPrepCourses = courses.where((c) {
+                  final title = c.title.toLowerCase();
+                  final badge = c.badge.toLowerCase();
+                  return title.contains('full') ||
+                      badge.contains('gold') ||
+                      title.contains('foundation') ||
+                      title.contains('target') ||
+                      title.contains('super');
+                }).toList();
+
+                final crashCourses = courses.where((c) {
+                  final title = c.title.toLowerCase();
+                  final badge = c.badge.toLowerCase();
+                  return title.contains('crash') ||
+                      title.contains('fast') ||
+                      badge.contains('silver') ||
+                      title.contains('rapid') ||
+                      title.contains('revision');
+                }).toList();
+
+                return TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildCoursesTab(courses),
+                    _buildCategoryBatchList(
+                      fullPrepCourses,
+                      'No full preparation batches available for this category.',
+                    ),
+                    _buildCategoryBatchList(
+                      crashCourses,
+                      'No crash courses available right now.',
+                    ),
+                    _buildPurchasesTab(courses),
+                  ],
+                );
+              },
+            ),
     );
   }
 

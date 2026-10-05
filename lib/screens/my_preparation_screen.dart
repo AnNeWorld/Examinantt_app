@@ -88,10 +88,11 @@ class _GoalsTabState extends State<GoalsTab> {
     required String currentValue,
     required ValueChanged<String> onSelected,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF0A1E3F),
+      backgroundColor: isDark ? const Color(0xFF0A1E3F) : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -110,28 +111,28 @@ class _GoalsTabState extends State<GoalsTab> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: isDark ? Colors.white24 : Colors.grey.shade300,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               const SizedBox(height: 16),
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: isDark ? Colors.white : AppTheme.darkSlate,
                 ),
               ),
               const SizedBox(height: 8),
-              const Divider(),
+              Divider(color: isDark ? Colors.white12 : Colors.grey.shade200),
               ...options.map((opt) {
                 final isSelected = opt == currentValue;
                 return ListTile(
                   title: Text(
                     opt,
                     style: TextStyle(
-                      color: isSelected ? const Color(0xFFFFA000) : Colors.white,
+                      color: isSelected ? const Color(0xFFFFA000) : (isDark ? Colors.white : AppTheme.darkSlate),
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                     ),
                   ),

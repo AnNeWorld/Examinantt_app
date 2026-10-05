@@ -6,8 +6,9 @@ class CommunityScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: const Color(0xFF070F1E),
+      backgroundColor: isDark ? const Color(0xFF070F1E) : Colors.white,
       body: SafeArea(
         child: CommunityChatView(
           isEmbedded: false,

@@ -22,6 +22,13 @@ class LiveClassesScreen extends StatefulWidget {
 
 class _LiveClassesScreenState extends State<LiveClassesScreen>
     with SingleTickerProviderStateMixin {
+  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
+  Color get _scaffoldBg => _isDark ? const Color(0xFF001026) : const Color(0xFFF8FAFC);
+  Color get _cardBg => _isDark ? const Color(0xFF071938) : Colors.white;
+  Color get _textColor => _isDark ? Colors.white : AppTheme.darkSlate;
+  Color get _subTextColor => _isDark ? const Color(0xFF94A3B8) : Colors.grey.shade600;
+  Color get _borderColor => _isDark ? Colors.white12 : Colors.grey.shade200;
+
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
   final ContentService _contentService = ContentService();
@@ -222,12 +229,12 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF001026),
+      backgroundColor: _scaffoldBg,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF071938),
+        backgroundColor: _cardBg,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: _textColor, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Row(
@@ -235,22 +242,22 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: const Color(0xFFEF4444).withValues(alpha: 0.2),
+                color: const Color(0xFFEF4444).withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.videocam_rounded, color: Color(0xFFEF4444), size: 18),
             ),
             const SizedBox(width: 10),
-            const Column(
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Live Classroom',
-                  style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w800),
+                  style: TextStyle(color: _textColor, fontSize: 17, fontWeight: FontWeight.w800),
                 ),
                 Text(
                   'Interactive sessions, recordings & doubt clearing',
-                  style: TextStyle(color: Color(0xFF94A3B8), fontSize: 10, fontWeight: FontWeight.w500),
+                  style: TextStyle(color: _subTextColor, fontSize: 10, fontWeight: FontWeight.w500),
                 ),
               ],
             ),
@@ -259,8 +266,8 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
           child: Container(
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: Colors.white12)),
+            decoration: BoxDecoration(
+              border: Border(bottom: BorderSide(color: _borderColor)),
             ),
             child: TabBar(
               controller: _tabController,
@@ -269,7 +276,7 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
               indicatorColor: const Color(0xFFFF7A00),
               indicatorWeight: 3,
               labelColor: const Color(0xFFFF7A00),
-              unselectedLabelColor: const Color(0xFF94A3B8),
+              unselectedLabelColor: _subTextColor,
               labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5),
               tabs: const [
                 Tab(

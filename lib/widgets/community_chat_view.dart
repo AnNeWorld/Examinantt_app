@@ -20,6 +20,7 @@ class CommunityChatView extends StatefulWidget {
 }
 
 class _CommunityChatViewState extends State<CommunityChatView> {
+  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
   final FirestoreService _firestoreService = FirestoreService();
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
@@ -127,7 +128,7 @@ class _CommunityChatViewState extends State<CommunityChatView> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFF070F1E),
+      color: _isDark ? const Color(0xFF070F1E) : Colors.white,
       child: Column(
         children: [
           // Header / Info banner (if not embedded, show top app bar)
@@ -194,15 +195,15 @@ class _CommunityChatViewState extends State<CommunityChatView> {
   Widget _buildStandaloneHeader() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: const BoxDecoration(
-        color: Color(0xFF0F172A),
-        border: Border(bottom: BorderSide(color: Colors.white12)),
+      decoration: BoxDecoration(
+        color: _isDark ? const Color(0xFF0F172A) : Colors.white,
+        border: Border(bottom: BorderSide(color: _isDark ? Colors.white12 : Colors.grey.shade200)),
       ),
       child: Row(
         children: [
           if (widget.onBack != null)
             IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              icon: Icon(Icons.arrow_back, color: _isDark ? Colors.white : const Color(0xFF1E293B)),
               onPressed: widget.onBack,
             ),
           const CircleAvatar(
@@ -211,15 +212,15 @@ class _CommunityChatViewState extends State<CommunityChatView> {
             child: Icon(Icons.forum_rounded, color: Colors.white, size: 20),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Examinantt Student Community',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                  style: TextStyle(color: _isDark ? Colors.white : const Color(0xFF1E293B), fontWeight: FontWeight.bold, fontSize: 16),
                 ),
-                Text(
+                const Text(
                   '🟢 140+ Students & Teachers Active',
                   style: TextStyle(color: Color(0xFF34D399), fontSize: 11),
                 ),
@@ -234,9 +235,9 @@ class _CommunityChatViewState extends State<CommunityChatView> {
   Widget _buildChannelSelector() {
     return Container(
       height: 48,
-      decoration: const BoxDecoration(
-        color: Color(0xFF0B1729),
-        border: Border(bottom: BorderSide(color: Colors.white10)),
+      decoration: BoxDecoration(
+        color: _isDark ? const Color(0xFF0B1729) : const Color(0xFFF8FAFC),
+        border: Border(bottom: BorderSide(color: _isDark ? Colors.white10 : Colors.grey.shade200)),
       ),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
@@ -265,10 +266,12 @@ class _CommunityChatViewState extends State<CommunityChatView> {
                           colors: [Color(0xFFFFA000), Color(0xFFFF8F00)],
                         )
                       : null,
-                  color: isSelected ? null : const Color(0xFF1E293B),
+                  color: isSelected ? null : (_isDark ? const Color(0xFF1E293B) : Colors.white),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isSelected ? const Color(0xFFFFD54F) : Colors.white12,
+                    color: isSelected
+                        ? const Color(0xFFFFD54F)
+                        : (_isDark ? Colors.white12 : Colors.grey.shade300),
                   ),
                 ),
                 child: Row(
@@ -277,13 +280,13 @@ class _CommunityChatViewState extends State<CommunityChatView> {
                     Icon(
                       channel['icon'] as IconData,
                       size: 14,
-                      color: isSelected ? Colors.black : Colors.white70,
+                      color: isSelected ? Colors.black : (_isDark ? Colors.white70 : const Color(0xFF475569)),
                     ),
                     const SizedBox(width: 6),
                     Text(
                       channel['label'] as String,
                       style: TextStyle(
-                        color: isSelected ? Colors.black : Colors.white70,
+                        color: isSelected ? Colors.black : (_isDark ? Colors.white70 : const Color(0xFF475569)),
                         fontSize: 12,
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                       ),
@@ -301,7 +304,7 @@ class _CommunityChatViewState extends State<CommunityChatView> {
   Widget _buildFilterBar() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-      color: const Color(0xFF081220),
+      color: _isDark ? const Color(0xFF081220) : const Color(0xFFF1F5F9),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -332,11 +335,11 @@ class _CommunityChatViewState extends State<CommunityChatView> {
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.verified, color: Color(0xFF34D399), size: 12),
+                Icon(Icons.verified, color: Color(0xFF10B981), size: 12),
                 SizedBox(width: 4),
                 Text(
                   'Faculty Verified',
-                  style: TextStyle(color: Color(0xFF34D399), fontSize: 10, fontWeight: FontWeight.w600),
+                  style: TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -360,16 +363,20 @@ class _CommunityChatViewState extends State<CommunityChatView> {
         decoration: BoxDecoration(
           color: isSelected
               ? (badgeColor ?? const Color(0xFF2563EB))
-              : const Color(0xFF1E293B),
+              : (_isDark ? const Color(0xFF1E293B) : Colors.white),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isSelected ? Colors.white24 : Colors.transparent,
+            color: isSelected
+                ? Colors.transparent
+                : (_isDark ? Colors.white12 : Colors.grey.shade300),
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Colors.white : Colors.white60,
+            color: isSelected
+                ? Colors.white
+                : (_isDark ? Colors.white60 : const Color(0xFF475569)),
             fontSize: 11,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
@@ -439,7 +446,9 @@ class _CommunityChatViewState extends State<CommunityChatView> {
                           end: Alignment.bottomRight,
                         )
                       : null,
-              color: (!isTeacher && !isMe) ? const Color(0xFF152238) : null,
+              color: (!isTeacher && !isMe)
+                  ? (_isDark ? const Color(0xFF152238) : const Color(0xFFF8FAFC))
+                  : null,
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(16),
                 topRight: const Radius.circular(16),
@@ -448,10 +457,10 @@ class _CommunityChatViewState extends State<CommunityChatView> {
               ),
               border: Border.all(
                 color: isTeacher
-                    ? const Color(0xFFFFA000).withValues(alpha: 0.6)
+                    ? const Color(0xFFFFA000).withValues(alpha: 0.5)
                     : isMe
                         ? const Color(0xFF60A5FA).withValues(alpha: 0.4)
-                        : Colors.white10,
+                        : (_isDark ? Colors.white12 : Colors.grey.shade200),
                 width: isTeacher ? 1.5 : 1.0,
               ),
               boxShadow: isTeacher
@@ -814,9 +823,9 @@ class _CommunityChatViewState extends State<CommunityChatView> {
   Widget _buildInputBar() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: const BoxDecoration(
-        color: Color(0xFF0F172A),
-        border: Border(top: BorderSide(color: Colors.white12)),
+      decoration: BoxDecoration(
+        color: _isDark ? const Color(0xFF0F172A) : Colors.white,
+        border: Border(top: BorderSide(color: _isDark ? Colors.white12 : Colors.grey.shade200)),
       ),
       child: SafeArea(
         top: false,
@@ -912,24 +921,24 @@ class _CommunityChatViewState extends State<CommunityChatView> {
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E293B),
+                      color: _isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
                       borderRadius: BorderRadius.circular(22),
                       border: Border.all(
                         color: _isPostingAsTeacher
                             ? const Color(0xFFFFA000).withValues(alpha: 0.5)
-                            : Colors.white12,
+                            : (_isDark ? Colors.white12 : Colors.grey.shade300),
                       ),
                     ),
                     child: TextField(
                       controller: _messageController,
                       minLines: 1,
                       maxLines: 4,
-                      style: const TextStyle(color: Colors.white, fontSize: 13),
+                      style: TextStyle(color: _isDark ? Colors.white : const Color(0xFF1E293B), fontSize: 13),
                       decoration: InputDecoration(
                         hintText: _isPostingAsTeacher
                             ? 'Reply with faculty solution or explanation...'
                             : 'Ask a doubt or converse with peers...',
-                        hintStyle: const TextStyle(color: Colors.white38, fontSize: 12),
+                        hintStyle: TextStyle(color: _isDark ? Colors.white38 : Colors.grey.shade400, fontSize: 12),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         border: InputBorder.none,
                       ),

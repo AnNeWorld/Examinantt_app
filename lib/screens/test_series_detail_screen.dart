@@ -795,22 +795,23 @@ class _TestSeriesDetailScreenState extends State<TestSeriesDetailScreen> {
   }
 
   void _showResultDialog(BuildContext context, String testName, TestResult res) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final accuracyStr = res.accuracy.toStringAsFixed(1);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF141C2F),
-        title: Text(testName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: isDark ? const Color(0xFF141C2F) : Colors.white,
+        title: Text(testName, style: TextStyle(color: isDark ? Colors.white : AppTheme.darkSlate, fontWeight: FontWeight.bold)),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildResultDialogRow('Marks Obtained', '${res.score} / ${(res.correctAnswers + res.wrongAnswers + res.skippedAnswers) * 4}'),
+              _buildResultDialogRow(isDark, 'Marks Obtained', '${res.score} / ${(res.correctAnswers + res.wrongAnswers + res.skippedAnswers) * 4}'),
               const SizedBox(height: 8),
-              _buildResultDialogRow('Accuracy', '$accuracyStr%'),
+              _buildResultDialogRow(isDark, 'Accuracy', '$accuracyStr%'),
               const SizedBox(height: 8),
-              _buildResultDialogRow('Time Spent', '${res.timeTakenSeconds ~/ 60}m ${res.timeTakenSeconds % 60}s'),
+              _buildResultDialogRow(isDark, 'Time Spent', '${res.timeTakenSeconds ~/ 60}m ${res.timeTakenSeconds % 60}s'),
             ],
           ),
         ),
@@ -824,19 +825,19 @@ class _TestSeriesDetailScreenState extends State<TestSeriesDetailScreen> {
     );
   }
 
-  Widget _buildResultDialogRow(String label, String val) {
+  Widget _buildResultDialogRow(bool isDark, String label, String val) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Flexible(
           child: Text(
             label,
-            style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 13),
+            style: TextStyle(color: isDark ? AppColors.textDarkSecondary : AppColors.textSecondary, fontSize: 13),
             overflow: TextOverflow.ellipsis,
           ),
         ),
         const SizedBox(width: 8),
-        Text(val, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+        Text(val, style: TextStyle(color: isDark ? Colors.white : AppTheme.darkSlate, fontWeight: FontWeight.bold, fontSize: 13)),
       ],
     );
   }

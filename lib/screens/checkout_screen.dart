@@ -190,32 +190,37 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final effectiveOriginalPrice = widget.originalPrice ?? (widget.price * 1.5).roundToDouble();
     final discount = (effectiveOriginalPrice - widget.price).clamp(0.0, double.infinity);
+    final scaffoldBg = isDark ? const Color(0xFF070E1A) : const Color(0xFFF8FAFC);
+    final appBarBg = isDark ? const Color(0xFF070E1A) : Colors.white;
+    final textColor = isDark ? Colors.white : AppTheme.darkSlate;
+    final iconBg = isDark ? Colors.white.withOpacity(0.08) : Colors.grey.shade100;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF070E1A),
+      backgroundColor: scaffoldBg,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF070E1A),
+        backgroundColor: appBarBg,
         elevation: 0,
         leading: IconButton(
           icon: Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.08),
+              color: iconBg,
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.arrow_back_ios_new, size: 16, color: Colors.white),
+            child: Icon(Icons.arrow_back_ios_new, size: 16, color: textColor),
           ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Secure Checkout',
               style: TextStyle(
-                color: Colors.white,
+                color: textColor,
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.2,

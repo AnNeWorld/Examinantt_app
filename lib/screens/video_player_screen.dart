@@ -168,16 +168,16 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           // External Watch Banner
           Container(
             width: double.infinity,
-            color: const Color(0xFF071938),
+            color: isDark ? const Color(0xFF071938) : const Color(0xFFF1F5F9),
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
             child: Row(
               children: [
                 const Icon(Icons.live_tv_rounded, color: Color(0xFFFF7A00), size: 16),
                 const SizedBox(width: 8),
-                const Expanded(
+                Expanded(
                   child: Text(
                     "Smooth HD Stream • Tap open icon for YouTube App",
-                    style: TextStyle(color: Colors.white70, fontSize: 11.5, fontWeight: FontWeight.w600),
+                    style: TextStyle(color: isDark ? Colors.white70 : AppTheme.darkSlate, fontSize: 11.5, fontWeight: FontWeight.w600),
                   ),
                 ),
                 InkWell(
