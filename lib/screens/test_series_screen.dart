@@ -1,208 +1,160 @@
+// ignore_for_file: unused_element, unused_field
 import 'package:flutter/material.dart';
 import '../utils/app_theme.dart';
-import 'test_series_detail_screen.dart';
+import '../services/payment_service.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
+import 'test_history_screen.dart';
+import '../widgets/test_page_sections.dart';
 
-class TestSeriesScreen extends StatelessWidget {
+class TestSeriesScreen extends StatefulWidget {
   const TestSeriesScreen({super.key});
 
   @override
+  State<TestSeriesScreen> createState() => _TestSeriesScreenState();
+}
+
+class _TestSeriesScreenState extends State<TestSeriesScreen> {
+  final PaymentService _paymentService = PaymentService();
+
+  @override
+  void initState() {
+    super.initState();
+    _paymentService.initialize(
+      onSuccess: (PaymentSuccessResponse response) {
+        if (!mounted) return;
+        AppTheme.showSuccessSnackBar(context, 'Payment Successful! Series Unlocked.');
+        setState(() {});
+      },
+      onFailure: (PaymentFailureResponse response) {
+        if (!mounted) return;
+        AppTheme.showErrorSnackBar(
+          context,
+          'Payment Failed: ${response.message ?? "User cancelled or transaction failed"}',
+        );
+      },
+      onExternalWallet: (ExternalWalletResponse response) {},
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            _buildTestCard(
-              context: context,
-              title: 'Examinantt Gold Test Series - SSC CGL',
-              badge: 'Gold',
-              price: '299',
-              originalPrice: '448.5',
-              testsCount: '108 Full Tests',
-              features: [
-                'Chapter-wise Tests',
-                'Subject-wise Mocks',
-                'Full Length Mocks',
-              ],
-              badgeColor: const Color(0xFFFFD700),
-            ),
-            const SizedBox(height: 16),
-            _buildTestCard(
-              context: context,
-              title: 'Examinantt Silver Test Series - Banking',
-              badge: 'Silver',
-              price: '199',
-              originalPrice: '399',
-              testsCount: '50 Full Tests',
-              features: [
-                'Sectional Tests',
-                'Full Length Mocks',
-                'Detailed Solutions',
-              ],
-              badgeColor: const Color(0xFFC0C0C0),
-            ),
-          ],
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? null : AppTheme.backgroundLight,
+        gradient: isDark
+            ? const LinearGradient(
+                colors: [Color(0xFF001638), Color(0xFF000F29)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              )
+            : null,
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Top App Bar matching Home, Batches & PDF Header
+              _buildTopAppBar(),
+
+              // Complete 7 Pages from test page.pdf
+              Expanded(
+                child: TestPageSections(
+                  onOpenHistory: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const TestHistoryScreen()),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildTestCard({
-    required BuildContext context,
-    required String title,
-    required String badge,
-    required String price,
-    required String originalPrice,
-    required String testsCount,
-    required List<String> features,
-    required Color badgeColor,
-  }) {
+  // Standard Header matching PDF: Hamburger / Shield + EXAMINANTT TEST CENTER + Bell + Search
+  Widget _buildTopAppBar() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final scaffoldBg = isDark ? Colors.transparent : Colors.white;
+    final textColor = isDark ? Colors.white : AppTheme.darkSlate;
+    final borderColor = isDark ? Colors.white10 : Colors.grey.shade200;
+
     return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.primaryColor.withOpacity(0.1)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: scaffoldBg,
+        border: Border(bottom: BorderSide(color: borderColor)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
+          // Logo Badge
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: AppTheme.darkSlate.withOpacity(0.02),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
-              ),
-              border: Border(
-                bottom: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.08)),
-              ),
+              color: const Color(0xFFFFA000).withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFFFA000).withValues(alpha: 0.3)),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: badgeColor.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: badgeColor),
-                  ),
-                  child: Text(
-                    badge,
-                    style: TextStyle(
-                      color: badgeColor.withOpacity(0.8),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    testsCount,
-                    textAlign: TextAlign.right,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                      color: AppTheme.primaryColor,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
+            child: const Icon(Icons.shield_rounded, color: Color(0xFFFFA000), size: 22),
           ),
-          Padding(
-            padding: const EdgeInsets.all(16),
+          const SizedBox(width: 10),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.darkSlate,
-                  ),
+                  'EXAMINANTT',
+                  style: TextStyle(color: textColor, fontWeight: FontWeight.w900, fontSize: 15, letterSpacing: 0.8),
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 16),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '₹$price',
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900,
-                        color: AppTheme.secondaryColor,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '₹$originalPrice',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-                        decoration: TextDecoration.lineThrough,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                ...features.map(
-                  (feature) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.check_circle,
-                          color: Colors.green,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(feature, style: const TextStyle(fontSize: 14)),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => TestSeriesDetailScreen(
-                            title: title,
-                            badge: badge,
-                            price: price,
-                            originalPrice: originalPrice,
-                            features: features,
-                            badgeColor: badgeColor,
-                          ),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryColor,
-                    ),
-                    child: const Text('Explore Series'),
-                  ),
+                const Text(
+                  'TEST CENTER',
+                  style: TextStyle(color: Color(0xFFFFA000), fontWeight: FontWeight.w800, fontSize: 11, letterSpacing: 0.5),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
+          ),
+          // Notification with badge 3 matching PDF
+          Stack(
+            children: [
+              IconButton(
+                icon: Icon(Icons.notifications_none_rounded, color: textColor),
+                onPressed: () {
+                  AppTheme.showSuccessSnackBar(context, 'You have 3 new test notifications!');
+                },
+              ),
+              Positioned(
+                right: 8,
+                top: 8,
+                child: Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFFA000),
+                    shape: BoxShape.circle,
+                  ),
+                  constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+                  child: const Text(
+                    '3',
+                    style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          IconButton(
+            icon: Icon(Icons.search_rounded, color: textColor),
+            onPressed: () {
+              AppTheme.showSuccessSnackBar(context, 'Search mock tests & question banks...');
+            },
           ),
         ],
       ),

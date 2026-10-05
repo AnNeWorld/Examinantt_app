@@ -1,5 +1,11 @@
+// ignore_for_file: unused_element, unused_field
 import 'package:flutter/material.dart';
 import '../utils/app_theme.dart';
+import '../services/payment_service.dart';
+import '../services/firestore_service.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
+import '../widgets/resource_page_sections.dart';
+import '../widgets/create_edit_resource_sheet.dart';
 
 class ResourcesScreen extends StatefulWidget {
   const ResourcesScreen({super.key});
@@ -9,287 +15,213 @@ class ResourcesScreen extends StatefulWidget {
 }
 
 class _ResourcesScreenState extends State<ResourcesScreen> {
-  int _selectedCategoryIndex = 0;
-  final List<String> _categories = [
-    'All',
-    'E-Books',
-    'PYQs',
-    'Class Notes',
-    'Strategy Videos',
-    'Current Affairs PDFs'
-  ];
+  final PaymentService _paymentService = PaymentService();
+  String? _pendingResourceTitle;
+  double? _pendingResourcePrice;
+  int _activeTabIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _paymentService.initialize(
+      onSuccess: _handlePaymentSuccess,
+      onFailure: _handlePaymentError,
+      onExternalWallet: _handleExternalWallet,
+    );
+  }
+
+  void _handlePaymentSuccess(PaymentSuccessResponse response) async {
+    final title = _pendingResourceTitle ?? 'Study Resource';
+    final price = _pendingResourcePrice ?? 49.0;
+    final resId = 'res_${title.toLowerCase().replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_')}';
+
+    await FirestoreService().addPurchase(
+      id: resId,
+      title: title,
+      type: 'Resource',
+      price: price,
+    );
+
+    await FirestoreService().addNotification(
+      title: 'Resource Unlocked 📖',
+      subtitle: 'Successfully unlocked $title in real-time!',
+    );
+    if (!mounted) return;
+    AppTheme.showSuccessSnackBar(context, 'Payment Successful: $title Unlocked in Real-Time!');
+  }
+
+  void _handlePaymentError(PaymentFailureResponse response) {
+    FirestoreService().addNotification(
+      title: 'Payment Cancelled/Failed ❌',
+      subtitle: 'Attempt to unlock resource was cancelled or failed.',
+    );
+    if (!mounted) return;
+    AppTheme.showErrorSnackBar(
+      context,
+      'Payment Failed: ${response.message ?? "User cancelled or transaction failed"}',
+    );
+  }
+
+  void _handleExternalWallet(ExternalWalletResponse response) {
+    if (!mounted) return;
+    AppTheme.showSuccessSnackBar(context, 'External Wallet: ${response.walletName ?? ""}');
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.backgroundLight,
-      appBar: AppBar(
-        title: const Text('Resources Dashboard', style: TextStyle(fontSize: 18)),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bool showAddResource = _activeTabIndex == 0 || _activeTabIndex == 2;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? null : AppTheme.backgroundLight,
+        gradient: isDark
+            ? const LinearGradient(
+                colors: [Color(0xFF001638), Color(0xFF000F29)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              )
+            : null,
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Search Bar
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
-                  ],
-                ),
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Search PDFs, Notes, Videos...',
-                    hintStyle: TextStyle(color: Colors.grey[400]),
-                    prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                ),
-              ),
-            ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        floatingActionButton: showAddResource
+            ? FloatingActionButton.extended(
+                heroTag: 'fab_add_resource',
+                onPressed: () => CreateEditResourceSheet.show(context),
+                backgroundColor: const Color(0xFF10B981),
+                foregroundColor: Colors.white,
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('Add Resource', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              )
+            : null,
+        body: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Top App Bar matching Home, Batches, Tests & PDF Header
+              _buildTopAppBar(),
 
-            // Category Chips
-            SizedBox(
-              height: 40,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: _categories.length,
-                itemBuilder: (context, index) {
-                  final isSelected = _selectedCategoryIndex == index;
-                  return GestureDetector(
-                    onTap: () {
+              // Complete 7 Pages from Resource page.pdf
+              Expanded(
+                child: ResourcePageSections(
+                  onTabChanged: (index) {
+                    if (mounted) {
                       setState(() {
-                        _selectedCategoryIndex = index;
+                        _activeTabIndex = index;
                       });
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.only(right: 12),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: isSelected ? AppTheme.primaryColor : Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: isSelected ? AppTheme.primaryColor : Colors.grey[300]!),
-                      ),
-                      child: Center(
-                        child: Text(
-                          _categories[index],
-                          style: TextStyle(
-                            color: isSelected ? Colors.white : Colors.grey[700],
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
+                    }
+                  },
+                  onExamChanged: (exam) {
+                    AppTheme.showSuccessSnackBar(context, 'Exam switched to $exam');
+                  },
+                  onResourceOpened: (title) {
+                    AppTheme.showSuccessSnackBar(context, 'Opening $title...');
+                  },
+                  onUnlockRequested: (title, price) {
+                    PaymentService().payAndUnlock(
+                      context: context,
+                      title: title,
+                      price: price,
+                      itemType: 'Resource',
+                      subtitle: 'Instant lifetime access to $title study material',
+                      onSuccess: () {
+                        if (mounted) setState(() {});
+                      },
+                    );
+                  },
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-
-            // Exams Categories
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.0),
-              child: Text(
-                'Browse by Exam',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.darkSlate),
-              ),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 90,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                children: [
-                  _buildExamCard('SSC', Icons.account_balance, Colors.blue),
-                  _buildExamCard('Banking', Icons.monetization_on, Colors.green),
-                  _buildExamCard('UPSC', Icons.public, Colors.purple),
-                  _buildExamCard('Railway', Icons.train, Colors.orange),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Popular Resources
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Popular Resources',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.darkSlate),
-                  ),
-                  Text(
-                    'View All',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // List of resources
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Column(
-                children: [
-                  _buildResourceCard(
-                    title: 'UPSC CSAT PYQ 2023',
-                    type: 'PDF',
-                    meta: '12 MB • 45 Pages',
-                    isFree: true,
-                    icon: Icons.picture_as_pdf,
-                    color: Colors.redAccent,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildResourceCard(
-                    title: 'SSC CGL Tier 1 Strategy',
-                    type: 'Video',
-                    meta: '45 Mins • 1080p',
-                    isFree: false,
-                    icon: Icons.play_circle_fill,
-                    color: Colors.blueAccent,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildResourceCard(
-                    title: 'Banking Awareness Cap',
-                    type: 'E-Book',
-                    meta: '25 MB • 120 Pages',
-                    isFree: false,
-                    icon: Icons.menu_book,
-                    color: Colors.teal,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildResourceCard(
-                    title: 'Current Affairs July 2026',
-                    type: 'Notes',
-                    meta: '5 MB • 20 Pages',
-                    isFree: true,
-                    icon: Icons.article,
-                    color: Colors.orange,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildResourceCard(
-                    title: 'Railway NTPC Science Notes',
-                    type: 'PDF',
-                    meta: '18 MB • 60 Pages',
-                    isFree: false,
-                    icon: Icons.picture_as_pdf,
-                    color: Colors.purple,
-                  ),
-                  const SizedBox(height: 32),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildExamCard(String title, IconData icon, Color color) {
-    return Container(
-      width: 80,
-      margin: const EdgeInsets.only(right: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: color, size: 28),
-          const SizedBox(height: 8),
-          Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.darkSlate)),
-        ],
-      ),
-    );
-  }
+  // Standard Header matching PDF: Shield Badge + EXAMINANTT RESOURCE CENTER + Bell (3) + Search
+  Widget _buildTopAppBar() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final scaffoldBg = isDark ? Colors.transparent : Colors.white;
+    final textColor = isDark ? Colors.white : AppTheme.darkSlate;
+    final borderColor = isDark ? Colors.white10 : Colors.grey.shade200;
 
-  Widget _buildResourceCard({
-    required String title,
-    required String type,
-    required String meta,
-    required bool isFree,
-    required IconData icon,
-    required Color color,
-  }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.primaryColor.withOpacity(0.1)),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4)),
-        ],
+        color: scaffoldBg,
+        border: Border(bottom: BorderSide(color: borderColor)),
       ),
       child: Row(
         children: [
+          // Logo Badge
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
+              color: const Color(0xFFFFA000).withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFFFA000).withValues(alpha: 0.3)),
             ),
-            child: Icon(icon, color: color, size: 28),
+            child: const Icon(Icons.shield_rounded, color: Color(0xFFFFA000), size: 22),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  title,
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.darkSlate),
+                  'EXAMINANTT',
+                  style: TextStyle(color: textColor, fontWeight: FontWeight.w900, fontSize: 15, letterSpacing: 0.8),
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        type,
-                        style: TextStyle(fontSize: 10, color: Colors.grey[700], fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      meta,
-                      style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w600),
-                    ),
-                  ],
+                const Text(
+                  'RESOURCE CENTER',
+                  style: TextStyle(color: Color(0xFFFFA000), fontWeight: FontWeight.w800, fontSize: 11, letterSpacing: 0.5),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isFree ? Colors.green : AppTheme.secondaryColor,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              minimumSize: const Size(70, 32),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              elevation: 0,
+          // Notification with badge 3 matching PDF
+          Stack(
+            children: [
+              IconButton(
+                icon: Icon(Icons.notifications_none_rounded, color: textColor),
+                onPressed: () {
+                  AppTheme.showSuccessSnackBar(context, 'You have 3 new study resources available!');
+                },
+              ),
+              Positioned(
+                right: 8,
+                top: 8,
+                child: Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFFA000),
+                    shape: BoxShape.circle,
+                  ),
+                  constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+                  child: const Text(
+                    '3',
+                    style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (_activeTabIndex == 0 || _activeTabIndex == 2)
+            IconButton(
+              icon: const Icon(Icons.add_circle_outline_rounded, color: Color(0xFF10B981)),
+              tooltip: 'Add Resource',
+              onPressed: () => CreateEditResourceSheet.show(context),
             ),
-            child: Text(isFree ? 'Free' : 'Unlock', style: const TextStyle(fontSize: 12)),
+          IconButton(
+            icon: Icon(Icons.search_rounded, color: textColor),
+            onPressed: () {
+              AppTheme.showSuccessSnackBar(context, 'Search notes, question papers & formulas...');
+            },
           ),
         ],
       ),

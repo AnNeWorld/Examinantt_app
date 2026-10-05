@@ -1,64 +1,140 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
+import '../services/firestore_service.dart';
+import '../utils/app_theme.dart';
+import '../constants/app_colors.dart';
 
 class BookmarksScreen extends StatelessWidget {
   const BookmarksScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+    final isLoggedIn = userProvider.isLoggedIn;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final scaffoldBg = isDark ? AppColors.backgroundDark : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: scaffoldBg,
       appBar: AppBar(
-        title: const Text('Bookmarks'),
-        backgroundColor: Colors.white,
+        title: Text('Bookmarks', style: TextStyle(fontWeight: FontWeight.bold, color: textColor)),
+        backgroundColor: scaffoldBg,
         elevation: 0,
-        foregroundColor: Colors.black,
+        foregroundColor: textColor,
+        iconTheme: IconThemeData(color: textColor),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _buildBookmarkItem(
-            'Q. What is the capital of Australia?',
-            'Geography',
-            'SSC CGL Mock Test 3',
-            'Canberra',
-          ),
-          const SizedBox(height: 12),
-          _buildBookmarkItem(
-            'Q. If x + 1/x = 5, then find the value of x^2 + 1/x^2',
-            'Algebra',
-            'SSC CHSL Previous Year',
-            '23',
-          ),
-          const SizedBox(height: 12),
-          _buildBookmarkItem(
-            'Q. Who is known as the Missile Man of India?',
-            'General Knowledge',
-            'RRB NTPC Set 1',
-            'Dr. A.P.J. Abdul Kalam',
-          ),
-          const SizedBox(height: 12),
-          _buildBookmarkItem(
-            'Q. A train running at the speed of 60 km/hr crosses a pole in 9 seconds. What is the length of the train?',
-            'Time & Distance',
-            'Banking IBPS PO Mock',
-            '150 metres',
-          ),
-        ].animate(interval: 50.ms).fade().slideY(begin: 0.1, end: 0, curve: Curves.easeOutCubic),
-      ),
+      body: !isLoggedIn
+          ? Center(
+              child: Text(
+                'Please sign in to view your bookmarks.',
+                style: TextStyle(fontSize: 16, color: isDark ? AppColors.textDarkSecondary : Colors.grey),
+              ),
+            )
+          : StreamBuilder<List<Map<String, dynamic>>>(
+              stream: FirestoreService().getBookmarksStream(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Text(
+                      'Error: ${snapshot.error}',
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  );
+                }
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.bookmark_border_rounded, size: 80, color: isDark ? AppColors.greyDark : Colors.grey[300]),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No Bookmarks Yet',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white : AppTheme.darkSlate,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'You can bookmark questions during your mock tests to review them later.',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: isDark ? AppColors.textDarkSecondary : Colors.grey[500],
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                final bookmarks = snapshot.data!;
+
+                return ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: bookmarks.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final bookmark = bookmarks[index];
+                    final questionId = bookmark['questionId']?.toString() ?? '';
+                    final questionText = bookmark['questionText']?.toString() ?? 'No Question';
+                    final subject = bookmark['subject']?.toString() ?? 'General';
+                    final testName = bookmark['testName']?.toString() ?? 'Mock Test';
+                    final correctAnswer = bookmark['correctAnswer']?.toString() ?? 'N/A';
+
+                    return _buildBookmarkItem(
+                      context,
+                      questionId: questionId,
+                      question: questionText,
+                      subject: subject,
+                      testName: testName,
+                      answer: correctAnswer,
+                    ).animate(delay: (50 * index).ms).fade().slideY(begin: 0.1, end: 0, curve: Curves.easeOutCubic);
+                  },
+                );
+              },
+            ),
     );
   }
 
-  Widget _buildBookmarkItem(String question, String subject, String testName, String answer) {
+  Widget _buildBookmarkItem(
+    BuildContext context, {
+    required String questionId,
+    required String question,
+    required String subject,
+    required String testName,
+    required String answer,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? AppColors.surfaceDark : Colors.white;
+    final borderColor = isDark ? AppColors.greyDark : Colors.grey.shade200;
+    final tagBg = isDark ? AppColors.greyDark : const Color(0xFFF1F5F9);
+    final tagTextColor = isDark ? Colors.white70 : const Color(0xFF475569);
+    final questionColor = isDark ? Colors.white : const Color(0xFF1E293B);
+    final answerBg = isDark ? AppColors.backgroundDark : const Color(0xFFEFF6FF);
+    final answerLabelColor = isDark ? AppColors.accent : const Color(0xFF2563EB);
+    final answerTextColor = isDark ? Colors.white : const Color(0xFF1E293B);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardBg,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -73,28 +149,43 @@ class BookmarksScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9), // slate-100
+                  color: tagBg,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   subject,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF475569), // slate-600
+                    color: tagTextColor,
                   ),
                 ),
               ),
-              const Icon(Icons.bookmark, color: Color(0xFF2563EB), size: 20),
+              IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                icon: Icon(Icons.bookmark, color: isDark ? AppColors.accent : const Color(0xFF2563EB), size: 22),
+                onPressed: () async {
+                  await FirestoreService().removeBookmark(questionId);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Removed bookmark'),
+                        duration: Duration(seconds: 1),
+                      ),
+                    );
+                  }
+                },
+              ),
             ],
           ),
           const SizedBox(height: 12),
           Text(
             question,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF1E293B), // slate-800
+              color: questionColor,
             ),
           ),
           const SizedBox(height: 12),
@@ -102,27 +193,27 @@ class BookmarksScreen extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFEFF6FF), // blue-50
+              color: answerBg,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Correct Answer:',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF2563EB), // primary color
+                    color: answerLabelColor,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   answer,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF1E293B), // dark slate
+                    color: answerTextColor,
                   ),
                 ),
               ],
@@ -133,12 +224,15 @@ class BookmarksScreen extends StatelessWidget {
             children: [
               const Icon(Icons.article_outlined, size: 16, color: Colors.grey),
               const SizedBox(width: 6),
-              Text(
-                testName,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey,
-                  fontWeight: FontWeight.w500,
+              Expanded(
+                child: Text(
+                  testName,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],

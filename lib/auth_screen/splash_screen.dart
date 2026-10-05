@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:carousel_slider/carousel_slider.dart';
-import '../constants/images.dart';
+import 'package:flutter/services.dart';
+import 'package:video_player/video_player.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
+import '../main.dart'; // To navigate to AuthWrapper
 import '../constants/app_colors.dart';
-import 'welcome_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -13,213 +13,202 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  VideoPlayerController? _controller;
+  bool _isNavigating = false;
+  bool _hasError = false;
+
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 5), () {
+    // Immersive mode for seamless full-screen video display
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    _initializeVideo();
+  }
+
+  Future<void> _initializeVideo() async {
+    final controller = VideoPlayerController.asset('assets/logo_video.mp4');
+    _controller = controller;
+
+    try {
+      await controller.initialize();
+      if (!mounted) return;
+
+      controller.setLooping(false);
+      await controller.setVolume(1.0); // Full audio if video has sound
+      await controller.play();
+
+      setState(() {});
+      FlutterNativeSplash.remove();
+
+      // Listen to exact video completion
+      controller.addListener(_videoListener);
+
+      // Dynamic safety timer: allows the entire video to play completely
+      final videoDuration = controller.value.duration;
+      final safetyWait = videoDuration > Duration.zero
+          ? videoDuration + const Duration(milliseconds: 300)
+          : const Duration(seconds: 6);
+
+      Future.delayed(safetyWait, () {
+        if (mounted && !_isNavigating) {
+          _navigateToNext();
+        }
+      });
+    } catch (e) {
+      debugPrint('[SplashScreen] Video initialization error: $e');
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const WelcomeScreen()),
-        );
+        setState(() {
+          _hasError = true;
+        });
+        FlutterNativeSplash.remove();
+        // Fallback timer if video cannot play
+        Future.delayed(const Duration(milliseconds: 1500), () {
+          if (mounted && !_isNavigating) {
+            _navigateToNext();
+          }
+        });
       }
-    });
+    }
+  }
+
+  void _videoListener() {
+    if (!mounted || _controller == null) return;
+    final value = _controller!.value;
+
+    if (!value.isInitialized) return;
+
+    // When the video finishes playing all the way to the end
+    if (value.position >= value.duration && value.duration > Duration.zero) {
+      _navigateToNext();
+    }
+  }
+
+  void _navigateToNext() {
+    if (_isNavigating) return;
+    _isNavigating = true;
+
+    // Restore standard status bar and navigation bar
+    SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.manual,
+      overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom],
+    );
+
+    try {
+      _controller?.removeListener(_videoListener);
+    } catch (e) {
+      debugPrint('[SplashScreen] Error removing listener: $e');
+    }
+
+    if (!mounted) return;
+
+    // Smooth fade transition to next screen
+    Navigator.pushReplacement(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => const AuthWrapper(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 600),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    try {
+      SystemChrome.setEnabledSystemUIMode(
+        SystemUiMode.manual,
+        overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom],
+      );
+    } catch (_) {}
+
+    try {
+      _controller?.removeListener(_videoListener);
+      _controller?.dispose();
+    } catch (_) {}
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final isInitialized = _controller != null && _controller!.value.isInitialized;
+
     return Scaffold(
-      body: Stack(
+      backgroundColor: const Color(0xFF00122C),
+      body: GestureDetector(
+        onTap: _navigateToNext, // Tap anywhere to skip
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          width: double.infinity,
+          height: double.infinity,
+          color: const Color(0xFF00122C),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              if (isInitialized && !_hasError)
+                Center(
+                  child: AspectRatio(
+                    aspectRatio: _controller!.value.aspectRatio,
+                    child: VideoPlayer(_controller!),
+                  ),
+                )
+              else if (_hasError)
+                _buildFallbackView()
+              else
+                const Center(
+                  child: SizedBox(
+                    width: 30,
+                    height: 30,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF7A00)),
+                    ),
+                  ),
+                ),
+
+
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFallbackView() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CarouselSlider(
-            options: CarouselOptions(
-              height: MediaQuery.of(context).size.height,
-              viewportFraction: 1.0,
-              autoPlay: true,
-              autoPlayInterval: const Duration(seconds: 2),
-              autoPlayAnimationDuration: const Duration(milliseconds: 800),
-            ),
-            items: AppImages.sliderImages.map((imageUrl) {
-              return Builder(
-                builder: (BuildContext context) {
-                  return Image.network(
-                    imageUrl,
-                    fit: BoxFit.cover,
-                    width: MediaQuery.of(context).size.width,
-                  );
-                },
-              );
-            }).toList(),
-          ),
           Container(
+            width: 100,
+            height: 100,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.primary.withOpacity(0.65),
-                  const Color(0xFF2E5793).withOpacity(0.65),
-                  const Color(0xFF132D52).withOpacity(0.75),
-                ],
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.accent.withValues(alpha: 0.35),
+                  blurRadius: 30,
+                  spreadRadius: 6,
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: Image.asset(
+                'assets/app_icon.png',
+                fit: BoxFit.cover,
               ),
             ),
           ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children:
-                    [
-                          Align(
-                            alignment: Alignment.topRight,
-                            child: Container(
-                              margin: const EdgeInsets.only(top: 12),
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.08),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(
-                                Icons.language,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                          const Spacer(flex: 3),
-
-                          // App Logo
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(16),
-                            child: Container(
-                              color: Colors.white,
-                              padding: const EdgeInsets.all(4),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: Image.asset(
-                                  'assets/app_icon.png',
-                                  height: 80,
-                                  width: 80,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-
-                          // Badge
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.08),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                CircleAvatar(
-                                  radius: 3.5,
-                                  backgroundColor: AppColors.accent,
-                                ),
-                                SizedBox(width: 8),
-                                Text(
-                                  'AI-POWERED LEARNING',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-
-                          // Heading
-                          const Text(
-                            'Welcome Back to',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 32,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const Text(
-                            'Examinantt',
-                            style: TextStyle(
-                              color: AppColors.accent,
-                              fontSize: 32,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-
-                          Text(
-                            'Resume your preparation and track your progress with our detailed analytics.',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.75),
-                              fontSize: 15,
-                              height: 1.5,
-                            ),
-                          ),
-
-                          const Spacer(flex: 4),
-
-                          // Mobile ready card
-                          Container(
-                            margin: const EdgeInsets.only(bottom: 32),
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.06),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primary,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: const Icon(
-                                    Icons.smartphone,
-                                    color: Colors.white,
-                                    size: 20,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                const Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'MOBILE READY',
-                                      style: TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                    Text(
-                                      'Learn Anywhere',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ]
-                        .animate(interval: 200.ms)
-                        .fade(duration: 800.ms)
-                        .slideY(begin: 0.2, end: 0, curve: Curves.easeOutCubic),
-              ),
+          const SizedBox(height: 24),
+          const Text(
+            'Examinantt',
+            style: TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.w900,
+              color: Colors.white,
+              letterSpacing: 1.2,
             ),
           ),
         ],

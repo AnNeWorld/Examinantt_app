@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../utils/app_theme.dart';
-import 'category_detail_screen.dart';
+import 'package:provider/provider.dart';  
+import '../providers/user_provider.dart';
+import '../widgets/quick_access_widget.dart';
+import '../widgets/locked_home_sections.dart';
+import '../widgets/unlocked_home_sections.dart';
+import 'package:carousel_slider/carousel_slider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'notifications_screen.dart';
+import '../models/notification_model.dart';
+import '../services/firestore_service.dart';
+import 'courses_screen.dart';
+import '../constants/app_colors.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -12,372 +21,562 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
+  Color get _getBackgroundColor => _isDark ? AppColors.backgroundDark : const Color(0xFFF8FAFC);
+  Color get _getCardColor => _isDark ? AppColors.surfaceDark : Colors.white;
+  Color get _getBorderColor => _isDark ? AppColors.greyDark : Colors.grey.shade200;
+  Color get _getTextColor => _isDark ? AppColors.textDark : AppColors.text;
+  Color get _getSecondaryTextColor => _isDark ? AppColors.textDarkSecondary : AppColors.textLight;
+
   int _currentCarouselIndex = 0;
   final CarouselSliderController _carouselController = CarouselSliderController();
 
-  final List<String> _bannerImages = [
-    'https://www.examinantt.com/assets/slider3-CgqkNE7j.png',
-    'https://www.examinantt.com/assets/slioder4-BhKXNWYL.png',
-    'https://www.examinantt.com/assets/slider5-K9I7QbE8.png',
-    'https://www.examinantt.com/assets/slider7-Ccj3mZdi.png',
-    'https://www.examinantt.com/assets/slider8-DeQIETzB.png',
-    'https://www.examinantt.com/assets/slider9-BN9bU3yy.png',
-    'https://www.examinantt.com/assets/slider10-mlIoqxrc.png',
-    'https://www.examinantt.com/assets/slider11-BF0Iauqj.png',
-  ];
-
-  final List<Map<String, dynamic>> _categories = [
-    {'title': 'Banking', 'icon': Icons.account_balance},
-    {'title': 'SSC CGL', 'icon': Icons.assignment},
-    {'title': 'Medical', 'icon': Icons.local_hospital},
-    {'title': 'Engineering', 'icon': Icons.engineering},
-    {'title': 'Boards', 'icon': Icons.school},
-  ];
-
-  final List<Map<String, dynamic>> _features = [
-    {'title': 'Mock Tests', 'desc': 'Latest pattern tests', 'icon': Icons.quiz},
-    {'title': 'Detailed Analysis', 'desc': 'Know your weak areas', 'icon': Icons.analytics},
-    {'title': 'Video Solutions', 'desc': 'Learn from experts', 'icon': Icons.play_circle_fill},
-    {'title': 'Study Material', 'desc': 'Comprehensive PDFs', 'icon': Icons.picture_as_pdf},
+  // Fallback banners matching https://www.examinantt.com/ exactly if Firestore stream is offline
+  static const List<Map<String, dynamic>> _fallbackBanners = [
+    {
+      'imageUrl': 'https://www.examinantt.com/assets/slider11-BF0Iauqj.png',
+      'title': 'Examinantt - Education Redefined',
+      'order': 1,
+    },
+    {
+      'imageUrl': 'https://www.examinantt.com/assets/slider3-CgqkNE7j.png',
+      'title': 'Live Interactive Classes',
+      'order': 2,
+    },
+    {
+      'imageUrl': 'https://www.examinantt.com/assets/slioder4-BhKXNWYL.png',
+      'title': 'Comprehensive Mock Tests & Test Series',
+      'order': 3,
+    },
+    {
+      'imageUrl': 'https://www.examinantt.com/assets/slider5-K9I7QbE8.png',
+      'title': 'Expert Guidance & Doubt Support',
+      'order': 4,
+    },
   ];
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHeroSlider(),
-          const SizedBox(height: 24),
-          _buildSectionTitle('Exams Running'),
-          _buildCategoriesList(),
-          const SizedBox(height: 24),
-          _buildSectionTitle('Key Features'),
-          _buildFeaturesGrid(),
-          const SizedBox(height: 24),
-          _buildPromoBanner(),
-          const SizedBox(height: 24),
-        ].animate(interval: 100.ms).fade(duration: 400.ms).slideY(begin: 0.1, end: 0),
-      ),
-    );
-  }
+    return Consumer<UserProvider>(
+      builder: (context, userProvider, child) {
+        final user = userProvider.user;
+        final name = user?.name ?? 'Student';
+        final initial = name.isNotEmpty ? name[0].toUpperCase() : 'S';
 
-  Widget _buildHeroSlider() {
-    return Column(
-      children: [
-        CarouselSlider(
-          carouselController: _carouselController,
-          options: CarouselOptions(
-            aspectRatio: 1.7, // Slightly taller aspect ratio for bigger images
-            autoPlay: true,
-            enlargeCenterPage: false, // Don't shrink side pages, just make it full width
-            viewportFraction: 1.0, // Full width of the screen
-            onPageChanged: (index, reason) {
-              setState(() {
-                _currentCarouselIndex = index;
-              });
-            },
-          ),
-          items: _bannerImages.map((imgUrl) {
-            return Builder(
-              builder: (BuildContext context) {
-                return Container(
-                  width: MediaQuery.of(context).size.width,
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: NetworkImage(imgUrl),
-                      fit: BoxFit.fill, // Ensures no cropping of text/images
+        return Scaffold(
+              backgroundColor: _getBackgroundColor,
+              appBar: AppBar(
+                backgroundColor: _getBackgroundColor,
+                elevation: 0,
+                scrolledUnderElevation: 0,
+                toolbarHeight: 52,
+                title: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(1.5),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [AppColors.accent, AppColors.primary],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                      child: CircleAvatar(
+                        radius: 15,
+                        backgroundColor: _isDark ? AppColors.surfaceDark : Colors.white,
+                        child: Text(
+                          initial,
+                          style: TextStyle(
+                            color: AppColors.accent,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
                     ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Hi, $name 👋',
+                            style: TextStyle(
+                              color: _getTextColor,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -0.2,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                          Row(
+                            children: [
+                              Container(
+                                width: 5,
+                                height: 5,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF10B981),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  'Target: ${userProvider.selectedExam}',
+                                  style: TextStyle(
+                                    color: _getSecondaryTextColor,
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                actions: [
+                  StreamBuilder<List<NotificationModel>>(
+                    stream: FirestoreService().getNotificationsStream(),
+                    builder: (context, snapshot) {
+                      final count = snapshot.data?.length ?? 0;
+                      return Container(
+                        margin: const EdgeInsets.only(right: 12),
+                        decoration: BoxDecoration(
+                          color: _getCardColor,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: _getBorderColor),
+                        ),
+                        child: Badge(
+                          label: Text(
+                            '$count',
+                            style: const TextStyle(
+                              fontSize: 8,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          isLabelVisible: count > 0,
+                          backgroundColor: AppColors.accent,
+                          offset: const Offset(-1, 1),
+                          child: IconButton(
+                            padding: const EdgeInsets.all(6),
+                            constraints: const BoxConstraints(),
+                            icon: Icon(
+                              Icons.notifications_outlined,
+                              color: _getTextColor,
+                              size: 18,
+                            ),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const NotificationsScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            );
-          }).toList(),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: _bannerImages.asMap().entries.map((entry) {
-            return GestureDetector(
-              onTap: () => _carouselController.animateToPage(entry.key),
-              child: Container(
-                width: 8.0,
-                height: 8.0,
-                margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppTheme.primaryColor.withOpacity(
-                    _currentCarouselIndex == entry.key ? 0.9 : 0.3,
-                  ),
+                ],
+              ),
+              body: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: StreamBuilder<List<Map<String, dynamic>>>(
+                  stream: FirestoreService().getUserPurchasesStream(explicitUid: user?.uid),
+                  builder: (context, purchaseSnap) {
+                    final purchases = purchaseSnap.data ?? [];
+                    final bool hasEnrolledBatch = purchases.any((p) {
+                      final type = (p['type'] ?? '').toString().toLowerCase();
+                      final title = (p['title'] ?? '').toString().toLowerCase();
+                      final id = (p['id'] ?? '').toString().toLowerCase();
+                      return type == 'batch' || title.contains('batch') || id.contains('batch');
+                    });
+                    final bool hasPurchasedBatch = hasEnrolledBatch;
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 4),
+                        // Target Exam Header Banner
+                        _buildTargetExamHeader(userProvider.selectedExam),
+                        const SizedBox(height: 6),
+
+                        // 1. Poster Banner Slider ALWAYS at the very top
+                        _buildHeroSlider().animate().fadeIn(duration: 350.ms),
+                        const SizedBox(height: 10),
+
+                        // Quick Access 6 cards (Learn, Practice, Tests, PYQs, Doubts, Analytics)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 12),
+                          child: QuickAccessWidget(),
+                        ).animate().fadeIn(delay: 50.ms, duration: 400.ms),
+                        const SizedBox(height: 10),
+
+                        // 2. If student has NOT purchased batch: show ALL pages of locked home.pdf
+                        if (!hasPurchasedBatch) ...[
+                          LockedHomeSections(
+                            onExploreBatches: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const CoursesScreen()),
+                              );
+                            },
+                          ).animate().fadeIn(delay: 50.ms, duration: 400.ms),
+                        ] else ...[
+                          // 3. If student HAS purchased batch: show ALL pages of unlocked home.pdf
+                          const UnlockedHomeSections().animate().fadeIn(delay: 50.ms, duration: 400.ms),
+                        ],
+                        const SizedBox(height: 36),
+                      ],
+                    );
+                  },
                 ),
               ),
             );
-          }).toList(),
-        ),
-      ],
+      },
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  // ---------------------------------------------------------------------------
+  // TARGET EXAM HEADER & DIALOG (Home Page)
+  // ---------------------------------------------------------------------------
+
+  Widget _buildTargetExamHeader(String selectedExam) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Text(
-        title,
-        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.darkSlate),
-      ),
-    );
-  }
-
-  Widget _buildCategoriesList() {
-    return SizedBox(
-      height: 110,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        itemCount: _categories.length,
-        itemBuilder: (context, index) {
-          final cat = _categories[index];
-          return GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CategoryDetailScreen(categoryName: cat['title']),
-                ),
-              );
-            },
-            child: Container(
-              width: 90,
-              margin: const EdgeInsets.only(right: 12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
-                ],
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(cat['icon'], color: AppTheme.secondaryColor, size: 32),
-                  const SizedBox(height: 8),
-                  Text(
-                    cat['title'],
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  void _showFeatureDetails(BuildContext context, Map<String, dynamic> feature) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(24),
-            topRight: Radius.circular(24),
+      padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 2.0),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 7.0),
+        decoration: BoxDecoration(
+          color: _isDark ? const Color(0xFF0F172A) : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: _isDark ? Colors.white12 : Colors.grey.shade200,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: _isDark ? 0.2 : 0.04),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Center(
+            Expanded(
+              child: InkWell(
+                onTap: () => _showChangeExamDialog(selectedExam),
+                borderRadius: BorderRadius.circular(8),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: AppColors.accent.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.school_rounded,
+                        color: AppColors.accent,
+                        size: 14,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Preparing for: ',
+                      style: TextStyle(
+                        color: _isDark ? Colors.white60 : Colors.black54,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Flexible(
+                      child: Text(
+                        selectedExam,
+                        style: const TextStyle(
+                          color: Color(0xFFFFA000),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12.5,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: Color(0xFFFFA000),
+                      size: 16,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            InkWell(
+              onTap: () => _showChangeExamDialog(selectedExam),
+              borderRadius: BorderRadius.circular(8),
               child: Container(
-                width: 40,
-                height: 4,
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
+                  color: const Color(0xFFFFA000).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: const Color(0xFFFFA000).withValues(alpha: 0.4),
+                  ),
+                ),
+                child: const Text(
+                  'Change ⇄',
+                  style: TextStyle(
+                    color: Color(0xFFFFA000),
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Icon(feature['icon'], color: AppTheme.primaryColor, size: 32),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        feature['title'],
-                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.darkSlate),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        feature['desc'],
-                        style: const TextStyle(fontSize: 14, color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            const Text('What you get:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            _buildFeaturePoint('Unlimited access to this feature.'),
-            _buildFeaturePoint('Regularly updated content.'),
-            _buildFeaturePoint('Available 24/7 on all your devices.'),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: const Text('Got it', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-              ),
-            ),
-            const SizedBox(height: 16),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildFeaturePoint(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.check_circle, color: Colors.green, size: 20),
-          const SizedBox(width: 8),
-          Expanded(child: Text(text, style: const TextStyle(fontSize: 14))),
-        ],
-      ),
-    );
-  }
+  void _showChangeExamDialog(String currentExam) {
+    final exams = [
+      'JEE Main 2027',
+      'NEET UG 2027',
+      'JEE Advanced',
+      'CUET UG 2027',
+      'GATE 2027',
+      'SSC CGL 2027',
+      'Defence Exams',
+    ];
 
-  Widget _buildFeaturesGrid() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      child: Column(
-        children: _features.map((feature) {
-          return GestureDetector(
-            onTap: () => _showFeatureDetails(context, feature),
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 16),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppTheme.primaryColor.withOpacity(0.1)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF0F172A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(feature['icon'], color: AppTheme.primaryColor, size: 28),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          feature['title'],
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.darkSlate,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          feature['desc'],
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ],
+                      color: Colors.white24,
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  Icon(
-                    Icons.chevron_right,
-                    color: Colors.grey[400],
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Select Target Exam',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
                   ),
-                ],
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Choose your target competitive exam to personalize your preparation.',
+                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+                const SizedBox(height: 16),
+                ...exams.map((exam) {
+                  final isSel = currentExam == exam;
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isSel ? AppColors.accent.withValues(alpha: 0.2) : Colors.white10,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        isSel ? Icons.check_circle : Icons.school_outlined,
+                        color: isSel ? AppColors.accent : Colors.white70,
+                        size: 18,
+                      ),
+                    ),
+                    title: Text(
+                      exam,
+                      style: TextStyle(
+                        color: isSel ? AppColors.accent : Colors.white,
+                        fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    ),
+                    trailing: isSel
+                        ? Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.accent,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text('Active', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                          )
+                        : null,
+                    onTap: () {
+                      Provider.of<UserProvider>(context, listen: false).updateTargetExam(exam);
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Row(
+                            children: [
+                              const Icon(Icons.check_circle_rounded, color: Colors.white, size: 16),
+                              const SizedBox(width: 8),
+                              Text('Target exam switched to $exam!'),
+                            ],
+                          ),
+                          backgroundColor: AppColors.accent,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                  );
+                }),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+
+  Widget _buildHeroSlider() {
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: FirestoreService().getBannersStream(),
+      builder: (context, snapshot) {
+        List<Map<String, dynamic>> banners = snapshot.data ?? [];
+        if (banners.isEmpty && snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox(height: 140);
+        }
+        if (banners.isEmpty) {
+          banners = _fallbackBanners;
+        }
+        if (banners.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        final safeIndex = _currentCarouselIndex.clamp(0, banners.length - 1);
+
+        return Column(
+          children: [
+            CarouselSlider(
+              carouselController: _carouselController,
+              options: CarouselOptions(
+                aspectRatio: 2.15,
+                autoPlay: banners.length > 1,
+                autoPlayInterval: const Duration(seconds: 4),
+                enlargeCenterPage: banners.length > 1,
+                enableInfiniteScroll: banners.length > 1,
+                viewportFraction: banners.length > 1 ? 0.94 : 1.0,
+                onPageChanged: (index, reason) {
+                  setState(() {
+                    _currentCarouselIndex = index;
+                  });
+                },
               ),
+              items: banners.map((banner) {
+                final imgUrl = (banner['imageUrl'] ?? banner['bannerUrl'] ?? banner['image'] ?? banner['url'] ?? '').toString().trim();
+                return Builder(
+                  builder: (BuildContext context) {
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const CoursesScreen()),
+                        );
+                      },
+                      child: Container(
+                        width: MediaQuery.of(context).size.width,
+                        margin: const EdgeInsets.symmetric(horizontal: 2),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: _isDark ? 0.25 : 0.04),
+                              blurRadius: 6,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: CachedNetworkImage(
+                            imageUrl: imgUrl,
+                            fit: BoxFit.fill,
+                            width: double.infinity,
+                            placeholder: (context, url) => Container(
+                              color: _isDark ? AppColors.surfaceDark : Colors.grey.shade200,
+                              child: const Center(
+                                child: SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                              ),
+                            ),
+                            errorWidget: (context, url, error) => Container(
+                              color: _isDark ? AppColors.surfaceDark : Colors.grey.shade200,
+                              child: const Center(
+                                child: Icon(Icons.image_not_supported_outlined, color: Colors.grey, size: 28),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }).toList(),
             ),
-          );
-        }).toList(),
-      ),
+            if (banners.length > 1) ...[
+              const SizedBox(height: 6),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: banners.asMap().entries.map((entry) {
+                  final isSelected = safeIndex == entry.key;
+                  return GestureDetector(
+                    onTap: () => _carouselController.animateToPage(entry.key),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: isSelected ? 14.0 : 5.0,
+                      height: 5.0,
+                      margin: const EdgeInsets.symmetric(horizontal: 2.0),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(2.5),
+                        color: isSelected
+                            ? AppColors.accent
+                            : (_isDark ? Colors.white24 : Colors.grey.shade300),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ],
+        );
+      },
     );
   }
-
-  Widget _buildPromoBanner() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppTheme.darkSlate, Color(0xFF334155)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            "Don't Leave Your Rank to Chance",
-            style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, height: 1.2),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Enroll in our premium test series and practice with OMR sheets.',
-            style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14),
-          ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.secondaryColor,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Explore Test Series', style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
-  }
-
 }

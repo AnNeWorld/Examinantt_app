@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../utils/app_theme.dart';
+import '../widgets/community_chat_view.dart';
 
 class CommunityScreen extends StatelessWidget {
   const CommunityScreen({super.key});
@@ -7,32 +7,15 @@ class CommunityScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Community & Forums'),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.forum, size: 80, color: AppTheme.primaryColor.withOpacity(0.5)),
-            const SizedBox(height: 16),
-            const Text(
-              'Discussion Forums',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.darkSlate,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Coming Soon...',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
-              ),
-            ),
-          ],
+      backgroundColor: const Color(0xFF070F1E),
+      body: SafeArea(
+        child: CommunityChatView(
+          isEmbedded: false,
+          onBack: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            }
+          },
         ),
       ),
     );
