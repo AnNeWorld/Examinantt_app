@@ -832,7 +832,7 @@ class _TestSeriesDetailScreenState extends State<TestSeriesDetailScreen> {
         Flexible(
           child: Text(
             label,
-            style: TextStyle(color: isDark ? AppColors.textDarkSecondary : AppColors.textSecondary, fontSize: 13),
+            style: TextStyle(color: isDark ? AppColors.textDarkSecondary : AppColors.textLight, fontSize: 13),
             overflow: TextOverflow.ellipsis,
           ),
         ),
