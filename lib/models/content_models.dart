@@ -25,6 +25,13 @@ class LiveClass {
   final bool hasLiveChat;
   final String batchId;
   final String batchName;
+  final double price;
+  final double? originalPrice;
+  final bool isFree;
+  final List<String> enrolledStudentIds;
+  final String streamServer; // 'Amazon AWS IVS' / 'AWS MediaLive'
+  final String awsChannelArn;
+  final String recordingUrl;
   final Color color;
 
   LiveClass({
@@ -52,8 +59,29 @@ class LiveClass {
     this.hasLiveChat = true,
     this.batchId = '',
     this.batchName = '',
+    this.price = 0.0,
+    this.originalPrice,
+    this.isFree = true,
+    this.enrolledStudentIds = const [],
+    this.streamServer = 'Amazon AWS IVS',
+    this.awsChannelArn = '',
+    this.recordingUrl = '',
     Color? color,
   }) : color = color ?? _getColorForSubject(subject);
+
+  bool isUserEnrolled({
+    required String? uid,
+    Set<String> purchasedBatchIds = const {},
+    Set<String> purchasedItemIds = const {},
+  }) {
+    if (isFree || price <= 0) return true;
+    if (uid != null && uid.isNotEmpty) {
+      if (enrolledStudentIds.contains(uid)) return true;
+    }
+    if (purchasedItemIds.contains(id)) return true;
+    if (batchId.isNotEmpty && purchasedBatchIds.contains(batchId)) return true;
+    return false;
+  }
 
   static Color _getColorForSubject(String subj) {
     final s = subj.toLowerCase();
@@ -217,6 +245,23 @@ class LiveClass {
 
     final hasChat = data['hasLiveChat'] != false;
 
+    final double price = double.tryParse((data['price'] ?? 0).toString()) ?? 0.0;
+    final double? origPrice = data['originalPrice'] != null
+        ? double.tryParse(data['originalPrice'].toString())
+        : null;
+    final bool isFree = data['isFree'] == true || (price <= 0);
+
+    List<String> enrolledIds = [];
+    if (data['enrolledStudentIds'] is List) {
+      enrolledIds = (data['enrolledStudentIds'] as List).map((e) => e.toString()).toList();
+    } else if (data['enrolledStudents'] is List) {
+      enrolledIds = (data['enrolledStudents'] as List).map((e) => e.toString()).toList();
+    }
+
+    final server = (data['streamServer'] ?? data['server'] ?? 'Amazon AWS IVS').toString();
+    final awsArn = (data['awsChannelArn'] ?? data['channelArn'] ?? '').toString();
+    final recording = (data['recordingUrl'] ?? data['recording'] ?? '').toString();
+
     return LiveClass(
       id: documentId,
       title: title,
@@ -242,6 +287,13 @@ class LiveClass {
       hasLiveChat: hasChat,
       batchId: batchId,
       batchName: batchName,
+      price: price,
+      originalPrice: origPrice,
+      isFree: isFree,
+      enrolledStudentIds: enrolledIds,
+      streamServer: server,
+      awsChannelArn: awsArn,
+      recordingUrl: recording,
       color: _getColorForSubject(subject),
     );
   }

@@ -19,6 +19,7 @@ import '../services/test_service.dart';
 import '../models/test_model.dart';
 import '../utils/app_theme.dart';
 import 'live_classes_screen.dart';
+import 'amazon_live_player_screen.dart';
 import 'test_series_screen.dart';
 import 'resources_screen.dart';
 import 'doubts_screen.dart';
@@ -655,7 +656,27 @@ class _HomeScreenState extends State<HomeScreen> {
                             ],
                           ),
                         ),
-                        Text(hero.instructor, style: const TextStyle(color: Color(0xFF64748B), fontSize: 11.5, fontWeight: FontWeight.w600)),
+                        Row(
+                          children: [
+                            Text(hero.instructor, style: const TextStyle(color: Color(0xFF64748B), fontSize: 11.5, fontWeight: FontWeight.w600)),
+                            const SizedBox(width: 8),
+                            InkWell(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => const LiveClassesScreen(initialTab: 0)),
+                                );
+                              },
+                              child: const Row(
+                                children: [
+                                  Text('All Classes', style: TextStyle(color: Color(0xFFFF7A00), fontSize: 11, fontWeight: FontWeight.bold)),
+                                  SizedBox(width: 2),
+                                  Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFFFF7A00), size: 10),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -676,7 +697,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const LiveClassesScreen(initialTab: 0),
+                              builder: (_) => AmazonLivePlayerScreen(liveClass: hero),
                             ),
                           );
                         },

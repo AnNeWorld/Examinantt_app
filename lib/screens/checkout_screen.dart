@@ -12,8 +12,9 @@ class CheckoutScreen extends StatefulWidget {
   final String title;
   final double price;
   final double? originalPrice;
+  final String? itemId;
   final String? subtitle;
-  final String? itemType; // 'Batch', 'Course', 'Test Series', 'Subscription', 'Resource'
+  final String? itemType; // 'Batch', 'Course', 'Test Series', 'Subscription', 'Resource', 'Live Class'
   final List<String>? features;
   final String? bannerImageUrl;
   final VoidCallback? onPaymentSuccess;
@@ -22,6 +23,7 @@ class CheckoutScreen extends StatefulWidget {
     super.key,
     required this.title,
     required this.price,
+    this.itemId,
     this.originalPrice,
     this.subtitle,
     this.itemType = 'Batch',
@@ -113,9 +115,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     });
 
     try {
-      final purchaseId = '${widget.itemType?.toLowerCase() ?? "item"}_${DateTime.now().millisecondsSinceEpoch}';
+      final purchaseId = widget.itemId != null && widget.itemId!.isNotEmpty
+          ? widget.itemId!
+          : '${widget.itemType?.toLowerCase() ?? "item"}_${DateTime.now().millisecondsSinceEpoch}';
       await FirestoreService().addPurchase(
         id: purchaseId,
+        itemId: widget.itemId ?? purchaseId,
         title: widget.title,
         type: widget.itemType ?? 'Batch',
         price: widget.price,

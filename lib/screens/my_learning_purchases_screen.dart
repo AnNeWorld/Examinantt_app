@@ -379,6 +379,8 @@ class _MyLearningPurchasesScreenState extends State<MyLearningPurchasesScreen> {
                         itemCount: livePurchases.length,
                         itemBuilder: (context, index) {
                           final purchase = livePurchases[index];
+                          final type = (purchase['type'] ?? 'Package').toString();
+                          final isLive = type.toLowerCase().contains('live');
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 12.0),
                             child: InkWell(
@@ -387,11 +389,11 @@ class _MyLearningPurchasesScreenState extends State<MyLearningPurchasesScreen> {
                               child: _buildRecentPurchaseRow(
                                 context,
                                 title: purchase['title'] ?? 'Purchase Item',
-                                type: purchase['type'] ?? 'Package',
+                                type: type,
                                 status: purchase['status'] ?? 'Active',
                                 date: purchase['date'] ?? '',
-                                color: const Color(0xFFFFA000),
-                                icon: Icons.local_mall_rounded,
+                                color: isLive ? const Color(0xFFEF4444) : const Color(0xFFFFA000),
+                                icon: isLive ? Icons.videocam_rounded : Icons.local_mall_rounded,
                               ),
                             ),
                           );

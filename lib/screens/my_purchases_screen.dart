@@ -4,6 +4,7 @@ import '../utils/app_theme.dart';
 import '../services/firestore_service.dart';
 import '../constants/app_colors.dart';
 import 'test_series_detail_screen.dart';
+import 'live_classes_screen.dart';
 
 class MyPurchasesScreen extends StatelessWidget {
   const MyPurchasesScreen({super.key});
@@ -77,24 +78,36 @@ class MyPurchasesScreen extends StatelessWidget {
               final cardBg = isDark ? AppColors.surfaceDark : Colors.white;
               final borderColor = isDark ? AppColors.greyDark : Colors.grey.withValues(alpha: 0.2);
 
+              final type = (purchase['type'] ?? '').toString();
+              final isLiveClass = type.toLowerCase().contains('live');
+
               return GestureDetector(
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => TestSeriesDetailScreen(
-                        categoryId: id,
-                        title: title,
-                        badge: 'Active',
-                        price: price.replaceAll('₹', ''),
-                        originalPrice: price.replaceAll('₹', ''),
-                        features: const ['Topic Wise Tests', 'Full Mock Tests', 'Detailed Solutions'],
-                        badgeColor: isDark ? AppColors.accent : AppTheme.primaryColor,
-                        imageUrl: '',
-                        isPurchased: true,
+                  if (isLiveClass) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const LiveClassesScreen(initialTab: 0),
                       ),
-                    ),
-                  );
+                    );
+                  } else {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => TestSeriesDetailScreen(
+                          categoryId: id,
+                          title: title,
+                          badge: 'Active',
+                          price: price.replaceAll('₹', ''),
+                          originalPrice: price.replaceAll('₹', ''),
+                          features: const ['Topic Wise Tests', 'Full Mock Tests', 'Detailed Solutions'],
+                          badgeColor: isDark ? AppColors.accent : AppTheme.primaryColor,
+                          imageUrl: '',
+                          isPurchased: true,
+                        ),
+                      ),
+                    );
+                  }
                 },
                 child: Container(
                   margin: const EdgeInsets.only(bottom: 16),
@@ -116,14 +129,18 @@ class MyPurchasesScreen extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: isDark
-                              ? AppColors.accent.withValues(alpha: 0.15)
-                              : AppTheme.primaryColor.withValues(alpha: 0.1),
+                          color: isLiveClass
+                              ? const Color(0xFFEF4444).withValues(alpha: 0.15)
+                              : (isDark
+                                  ? AppColors.accent.withValues(alpha: 0.15)
+                                  : AppTheme.primaryColor.withValues(alpha: 0.1)),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
-                          Icons.shopping_bag,
-                          color: isDark ? AppColors.accent : AppTheme.primaryColor,
+                          isLiveClass ? Icons.videocam_rounded : Icons.shopping_bag,
+                          color: isLiveClass
+                              ? const Color(0xFFEF4444)
+                              : (isDark ? AppColors.accent : AppTheme.primaryColor),
                         ),
                       ),
                       const SizedBox(width: 16),
