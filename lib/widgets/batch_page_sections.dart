@@ -1342,16 +1342,6 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
                                         ),
                                       ),
                                       const PopupMenuItem(
-                                        value: 'edit',
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.edit_outlined, size: 16, color: Colors.amber),
-                                            SizedBox(width: 8),
-                                            Text('Edit Batch', style: TextStyle(color: Colors.white, fontSize: 12)),
-                                          ],
-                                        ),
-                                      ),
-                                      const PopupMenuItem(
                                         value: 'delete',
                                         child: Row(
                                           children: [
@@ -1370,8 +1360,6 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
                                             builder: (context) => BatchDetailsScreen(batch: course),
                                           ),
                                         );
-                                      } else if (val == 'edit') {
-                                        CreateEditBatchSheet.show(context, existingBatch: course);
                                       } else if (val == 'delete') {
                                         _confirmDeleteBatch(course);
                                       }

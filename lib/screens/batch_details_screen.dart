@@ -6,7 +6,6 @@ import '../services/content_service.dart';
 import '../services/test_service.dart';
 import '../services/payment_service.dart';
 import '../utils/app_theme.dart';
-import '../widgets/create_edit_batch_sheet.dart';
 import 'amazon_live_player_screen.dart';
 import 'pdf_viewer_screen.dart';
 import 'video_player_screen.dart';
@@ -487,12 +486,6 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen>
             )
           else ...[
             IconButton(
-              icon: const Icon(Icons.edit_outlined, size: 20),
-              color: const Color(0xFF0070F3),
-              tooltip: 'Edit Batch',
-              onPressed: () => CreateEditBatchSheet.show(context, existingBatch: currentBatch),
-            ),
-            IconButton(
               icon: const Icon(Icons.delete_outline_rounded, size: 20),
               color: Colors.redAccent,
               tooltip: 'Delete Batch',
@@ -935,12 +928,6 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen>
             color: const Color(0xFF38BDF8),
             tooltip: 'View Batch Overview & Syllabus',
             onPressed: () => setState(() => _forceOverviewView = true),
-          ),
-          IconButton(
-            icon: const Icon(Icons.edit_outlined, size: 20),
-            color: const Color(0xFF0070F3),
-            tooltip: 'Edit Batch',
-            onPressed: () => CreateEditBatchSheet.show(context, existingBatch: currentBatch),
           ),
           IconButton(
             icon: const Icon(Icons.delete_outline_rounded, size: 20),
