@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'certificate_verification_screen.dart';
 
 class HelpSupportScreen extends StatefulWidget {
   const HelpSupportScreen({super.key});
@@ -556,14 +558,62 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                   ),
                   const SizedBox(height: 16),
                   InkWell(
-                    onTap: () => _mockLauncher('Call Support', '+91 98765 43210'),
+                    onTap: () async {
+                      final uri = Uri.parse('https://wa.me/918881188678?text=Hello%20Examinantt%20Team%2C%20I%20need%20academic%20support.');
+                      try {
+                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      } catch (_) {
+                        _mockLauncher('WhatsApp Support', '+91 8881188678');
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(10),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4.0),
+                      child: _buildContactRow(
+                        context,
+                        title: 'WhatsApp Support',
+                        desc: '+91 8881188678',
+                        meta: '24x7 Active',
+                        icon: Icons.chat_rounded,
+                        color: const Color(0xFF25D366),
+                        isLive: true,
+                      ),
+                    ),
+                  ),
+                  const Divider(height: 20),
+                  InkWell(
+                    onTap: _showLiveChatSheet,
+                    borderRadius: BorderRadius.circular(10),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4.0),
+                      child: _buildContactRow(
+                        context,
+                        title: 'Live Chat Assistant',
+                        desc: 'Examinantt Academic Support Bot',
+                        meta: 'Instant 24x7',
+                        icon: Icons.support_agent_rounded,
+                        color: const Color(0xFF6366F1),
+                        isLive: true,
+                      ),
+                    ),
+                  ),
+                  const Divider(height: 20),
+                  InkWell(
+                    onTap: () async {
+                      final uri = Uri.parse('tel:+918881188678');
+                      try {
+                        await launchUrl(uri);
+                      } catch (_) {
+                        _mockLauncher('Call Support', '+91 8881188678');
+                      }
+                    },
                     borderRadius: BorderRadius.circular(10),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4.0),
                       child: _buildContactRow(
                         context,
                         title: 'Call Us',
-                        desc: '+91 98765 43210',
+                        desc: '+91 8881188678',
                         meta: '9 AM - 9 PM',
                         icon: Icons.phone_in_talk_outlined,
                         color: const Color(0xFF3B82F6),
@@ -572,7 +622,14 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                   ),
                   const Divider(height: 20),
                   InkWell(
-                    onTap: () => _mockLauncher('Email Support', 'support@examinantt.com'),
+                    onTap: () async {
+                      final uri = Uri.parse('mailto:support@examinantt.com');
+                      try {
+                        await launchUrl(uri);
+                      } catch (_) {
+                        _mockLauncher('Email Support', 'support@examinantt.com');
+                      }
+                    },
                     borderRadius: BorderRadius.circular(10),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4.0),
@@ -588,18 +645,22 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                   ),
                   const Divider(height: 20),
                   InkWell(
-                    onTap: _showLiveChatSheet,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const CertificateVerificationScreen()),
+                      );
+                    },
                     borderRadius: BorderRadius.circular(10),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4.0),
                       child: _buildContactRow(
                         context,
-                        title: 'Live Chat',
-                        desc: 'Chat with our support team',
-                        meta: 'Online',
-                        icon: Icons.chat_bubble_outline_rounded,
+                        title: 'Verify Certificate',
+                        desc: 'Official certificate authenticity verification',
+                        meta: 'Portal',
+                        icon: Icons.verified_rounded,
                         color: const Color(0xFF10B981),
-                        isLive: true,
                       ),
                     ),
                   ),

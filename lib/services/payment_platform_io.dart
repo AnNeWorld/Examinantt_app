@@ -92,7 +92,7 @@ class PaymentPlatformIO implements PaymentPlatformDelegate {
       return;
     }
 
-    final resolvedContact = contact.trim().isNotEmpty ? contact.trim() : '9876543210';
+    final resolvedContact = contact.trim().isNotEmpty ? contact.trim() : '8881188678';
     final resolvedEmail = email.trim().isNotEmpty ? email.trim() : 'student@examinantt.com';
 
     final Map<String, dynamic> options = {

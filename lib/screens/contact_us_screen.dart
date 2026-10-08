@@ -80,6 +80,42 @@ class ContactUsScreen extends StatelessWidget {
                   const SizedBox(height: 32),
                   _buildContactCard(
                     context,
+                    icon: Icons.chat_rounded,
+                    title: 'WhatsApp Support',
+                    content: '+91 8881188678 (24x7 Helpdesk)',
+                    color: const Color(0xFF25D366),
+                    onTap: () async {
+                      final Uri url = Uri.parse('https://wa.me/918881188678?text=Hello%20Examinantt%20Team%2C%20I%20need%20help%20with%20my%20preparation.');
+                      try {
+                        await launchUrl(url, mode: LaunchMode.externalApplication);
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open WhatsApp')));
+                        }
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  _buildContactCard(
+                    context,
+                    icon: Icons.phone_rounded,
+                    title: 'Call Us',
+                    content: '+91 8881188678',
+                    color: Colors.green,
+                    onTap: () async {
+                      final Uri url = Uri(scheme: 'tel', path: '+918881188678');
+                      try {
+                        await launchUrl(url);
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open Dialer app')));
+                        }
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  _buildContactCard(
+                    context,
                     icon: Icons.email_rounded,
                     title: 'Email Us',
                     content: 'support@examinantt.com',
@@ -98,17 +134,17 @@ class ContactUsScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   _buildContactCard(
                     context,
-                    icon: Icons.phone_rounded,
-                    title: 'Call Us',
-                    content: '+91 9876543210',
-                    color: Colors.green,
+                    icon: Icons.language_rounded,
+                    title: 'Official Website',
+                    content: 'https://www.examinantt.com',
+                    color: const Color(0xFF0070F3),
                     onTap: () async {
-                      final Uri url = Uri(scheme: 'tel', path: '+919876543210');
+                      final Uri url = Uri.parse('https://www.examinantt.com');
                       try {
-                        await launchUrl(url);
+                        await launchUrl(url, mode: LaunchMode.externalApplication);
                       } catch (e) {
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open Dialer app')));
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open browser')));
                         }
                       }
                     },

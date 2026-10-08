@@ -16,30 +16,55 @@ class _PyqsScreenState extends State<PyqsScreen> {
   String _selectedExamFilter = 'All';
   String _searchQuery = '';
 
-    Stream<List<Map<String, dynamic>>> _getPyqsStream() {
-    return FirebaseFirestore.instance.collection('resources').snapshots().map((snapshot) {
+  Stream<List<Map<String, dynamic>>> _getPyqsStream() {
+    return FirebaseFirestore.instance.collection('pyqs').snapshots().asyncMap((pyqSnap) async {
       final list = <Map<String, dynamic>>[];
-      for (final doc in snapshot.docs) {
+      for (final doc in pyqSnap.docs) {
         final data = doc.data();
-        final type = (data['type'] ?? '').toString().toUpperCase();
-        if (type == 'PYQ' || type.contains('PYQ')) {
-          final exam = (data['exam'] ?? data['examCategory'] ?? 'General').toString();
-          list.add({
-            'id': doc.id,
-            'exam': exam,
-            'year': (data['year'] ?? '').toString(),
-            'title': (data['title'] ?? '').toString(),
-            'shift': (data['shift'] ?? data['subtitle'] ?? 'Official Shift').toString(),
-            'questions': data['questions'] ?? data['totalQuestions'] ?? 90,
-            'marks': data['marks'] ?? data['totalMarks'] ?? 300,
-            'duration': (data['duration'] ?? data['time'] ?? '180 Mins').toString(),
-            'subjects': (data['subject'] ?? data['subjects'] ?? data['category'] ?? '').toString(),
-            'pdfUrl': (data['url'] ?? data['pdfUrl'] ?? '').toString(),
-            'attempts': (data['downloads'] != null ? '${data['downloads']} Attempts' : 'Official Paper'),
-            'color': const Color(0xFF0070F3),
-          });
-        }
+        final exam = (data['exam'] ?? data['examCategory'] ?? data['category'] ?? 'General').toString();
+        list.add({
+          'id': doc.id,
+          'exam': exam,
+          'year': (data['year'] ?? '').toString(),
+          'title': (data['title'] ?? data['name'] ?? 'PYQ Paper').toString(),
+          'shift': (data['shift'] ?? data['subtitle'] ?? 'Official Shift').toString(),
+          'questions': data['questions'] ?? data['totalQuestions'] ?? 90,
+          'marks': data['marks'] ?? data['totalMarks'] ?? 300,
+          'duration': (data['duration'] ?? data['time'] ?? '180 Mins').toString(),
+          'subjects': (data['subject'] ?? data['subjects'] ?? data['category'] ?? '').toString(),
+          'pdfUrl': (data['url'] ?? data['pdfUrl'] ?? data['fileUrl'] ?? '').toString(),
+          'attempts': (data['downloads'] != null ? '${data['downloads']} Attempts' : 'Official Paper'),
+          'color': const Color(0xFF0070F3),
+        });
       }
+
+      // Also merge resources collection for type == PYQ
+      try {
+        final resSnap = await FirebaseFirestore.instance.collection('resources').get();
+        for (final doc in resSnap.docs) {
+          final data = doc.data();
+          final type = (data['type'] ?? '').toString().toUpperCase();
+          if (type == 'PYQ' || type.contains('PYQ')) {
+            if (list.any((item) => item['id'] == doc.id)) continue;
+            final exam = (data['exam'] ?? data['examCategory'] ?? 'General').toString();
+            list.add({
+              'id': doc.id,
+              'exam': exam,
+              'year': (data['year'] ?? '').toString(),
+              'title': (data['title'] ?? '').toString(),
+              'shift': (data['shift'] ?? data['subtitle'] ?? 'Official Shift').toString(),
+              'questions': data['questions'] ?? data['totalQuestions'] ?? 90,
+              'marks': data['marks'] ?? data['totalMarks'] ?? 300,
+              'duration': (data['duration'] ?? data['time'] ?? '180 Mins').toString(),
+              'subjects': (data['subject'] ?? data['subjects'] ?? data['category'] ?? '').toString(),
+              'pdfUrl': (data['url'] ?? data['pdfUrl'] ?? '').toString(),
+              'attempts': (data['downloads'] != null ? '${data['downloads']} Attempts' : 'Official Paper'),
+              'color': const Color(0xFF0070F3),
+            });
+          }
+        }
+      } catch (_) {}
+
       return list;
     });
   }
@@ -102,13 +127,24 @@ class _PyqsScreenState extends State<PyqsScreen> {
                 ),
                 const SizedBox(height: 10),
 
-                // Exam Filter Horizontal Chips
+                // Exam Filter Horizontal Chips matching examinantt.com
                 SizedBox(
                   height: 30,
                   child: ListView(
                     scrollDirection: Axis.horizontal,
                     physics: const BouncingScrollPhysics(),
-                    children: ['All', 'JEE Main', 'NEET UG', 'SSC CGL', 'CUET UG', 'NDA'].map((exam) {
+                    children: [
+                      'All',
+                      'JEE Main',
+                      'NEET UG',
+                      'CUET UG',
+                      'SSC CGL',
+                      'UPSI',
+                      'Defence',
+                      'State Exams',
+                      'Teaching',
+                      'Boards',
+                    ].map((exam) {
                       final isSel = _selectedExamFilter == exam;
                       return GestureDetector(
                         onTap: () => setState(() => _selectedExamFilter = exam),

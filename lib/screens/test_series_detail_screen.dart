@@ -4,6 +4,7 @@ import '../services/test_service.dart';
 import '../services/firestore_service.dart';
 import '../models/test_model.dart';
 import 'quiz_screen.dart';
+import 'omr_test_attempt_screen.dart';
 import '../services/payment_service.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import '../constants/app_colors.dart';
@@ -647,23 +648,58 @@ class _TestSeriesDetailScreenState extends State<TestSeriesDetailScreen> {
                 if (testIndex % 2 == 0) {
                   statusLabel = 'Completed • Score: ${res.score}/${totalQs * 4} ($scorePerc%)';
                   statusColor = Colors.green;
-                  actionButton = _buildOutlineActionButton('View Result >', Colors.green, () {
-                    // Navigate to results if implemented, else view summary dialog
-                    _showResultDialog(context, test.title, res);
-                  });
+                  actionButton = Row(
+                    children: [
+                      Expanded(
+                        child: _buildOutlineActionButton('View Result >', Colors.green, () {
+                          _showResultDialog(context, test.title, res);
+                        }),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildOutlineActionButton('OMR Practice', const Color(0xFF10B981), () {
+                          _startOmrTest(test);
+                        }),
+                      ),
+                    ],
+                  );
                 } else {
                   statusLabel = 'Attempted • Score: ${res.score}/${totalQs * 4} ($scorePerc%)';
                   statusColor = Colors.blue;
-                  actionButton = _buildOutlineActionButton('Reattempt >', Colors.blue, () {
-                    _startTest(test);
-                  });
+                  actionButton = Row(
+                    children: [
+                      Expanded(
+                        child: _buildOutlineActionButton('Reattempt (CBT)', Colors.blue, () {
+                          _startTest(test);
+                        }),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildOutlineActionButton('OMR Sheet', const Color(0xFF10B981), () {
+                          _startOmrTest(test);
+                        }),
+                      ),
+                    ],
+                  );
                 }
               } else {
                 statusLabel = 'Not Attempted';
                 statusColor = Colors.white54;
-                actionButton = _buildOutlineActionButton('Start Test >', AppColors.accent, () {
-                  _startTest(test);
-                });
+                actionButton = Row(
+                  children: [
+                    Expanded(
+                      child: _buildOutlineActionButton('Start CBT >', AppColors.accent, () {
+                        _startTest(test);
+                      }),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _buildOutlineActionButton('OMR Mode', const Color(0xFF10B981), () {
+                        _startOmrTest(test);
+                      }),
+                    ),
+                  ],
+                );
               }
 
               final diff = testIndex % 3 == 0 ? 'Easy' : (testIndex % 3 == 1 ? 'Medium' : 'Hard');
@@ -791,6 +827,17 @@ class _TestSeriesDetailScreenState extends State<TestSeriesDetailScreen> {
       ),
     ).then((_) {
       _fetchUserResults(); // Refresh completion indicators when returning
+    });
+  }
+
+  void _startOmrTest(MockTest test) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => OmrTestAttemptScreen(test: test),
+      ),
+    ).then((_) {
+      _fetchUserResults();
     });
   }
 

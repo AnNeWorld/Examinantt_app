@@ -155,7 +155,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final user = Provider.of<UserProvider>(context, listen: false).user;
     final phone = user?.phone.isNotEmpty == true
         ? user!.phone
-        : (FirebaseAuth.instance.currentUser?.phoneNumber ?? '9876543210');
+        : (FirebaseAuth.instance.currentUser?.phoneNumber ?? '8881188678');
     final email = user?.email.isNotEmpty == true
         ? user!.email
         : (FirebaseAuth.instance.currentUser?.email ?? 'student@examinantt.com');

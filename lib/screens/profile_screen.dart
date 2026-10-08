@@ -13,6 +13,7 @@ import 'preferences_screen.dart';
 import 'privacy_security_screen.dart';
 import 'help_support_screen.dart';
 import 'about_examinantt_screen.dart';
+import 'certificate_verification_screen.dart';
 import '../auth_screen/sign_up_login.dart';
 import '../widgets/game_animations.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -439,6 +440,14 @@ class ProfileScreen extends StatelessWidget {
                     icon: Icons.support_agent_rounded,
                     color: const Color(0xFF00C6FF),
                     destination: HelpSupportScreen(),
+                  ),
+                  _buildNavigationMenuTile(
+                    context,
+                    title: 'Verify Certificate',
+                    desc: 'Official certificate authenticity verification',
+                    icon: Icons.verified_rounded,
+                    color: const Color(0xFF10B981),
+                    destination: const CertificateVerificationScreen(),
                   ),
                   _buildNavigationMenuTile(
                     context,
@@ -870,7 +879,7 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Future<void> _openWhatsApp(BuildContext context) async {
-    final uri = Uri.parse('https://wa.me/919876543210?text=Hello%20Examinantt%20Team%2C%20I%20am%20a%20student%20and%20need%20academic%20counselling%20and%20guidance.');
+    final uri = Uri.parse('https://wa.me/918881188678?text=Hello%20Examinantt%20Team%2C%20I%20am%20a%20student%20and%20need%20academic%20counselling%20and%20guidance.');
     try {
       final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!launched) {
@@ -879,13 +888,13 @@ class ProfileScreen extends StatelessWidget {
     } catch (e) {
       debugPrint('WhatsApp launch error: $e');
       if (context.mounted) {
-        AppTheme.showSuccessSnackBar(context, 'WhatsApp: Contact +91 98765 43210');
+        AppTheme.showSuccessSnackBar(context, 'WhatsApp: Contact +91 8881188678');
       }
     }
   }
 
   Future<void> _openPhoneCall(BuildContext context) async {
-    final uri = Uri.parse('tel:+919876543210');
+    final uri = Uri.parse('tel:+918881188678');
     try {
       final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!launched) {
@@ -894,7 +903,7 @@ class ProfileScreen extends StatelessWidget {
     } catch (e) {
       debugPrint('Phone call launch error: $e');
       if (context.mounted) {
-        AppTheme.showSuccessSnackBar(context, 'Admissions Desk: 1800-123-456 / +91 98765 43210');
+        AppTheme.showSuccessSnackBar(context, 'Admissions Desk: +91 8881188678');
       }
     }
   }

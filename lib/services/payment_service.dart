@@ -51,7 +51,7 @@ class PaymentService {
     VoidCallback? onSuccess,
   }) async {
     final user = FirebaseAuth.instance.currentUser;
-    final phone = user?.phoneNumber ?? '9876543210';
+    final phone = user?.phoneNumber ?? '8881188678';
     final email = user?.email ?? 'student@examinantt.com';
     final effectiveItemId = (itemId != null && itemId.isNotEmpty)
         ? itemId
@@ -164,7 +164,7 @@ class PaymentService {
     if (resolvedContact == null || resolvedContact.isEmpty) {
       resolvedContact = FirebaseAuth.instance.currentUser?.phoneNumber;
     }
-    String cleanContact = '9876543210';
+    String cleanContact = '8881188678';
     if (resolvedContact != null && resolvedContact.isNotEmpty) {
       final digits = resolvedContact.replaceAll(RegExp(r'[^0-9+]'), '');
       if (digits.length >= 10) {
