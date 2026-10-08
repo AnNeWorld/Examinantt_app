@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
+import '../constants/app_fonts.dart';
 
 class ProfileAvatarWidget extends StatefulWidget {
   final double size;
@@ -144,19 +145,12 @@ class _ProfileAvatarWidgetState extends State<ProfileAvatarWidget> {
                 ),
                 Text(
                   'Profile Photo',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: textColor,
-                  ),
+                  style: AppTextStyles.titleLarge.withColor(textColor).bold,
                 ),
                 const SizedBox(height: 6),
                 Text(
                   'Upload a photo (JPG, PNG, WebP • Max 2MB)',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDark ? Colors.white54 : Colors.black54,
-                  ),
+                  style: AppTextStyles.caption.withColor(isDark ? Colors.white54 : Colors.black54),
                 ),
                 const SizedBox(height: 20),
                 Row(
@@ -232,11 +226,7 @@ class _ProfileAvatarWidgetState extends State<ProfileAvatarWidget> {
             const SizedBox(height: 8),
             Text(
               label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white : Colors.black87,
-              ),
+              style: AppTextStyles.titleSmall.size(13).semiBold.withColor(isDark ? Colors.white : Colors.black87),
             ),
           ],
         ),
@@ -298,11 +288,7 @@ class _ProfileAvatarWidgetState extends State<ProfileAvatarWidget> {
     return Center(
       child: Text(
         initialText,
-        style: TextStyle(
-          color: widget.borderColor,
-          fontSize: widget.size * 0.4,
-          fontWeight: FontWeight.bold,
-        ),
+        style: AppTextStyles.displayMedium.withColor(widget.borderColor).size(widget.size * 0.4).bold,
       ),
     );
   }

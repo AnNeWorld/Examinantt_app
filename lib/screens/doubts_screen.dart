@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../utils/app_theme.dart';
 import '../constants/app_colors.dart';
+import '../constants/app_fonts.dart';
 
 class DoubtsScreen extends StatefulWidget {
   const DoubtsScreen({super.key});
@@ -35,7 +36,7 @@ class _DoubtsScreenState extends State<DoubtsScreen> {
           builder: (context, setDialogState) {
             return AlertDialog(
               backgroundColor: cardColor,
-              title: Text('Ask a Doubt', style: TextStyle(color: textColor)),
+              title: Text('Ask a Doubt', style: AppTextStyles.titleLarge.withColor(textColor).bold),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -43,9 +44,9 @@ class _DoubtsScreenState extends State<DoubtsScreen> {
                     DropdownButtonFormField<String>(
                       dropdownColor: cardColor,
                       initialValue: _selectedSubject,
-                      style: TextStyle(color: textColor),
+                      style: AppTextStyles.bodyMedium.withColor(textColor),
                       items: ['Maths', 'Reasoning', 'English', 'General Awareness']
-                          .map((s) => DropdownMenuItem(value: s, child: Text(s, style: TextStyle(color: textColor))))
+                          .map((s) => DropdownMenuItem(value: s, child: Text(s, style: AppTextStyles.bodyMedium.withColor(textColor))))
                           .toList(),
                       onChanged: (val) {
                         setDialogState(() {
@@ -54,7 +55,7 @@ class _DoubtsScreenState extends State<DoubtsScreen> {
                       },
                       decoration: InputDecoration(
                         labelText: 'Subject',
-                        labelStyle: TextStyle(color: secondaryTextColor),
+                        labelStyle: AppTextStyles.caption.withColor(secondaryTextColor),
                         enabledBorder: UnderlineInputBorder(
                           borderSide: BorderSide(color: secondaryTextColor.withValues(alpha: 0.5)),
                         ),
@@ -64,10 +65,10 @@ class _DoubtsScreenState extends State<DoubtsScreen> {
                     TextField(
                       controller: _doubtController,
                       maxLines: 4,
-                      style: TextStyle(color: textColor),
+                      style: AppTextStyles.bodyMedium.withColor(textColor),
                       decoration: InputDecoration(
                         hintText: 'Type your question here...',
-                        hintStyle: TextStyle(color: secondaryTextColor),
+                        hintStyle: AppTextStyles.caption.withColor(secondaryTextColor),
                         border: const OutlineInputBorder(),
                         enabledBorder: OutlineInputBorder(
                           borderSide: BorderSide(color: secondaryTextColor.withValues(alpha: 0.5)),
@@ -337,10 +338,7 @@ class _DoubtsScreenState extends State<DoubtsScreen> {
                         backgroundColor: isDark ? AppColors.backgroundDark : Colors.grey[200],
                         child: Text(
                           studentName.isNotEmpty ? studentName[0].toUpperCase() : 'S',
-                          style: TextStyle(
-                            color: textColor,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: AppTextStyles.titleSmall.withColor(textColor).bold,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -350,20 +348,13 @@ class _DoubtsScreenState extends State<DoubtsScreen> {
                           children: [
                             Text(
                               studentName,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                                color: textColor,
-                              ),
+                              style: AppTextStyles.titleSmall.withColor(textColor).bold,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                             Text(
                               time,
-                              style: TextStyle(
-                                color: secondaryTextColor,
-                                fontSize: 11,
-                              ),
+                              style: AppTextStyles.caption.withColor(secondaryTextColor).size(11),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -382,11 +373,7 @@ class _DoubtsScreenState extends State<DoubtsScreen> {
                   ),
                   child: Text(
                     subject,
-                    style: const TextStyle(
-                      color: Colors.blue,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: AppTextStyles.captionBold.withColor(Colors.blue).size(11),
                   ),
                 ),
               ],
@@ -394,11 +381,7 @@ class _DoubtsScreenState extends State<DoubtsScreen> {
             const SizedBox(height: 16),
             Text(
               question,
-              style: TextStyle(
-                fontSize: 15,
-                color: textColor,
-                height: 1.4,
-              ),
+              style: AppTextStyles.bodyMedium.withColor(textColor).size(15).lineHeight(1.4),
             ),
             const SizedBox(height: 16),
             Divider(color: isDark ? AppColors.greyDark : Colors.grey[200]),
@@ -416,11 +399,7 @@ class _DoubtsScreenState extends State<DoubtsScreen> {
                     const SizedBox(width: 6),
                     Text(
                       isAnswered ? '$answersCount Answers' : 'Unanswered',
-                      style: TextStyle(
-                        color: isAnswered ? Colors.green : Colors.orange,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
+                      style: AppTextStyles.captionBold.withColor(isAnswered ? Colors.green : Colors.orange).size(13),
                     ),
                   ],
                 ),

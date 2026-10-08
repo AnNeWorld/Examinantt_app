@@ -287,9 +287,10 @@ class FirestoreService {
       final dateFormatted = DateFormat('dd MMM yyyy, hh:mm a').format(now);
       final validTillFormatted = DateFormat('dd MMM yyyy').format(now.add(const Duration(days: 365)));
       final actualItemId = (itemId != null && itemId.isNotEmpty) ? itemId : id;
-      await _db.collection('users').doc(uid).collection('purchases').doc(id).set({
-        'id': id,
+      final purchaseData = {
+        'id': actualItemId,
         'itemId': actualItemId,
+        'batchId': actualItemId,
         'title': title,
         'type': type,
         'price': '₹${price.toStringAsFixed(0)}',
@@ -297,16 +298,59 @@ class FirestoreService {
         'date': dateFormatted,
         'validTill': validTillFormatted,
         'purchasedAt': FieldValue.serverTimestamp(),
-      });
+      };
 
-      // If this purchase is a Live Class, automatically enroll student in that class
+      // 1. Save in Firestore user purchases
+      await _db.collection('users').doc(uid).collection('purchases').doc(actualItemId).set(purchaseData, SetOptions(merge: true));
+      if (id != actualItemId) {
+        await _db.collection('users').doc(uid).collection('purchases').doc(id).set(purchaseData, SetOptions(merge: true));
+      }
+
+      // 2. Persist locally to SharedPreferences so access NEVER expires or gets lost
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final currentPurchased = prefs.getStringList('purchased_batch_ids') ?? [];
+        final updatedSet = {
+          ...currentPurchased,
+          actualItemId,
+          id,
+          title.toLowerCase().trim(),
+        };
+        await prefs.setStringList('purchased_batch_ids', updatedSet.toList());
+      } catch (e) {
+        debugPrint("Error saving purchase to SharedPreferences: $e");
+      }
+
+      // 3. Mark enrollment on batch document directly in Firestore
+      if (type.toLowerCase().contains('batch') || type.toLowerCase().contains('course')) {
+        try {
+          await _db.collection('batches').doc(actualItemId).set({
+            'enrolledStudentIds': FieldValue.arrayUnion([uid]),
+          }, SetOptions(merge: true));
+          await _db.collection('courses').doc(actualItemId).set({
+            'enrolledStudentIds': FieldValue.arrayUnion([uid]),
+          }, SetOptions(merge: true));
+        } catch (_) {}
+      }
+
+      // 4. If this purchase is a Live Class, automatically enroll student in that class
       if (type.toLowerCase().contains('live') && actualItemId.isNotEmpty) {
         await enrollInLiveClass(liveClassId: actualItemId, explicitUid: uid);
       }
 
-      AppLogger.s("Successfully recorded purchase $id ($title)", tag: "PURCHASES");
+      AppLogger.s("Successfully recorded permanent purchase $actualItemId ($title)", tag: "PURCHASES");
     } catch (e, stack) {
       AppLogger.e("Error adding purchase to Firestore", error: e, stackTrace: stack, tag: "PURCHASES");
+    }
+  }
+
+  /// Synchronously or quickly get locally cached purchased batch IDs
+  static Future<Set<String>> getCachedPurchasedIds() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return (prefs.getStringList('purchased_batch_ids') ?? []).toSet();
+    } catch (_) {
+      return {};
     }
   }
 
@@ -372,18 +416,29 @@ class FirestoreService {
   Future<void> ensureRealAwsLiveClassesExist() async {
     try {
       final snap = await _db.collection('live_classes').limit(1).get();
-      if (snap.docs.isNotEmpty) return;
+      // If docs exist, check if optics doc has batchId, if not, update it
+      if (snap.docs.isNotEmpty) {
+        final opticsDoc = await _db.collection('live_classes').doc('live_aws_optics_101').get();
+        if (opticsDoc.exists && (opticsDoc.data()?['batchId'] == null || (opticsDoc.data()?['batchId'] ?? '').toString().isEmpty)) {
+          await _db.collection('live_classes').doc('live_aws_optics_101').set({
+            'batchId': 'batch_jee_main_2027',
+            'batchName': 'JEE Main 2027 Conqueror Batch',
+            'notesUrl': 'https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf',
+          }, SetOptions(merge: true));
+        }
+        return;
+      }
 
       final now = DateTime.now();
       
-      // 1. Live Now - Amazon AWS IVS Ultra-Low Latency Live Stream
+      // 1. Live Now - Amazon AWS IVS Ultra-Low Latency Live Stream (Inside JEE Batch)
       await _db.collection('live_classes').doc('live_aws_optics_101').set({
         'title': 'Wave Optics & Interference (Live Problem Solving)',
         'instructor': 'Er. Aman Verma',
         'educatorName': 'Er. Aman Verma',
         'qualification': 'IIT Delhi • Senior Physics Master Faculty',
         'subject': 'Physics',
-        'examCategory': 'JEE Advanced',
+        'examCategory': 'JEE Main 2027',
         'chapter': 'Wave Optics • Superposition & Young\'s Double Slit Experiment',
         'description': 'Real-time live problem solving, previous years trick questions, and doubt clearance on Amazon AWS IVS streaming infrastructure.',
         'status': 'live',
@@ -399,19 +454,21 @@ class FirestoreService {
         'time': 'Live Now',
         'price': 0.0,
         'isFree': true,
-        'notesUrl': 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+        'notesUrl': 'https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf',
         'hasLiveChat': true,
+        'batchId': 'batch_jee_main_2027',
+        'batchName': 'JEE Main 2027 Conqueror Batch',
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-      // 2. Scheduled Live - Amazon AWS IVS Live Stream (Paid Premium Class)
+      // 2. Scheduled Live - Amazon AWS IVS Live Stream (Inside NEET Batch)
       await _db.collection('live_classes').doc('live_aws_organic_chem_201').set({
         'title': 'Organic Chemistry: Aldehydes, Ketones & Carboxylic Acids',
         'instructor': 'Dr. Pooja Sharma',
         'educatorName': 'Dr. Pooja Sharma',
         'qualification': 'Ph.D Organic Chemistry • 12+ Yrs Top Faculty',
         'subject': 'Chemistry',
-        'examCategory': 'NEET & JEE',
+        'examCategory': 'NEET UG 2027',
         'chapter': 'Reaction Mechanisms, Cannizzaro & Aldol Condensation Masterclass',
         'description': 'Comprehensive live session with step-by-step mechanism breakdown, exam tricks, and live student doubt answering.',
         'status': 'upcoming',
@@ -426,19 +483,21 @@ class FirestoreService {
         'price': 199.0,
         'originalPrice': 499.0,
         'isFree': false,
-        'notesUrl': '',
+        'notesUrl': 'https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf',
         'hasLiveChat': true,
+        'batchId': 'batch_neet_ug_2027',
+        'batchName': 'NEET UG 2027 Victory Batch',
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-      // 3. Completed Live Class - AWS CloudFront / Recorded HLS Stream
+      // 3. Completed Live Class - AWS CloudFront / Recorded HLS Stream (Inside JEE Batch)
       await _db.collection('live_classes').doc('live_aws_maths_calculus_301').set({
         'title': 'Integral Calculus: Definite Integrals & Area Under Curves',
         'instructor': 'Prof. Rajesh Khanna',
         'educatorName': 'Prof. Rajesh Khanna',
         'qualification': 'Ex-HOD Mathematics • 15+ Yrs Experience',
         'subject': 'Mathematics',
-        'examCategory': 'JEE Main / Advanced',
+        'examCategory': 'JEE Main 2027',
         'chapter': 'Properties of Definite Integrals & Advanced Shortcut Methods',
         'description': 'Complete live lecture recording with full chapter notes and high-frequency numerical practice.',
         'status': 'completed',
@@ -453,8 +512,38 @@ class FirestoreService {
         'price': 149.0,
         'originalPrice': 399.0,
         'isFree': false,
-        'notesUrl': 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+        'notesUrl': 'https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf',
         'hasLiveChat': false,
+        'batchId': 'batch_jee_main_2027',
+        'batchName': 'JEE Main 2027 Conqueror Batch',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      // 4. Another Recorded Video Lecture with Presentation PPT (Inside JEE Batch)
+      await _db.collection('live_classes').doc('live_aws_kinematics_401').set({
+        'title': 'Kinematics: 2D Projectile Motion & Relative Velocity',
+        'instructor': 'Er. Aman Verma',
+        'educatorName': 'Er. Aman Verma',
+        'qualification': 'IIT Delhi • Senior Physics Master Faculty',
+        'subject': 'Physics',
+        'examCategory': 'JEE Main 2027',
+        'chapter': 'Motion in a Plane • River Boat Problems & Air Wind Problems',
+        'description': 'Complete recorded video class with slide deck PPT presentation and step-by-step derivations.',
+        'status': 'completed',
+        'isLive': false,
+        'isUpcoming': false,
+        'isRecorded': true,
+        'streamServer': 'Amazon AWS CloudFront',
+        'streamUrl': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+        'recordingUrl': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+        'time': '3 days ago',
+        'durationMinutes': 70,
+        'price': 0.0,
+        'isFree': true,
+        'notesUrl': 'https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf',
+        'hasLiveChat': false,
+        'batchId': 'batch_jee_main_2027',
+        'batchName': 'JEE Main 2027 Conqueror Batch',
         'createdAt': FieldValue.serverTimestamp(),
       });
     } catch (e) {
@@ -863,6 +952,22 @@ class FirestoreService {
             await _db.collection('batch_test_series').doc('${batch.id}_$removedId').delete();
           } catch (_) {}
         }
+      }
+
+      // 4. Manage batch_live_classes relationship collection
+      for (final lcId in batch.liveClassIds) {
+        await _db.collection('batch_live_classes').doc('${batch.id}_$lcId').set({
+          'batchId': batch.id,
+          'liveClassId': lcId,
+          'createdAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+
+        try {
+          await _db.collection('live_classes').doc(lcId).update({
+            'batchId': batch.id,
+            'batchName': batch.title,
+          });
+        } catch (_) {}
       }
 
       AppLogger.s("Successfully saved batch ${batch.id} with relationships", tag: "BATCH_SERVICE");

@@ -946,16 +946,6 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> {
                 runSpacing: 6,
                 alignment: WrapAlignment.end,
                 children: [
-                  OutlinedButton.icon(
-                    onPressed: () => CreateEditResourceSheet.show(context),
-                    icon: const Icon(Icons.add_rounded, size: 15, color: Color(0xFF10B981)),
-                    label: const Text('Add Resource', style: TextStyle(color: Color(0xFF10B981), fontSize: 11, fontWeight: FontWeight.bold)),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFF10B981)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    ),
-                  ),
                   OutlinedButton(
                     onPressed: () => _switchTab(4),
                     style: OutlinedButton.styleFrom(

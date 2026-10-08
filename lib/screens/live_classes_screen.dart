@@ -9,6 +9,7 @@ import '../utils/app_theme.dart';
 import 'amazon_live_player_screen.dart';
 import 'checkout_screen.dart';
 import 'pdf_viewer_screen.dart';
+import 'batch_details_screen.dart';
 
 class LiveClassesScreen extends StatefulWidget {
   final int initialTab;
@@ -131,6 +132,32 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
         ),
       ),
     );
+  }
+
+  void _navigateToBatch(LiveClass c) async {
+    try {
+      final batches = await _firestoreService.getBatchesStream().first;
+      final match = batches.firstWhere(
+        (b) =>
+            (c.batchId.isNotEmpty && b.id == c.batchId) ||
+            (c.batchName.isNotEmpty && b.title.toLowerCase() == c.batchName.toLowerCase()),
+        orElse: () => CourseModel(
+          id: c.batchId.isNotEmpty ? c.batchId : 'batch_general',
+          title: c.batchName.isNotEmpty ? c.batchName : '${c.examCategory} Batch',
+          examCategory: c.examCategory,
+          price: c.price,
+        ),
+      );
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => BatchDetailsScreen(batch: match),
+        ),
+      );
+    } catch (e) {
+      debugPrint("Error opening batch: $e");
+    }
   }
 
   void _openCheckout(LiveClass c) {
@@ -865,6 +892,32 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
                         style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w900),
                       ),
                     ),
+                    if (c.batchName.isNotEmpty || c.batchId.isNotEmpty) ...[
+                      const SizedBox(width: 6),
+                      InkWell(
+                        onTap: () => _navigateToBatch(c),
+                        borderRadius: BorderRadius.circular(4),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0070F3).withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(color: const Color(0xFF0070F3).withValues(alpha: 0.3)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.class_outlined, color: Color(0xFF38BDF8), size: 10),
+                              const SizedBox(width: 3),
+                              Text(
+                                c.batchName.isNotEmpty ? c.batchName.toUpperCase() : 'BATCH',
+                                style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 8.5, fontWeight: FontWeight.w800),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                     if (c.examCategory.isNotEmpty && c.examCategory != 'All Exams') ...[
                       const SizedBox(width: 6),
                       Container(

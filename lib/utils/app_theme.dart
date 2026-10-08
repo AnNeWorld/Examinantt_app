@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../constants/app_colors.dart';
+import '../constants/app_fonts.dart';
 
 class AppTheme {
   static const Color primaryColor = AppColors.primary;
@@ -9,7 +10,7 @@ class AppTheme {
   static const Color darkSlate = AppColors.text;
   static const Color backgroundLight = AppColors.background;
 
-  static const String fontFamily = 'Poppins';
+  static const String fontFamily = AppFonts.primaryFont;
 
   static ThemeData get lightTheme {
     return ThemeData(
@@ -41,11 +42,7 @@ class AppTheme {
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           elevation: 4,
           shadowColor: AppColors.primary.withValues(alpha: 0.4),
-          textStyle: const TextStyle(
-            fontFamily: fontFamily,
-            fontWeight: FontWeight.w600,
-            fontSize: 16,
-          ),
+          textStyle: AppTextStyles.buttonLarge,
         ),
       ),
       cardTheme: CardThemeData(
@@ -56,13 +53,7 @@ class AppTheme {
           borderRadius: BorderRadius.circular(16), 
         ),
       ),
-      textTheme: const TextTheme(
-        headlineLarge: TextStyle(fontFamily: fontFamily, fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.text, letterSpacing: -0.5),
-        headlineMedium: TextStyle(fontFamily: fontFamily, fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.text, letterSpacing: -0.5),
-        titleLarge: TextStyle(fontFamily: fontFamily, fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.text),
-        bodyLarge: TextStyle(fontFamily: fontFamily, fontSize: 16, color: AppColors.text, height: 1.5),
-        bodyMedium: TextStyle(fontFamily: fontFamily, fontSize: 14, color: AppColors.textLight, height: 1.5),
-      ),
+      textTheme: AppTextStyles.lightTextTheme,
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surface,
@@ -112,11 +103,7 @@ class AppTheme {
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           elevation: 4,
           shadowColor: AppColors.accent.withValues(alpha: 0.3),
-          textStyle: const TextStyle(
-            fontFamily: fontFamily,
-            fontWeight: FontWeight.w700,
-            fontSize: 16,
-          ),
+          textStyle: AppTextStyles.buttonLarge.withColor(AppColors.primary),
         ),
       ),
       cardTheme: CardThemeData(
@@ -127,13 +114,7 @@ class AppTheme {
           borderRadius: BorderRadius.circular(16),
         ),
       ),
-      textTheme: const TextTheme(
-        headlineLarge: TextStyle(fontFamily: fontFamily, fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.textDark, letterSpacing: -0.5),
-        headlineMedium: TextStyle(fontFamily: fontFamily, fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.textDark, letterSpacing: -0.5),
-        titleLarge: TextStyle(fontFamily: fontFamily, fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textDark),
-        bodyLarge: TextStyle(fontFamily: fontFamily, fontSize: 16, color: AppColors.textDark, height: 1.5),
-        bodyMedium: TextStyle(fontFamily: fontFamily, fontSize: 14, color: AppColors.textDarkSecondary, height: 1.5),
-      ),
+      textTheme: AppTextStyles.darkTextTheme,
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.backgroundDark,
@@ -178,12 +159,7 @@ class AppTheme {
             Expanded(
               child: Text(
                 message,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: fontFamily,
-                ),
+                style: AppTextStyles.bodyMedium.white.semiBold,
               ),
             ),
           ],
@@ -215,12 +191,7 @@ class AppTheme {
             Expanded(
               child: Text(
                 message,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: fontFamily,
-                ),
+                style: AppTextStyles.bodyMedium.white.semiBold,
               ),
             ),
           ],
@@ -252,12 +223,7 @@ class AppTheme {
             Expanded(
               child: Text(
                 message,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: fontFamily,
-                ),
+                style: AppTextStyles.bodyMedium.white.semiBold,
               ),
             ),
           ],

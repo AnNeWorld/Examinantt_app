@@ -5,7 +5,6 @@ import '../services/payment_service.dart';
 import '../services/firestore_service.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import '../widgets/resource_page_sections.dart';
-import '../widgets/create_edit_resource_sheet.dart';
 
 import '../models/content_models.dart';
 import '../services/content_service.dart';
@@ -83,7 +82,6 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bool showAddResource = _activeTabIndex == 0 || _activeTabIndex == 2 || !isDark;
 
     return Container(
       decoration: BoxDecoration(
@@ -98,16 +96,6 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
       ),
       child: Scaffold(
         backgroundColor: isDark ? Colors.transparent : const Color(0xFFF8FAFC),
-        floatingActionButton: showAddResource
-            ? FloatingActionButton.extended(
-                heroTag: 'fab_add_resource',
-                onPressed: () => CreateEditResourceSheet.show(context),
-                backgroundColor: const Color(0xFF10B981),
-                foregroundColor: Colors.white,
-                icon: const Icon(Icons.add_rounded),
-                label: const Text('Add Resource', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-              )
-            : null,
         body: SafeArea(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -502,12 +490,6 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
               ),
             ],
           ),
-          if (_activeTabIndex == 0 || _activeTabIndex == 2)
-            IconButton(
-              icon: const Icon(Icons.add_circle_outline_rounded, color: Color(0xFF10B981)),
-              tooltip: 'Add Resource',
-              onPressed: () => CreateEditResourceSheet.show(context),
-            ),
           IconButton(
             icon: Icon(Icons.search_rounded, color: textColor),
             onPressed: () {

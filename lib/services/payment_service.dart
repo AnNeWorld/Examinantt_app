@@ -46,18 +46,22 @@ class PaymentService {
     required String title,
     required double price,
     required String itemType, // 'Batch', 'Course', 'Test Series', 'Resource'
+    String? itemId,
     String? subtitle,
     VoidCallback? onSuccess,
   }) async {
     final user = FirebaseAuth.instance.currentUser;
     final phone = user?.phoneNumber ?? '9876543210';
     final email = user?.email ?? 'student@examinantt.com';
+    final effectiveItemId = (itemId != null && itemId.isNotEmpty)
+        ? itemId
+        : '${itemType.toLowerCase()}_${DateTime.now().millisecondsSinceEpoch}';
 
     // 1. Free item
     if (price <= 0) {
-      final purchaseId = '${itemType.toLowerCase()}_${DateTime.now().millisecondsSinceEpoch}';
       await FirestoreService().addPurchase(
-        id: purchaseId,
+        id: effectiveItemId,
+        itemId: effectiveItemId,
         title: title,
         type: itemType,
         price: 0,
@@ -78,9 +82,9 @@ class PaymentService {
       email: email,
       onSuccess: (res) async {
         try {
-          final purchaseId = '${itemType.toLowerCase()}_${DateTime.now().millisecondsSinceEpoch}';
           await FirestoreService().addPurchase(
-            id: purchaseId,
+            id: effectiveItemId,
+            itemId: effectiveItemId,
             title: title,
             type: itemType,
             price: price,

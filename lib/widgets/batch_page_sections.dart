@@ -50,18 +50,23 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
   final PaymentService _paymentService = PaymentService();
   String? _lastCheckoutTitle;
   int? _lastCheckoutPrice;
+  String? _lastCheckoutBatchId;
+  Set<String> _cachedPurchasedBatchIds = <String>{};
   late final Stream<List<CourseModel>> _coursesStream;
 
   @override
   void initState() {
     super.initState();
     _coursesStream = ContentService().getCoursesStream();
+    _loadCachedPurchases();
     _paymentService.initialize(
       onSuccess: (res) async {
         final title = _lastCheckoutTitle ?? 'Selection Batch';
         final price = (_lastCheckoutPrice ?? 1999).toDouble();
+        final batchId = _lastCheckoutBatchId ?? 'batch_${DateTime.now().millisecondsSinceEpoch}';
         await FirestoreService().addPurchase(
-          id: 'batch_${DateTime.now().millisecondsSinceEpoch}',
+          id: batchId,
+          itemId: batchId,
           title: title,
           type: 'Batch',
           price: price,
@@ -70,8 +75,10 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
           title: 'Batch Unlocked! 🎉',
           subtitle: 'Successfully enrolled in $title via Razorpay.',
         );
+        await _loadCachedPurchases();
         if (!mounted) return;
         AppTheme.showSuccessSnackBar(context, 'Payment Successful: $title Unlocked!');
+        setState(() {});
       },
       onFailure: (res) {
         if (!mounted) return;
@@ -79,6 +86,40 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
       },
       onExternalWallet: (res) {},
     );
+  }
+
+  Future<void> _loadCachedPurchases() async {
+    final cached = await FirestoreService.getCachedPurchasedIds();
+    if (mounted) {
+      setState(() {
+        _cachedPurchasedBatchIds = cached;
+      });
+    }
+  }
+
+  bool _isCourseEnrolled(CourseModel course, List<Map<String, dynamic>> purchases) {
+    if (course.price <= 0) return true;
+    final bId = course.id.trim();
+    final bTitle = course.title.trim().toLowerCase();
+
+    // 1. Check local persistent storage cache
+    if (bId.isNotEmpty && _cachedPurchasedBatchIds.contains(bId)) return true;
+    if (bTitle.isNotEmpty && _cachedPurchasedBatchIds.contains(bTitle)) return true;
+
+    // 2. Check enrolledStudentIds on batch
+    final uid = FirestoreService().effectiveUid ?? '';
+    if (uid.isNotEmpty && course.enrolledStudentIds.contains(uid)) return true;
+
+    // 3. Check Firestore purchases stream
+    return purchases.any((p) {
+      final pId = (p['id'] ?? '').toString().trim();
+      final pItemId = (p['itemId'] ?? '').toString().trim();
+      final pTitle = (p['title'] ?? '').toString().trim().toLowerCase();
+
+      if (bId.isNotEmpty && (pId == bId || pItemId == bId)) return true;
+      if (bTitle.isNotEmpty && pTitle.isNotEmpty && pTitle == bTitle) return true;
+      return false;
+    });
   }
 
   @override
@@ -391,11 +432,11 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
                 ),
                 Row(
                   children: [
-                    const Icon(Icons.calendar_month, color: Colors.orange, size: 13),
+                    const Icon(Icons.verified_rounded, color: Color(0xFF10B981), size: 14),
                     const SizedBox(width: 4),
-                    const Text(
-                      '187 Days Remaining',
-                      style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 10),
+                    Text(
+                      '$_selectedExam Goal',
+                      style: const TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.bold, fontSize: 10),
                     ),
                   ],
                 ),
@@ -674,14 +715,8 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
 
               final purchases = purchasesSnap.data ?? [];
               final allBatches = batchesSnap.data ?? [];
-              final purchasedBatchIds = purchases
-                  .where((p) => (p['type']?.toString().toLowerCase() == 'batch' ||
-                      p['itemType']?.toString().toLowerCase() == 'batch'))
-                  .map((p) => (p['id'] ?? p['categoryId'] ?? '').toString())
-                  .toSet();
-
               final enrolledBatches = allBatches
-                  .where((b) => purchasedBatchIds.contains(b.id))
+                  .where((b) => _isCourseEnrolled(b, purchases))
                   .toList();
 
               if (enrolledBatches.isEmpty) {
@@ -873,20 +908,11 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: const Color(0xFF1B3A68)),
               ),
-              child: Column(
-                children: [
-                  const Text(
-                    'No batches currently created in Firestore.',
-                    style: TextStyle(color: Colors.white70, fontSize: 12),
-                  ),
-                  const SizedBox(height: 8),
-                  ElevatedButton.icon(
-                    onPressed: () => CreateEditBatchSheet.show(context),
-                    icon: const Icon(Icons.add_rounded, size: 14),
-                    label: const Text('Create Batch', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0070F3), foregroundColor: Colors.white),
-                  ),
-                ],
+              child: const Center(
+                child: Text(
+                  'No batches currently created in Firestore.',
+                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                ),
               ),
             );
           }
@@ -1066,134 +1092,123 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
 
 
 
-    return _buildSectionShell(
-      sectionNumber: '04',
-      sectionTag: 'ALL BATCHES FOR JEE MAIN 2027',
-      sectionIcon: Icons.view_list_rounded,
-      subtitle: 'Quality batches. Better preparation.',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return StreamBuilder<List<CourseModel>>(
+      stream: _coursesStream,
+      builder: (context, snapshot) {
+        final courses = snapshot.data ?? [];
+        final totalBatches = courses.length;
+        final totalTests = courses.fold<int>(0, (sum, c) => sum + c.testSeriesIds.length);
+        final totalResources = courses.fold<int>(0, (sum, c) => sum + c.resourceIds.length);
+
+        List<CourseModel> displayCourses = courses;
+        if (_activeBatchFilter == 1) {
+          final filtered = courses.where((c) => !c.title.toLowerCase().contains('crash')).toList();
+          if (filtered.isNotEmpty) displayCourses = filtered;
+        } else if (_activeBatchFilter == 2) {
+          final filtered = courses.where((c) => c.title.toLowerCase().contains('crash') || c.validity.contains('30') || c.validity.contains('Days')).toList();
+          if (filtered.isNotEmpty) displayCourses = filtered;
+        } else if (_activeBatchFilter == 3) {
+          final filtered = courses.where((c) {
+            final t = c.title.toLowerCase();
+            return t.contains('physic') || t.contains('chem') || t.contains('math') || t.contains('bio');
+          }).toList();
+          if (filtered.isNotEmpty) displayCourses = filtered;
+        }
+
+        return _buildSectionShell(
+          sectionNumber: '04',
+          sectionTag: 'ALL BATCHES FOR ${_selectedExam.toUpperCase()}',
+          sectionIcon: Icons.view_list_rounded,
+          subtitle: 'Quality batches. Better preparation.',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Expanded(
-                child: Text('Choose the Right Batch for Your Journey 🎯', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900)),
+              const Text('Choose the Right Batch for Your Journey 🎯', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900)),
+              const SizedBox(height: 2),
+              const Text('Explore expert-designed batches and find the perfect match for your goals.', style: TextStyle(color: Colors.white54, fontSize: 9.5)),
+              const SizedBox(height: 10),
+
+              // 4 Dynamic Feature pillars
+              Row(
+                children: [
+                  Expanded(child: _MiniPillar('$totalBatches', 'Batches', Icons.school_outlined)),
+                  const SizedBox(width: 4),
+                  Expanded(child: _MiniPillar(totalTests > 0 ? '$totalTests' : 'Full', 'Mock Tests', Icons.quiz_outlined)),
+                  const SizedBox(width: 4),
+                  Expanded(child: _MiniPillar(totalResources > 0 ? '$totalResources' : 'Full', 'Resources', Icons.folder_special_outlined)),
+                  const SizedBox(width: 4),
+                  const Expanded(child: _MiniPillar('Live+Rec', 'Classes', Icons.videocam_outlined)),
+                ],
               ),
-              ElevatedButton.icon(
-                onPressed: () => CreateEditBatchSheet.show(context),
-                icon: const Icon(Icons.add_rounded, size: 14),
-                label: const Text('Create Batch', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0070F3),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+              const SizedBox(height: 10),
+
+              // Filter bar
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: filters.asMap().entries.map((e) {
+                    final isSel = e.key == _activeBatchFilter;
+                    return GestureDetector(
+                      onTap: () => setState(() => _activeBatchFilter = e.key),
+                      child: Container(
+                        margin: const EdgeInsets.only(right: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: isSel ? const Color(0xFF0070F3) : const Color(0xFF0A1E3C),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: isSel ? const Color(0xFF0070F3) : const Color(0xFF1E3A68)),
+                        ),
+                        child: Text(
+                          e.value,
+                          style: TextStyle(color: isSel ? Colors.white : Colors.white70, fontSize: 9, fontWeight: isSel ? FontWeight.bold : FontWeight.normal),
+                        ),
+                      ),
+                    );
+                  }).toList(),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 2),
-          const Text('Explore expert-designed batches and find the perfect match for your goals.', style: TextStyle(color: Colors.white54, fontSize: 9.5)),
-          const SizedBox(height: 10),
+              const SizedBox(height: 10),
 
-          // 4 Feature icons
-          Row(
-            children: const [
-              Expanded(child: _MiniPillar('5000+', 'Questions', Icons.quiz_outlined)),
-              SizedBox(width: 4),
-              Expanded(child: _MiniPillar('Live+Rec', 'Classes', Icons.videocam_outlined)),
-              SizedBox(width: 4),
-              Expanded(child: _MiniPillar('Expert', 'Faculty', Icons.school_outlined)),
-              SizedBox(width: 4),
-              Expanded(child: _MiniPillar('11L+', 'Students', Icons.groups_outlined)),
-            ],
-          ),
-          const SizedBox(height: 10),
-
-          // Filter bar
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: filters.asMap().entries.map((e) {
-                final isSel = e.key == _activeBatchFilter;
-                return GestureDetector(
-                  onTap: () => setState(() => _activeBatchFilter = e.key),
-                  child: Container(
-                    margin: const EdgeInsets.only(right: 6),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isSel ? const Color(0xFF0070F3) : const Color(0xFF0A1E3C),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: isSel ? const Color(0xFF0070F3) : const Color(0xFF1E3A68)),
-                    ),
-                    child: Text(
-                      e.value,
-                      style: TextStyle(color: isSel ? Colors.white : Colors.white70, fontSize: 9, fontWeight: isSel ? FontWeight.bold : FontWeight.normal),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // Help me choose recommendation card
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF0A1E3C),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFF1E4072)),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.explore_outlined, color: Color(0xFF38BDF8), size: 16),
-                const SizedBox(width: 8),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Not sure which batch is best for you?', style: TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.bold)),
-                      Text('Answer 3 quick questions for instant recommendation.', style: TextStyle(color: Colors.white54, fontSize: 7.5)),
-                    ],
-                  ),
+              // Help me choose recommendation card
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0A1E3C),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFF1E4072)),
                 ),
-                ElevatedButton(
-                  onPressed: () => _scrollToKey(_section08Key),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0070F3),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                  ),
-                  child: const Text('Help Me Choose >', style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold)),
+                child: Row(
+                  children: [
+                    const Icon(Icons.explore_outlined, color: Color(0xFF38BDF8), size: 16),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Not sure which batch is best for you?', style: TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.bold)),
+                          Text('Answer 3 quick questions for instant recommendation.', style: TextStyle(color: Colors.white54, fontSize: 7.5)),
+                        ],
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => _scrollToKey(_section08Key),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0070F3),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                      ),
+                      child: const Text('Help Me Choose >', style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
+              ),
+              const SizedBox(height: 12),
 
-          // Batches List from Real Firestore 'courses' collection
-          StreamBuilder<List<CourseModel>>(
-            stream: _coursesStream,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
-                return const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(24.0),
-                    child: CircularProgressIndicator(color: Color(0xFF0070F3)),
-                  ),
-                );
-              }
-
-              final courses = snapshot.data ?? [];
-              if (courses.isEmpty) {
-                return Container(
+              if (displayCourses.isEmpty)
+                Container(
                   padding: const EdgeInsets.all(20),
                   margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
@@ -1201,345 +1216,373 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: const Color(0xFF1F4378)),
                   ),
-                  child: Column(
-                    children: [
-                      const Text(
-                        'No batches currently available in Firestore.',
-                        style: TextStyle(color: Colors.white70, fontSize: 13),
-                      ),
-                      const SizedBox(height: 10),
-                      ElevatedButton.icon(
-                        onPressed: () => CreateEditBatchSheet.show(context),
-                        icon: const Icon(Icons.add, size: 14),
-                        label: const Text('Create First Batch', style: TextStyle(fontSize: 11)),
-                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0070F3)),
-                      ),
-                    ],
+                  child: const Center(
+                    child: Text(
+                      'No batches currently available in Firestore.',
+                      style: TextStyle(color: Colors.white70, fontSize: 13),
+                    ),
                   ),
-                );
-              }
+                )
+              else
+                StreamBuilder<List<Map<String, dynamic>>>(
+                  stream: FirestoreService().getUserPurchasesStream(),
+                  builder: (context, purchaseSnap) {
+                    final purchases = purchaseSnap.data ?? [];
 
-              return Column(
-                children: courses.map((course) {
-                  final batchTitle = course.title;
-                  final batchPrice = course.price.toInt();
-                  const Color tagColor = Color(0xFF38BDF8);
-                  const IconData tagIcon = Icons.stars_rounded;
-                  final int discountPercent = course.originalPrice > course.price && course.originalPrice > 0
-                      ? (((course.originalPrice - course.price) / course.originalPrice) * 100).round()
-                      : 0;
+                    return Column(
+                      children: displayCourses.map((course) {
+                      final isEnrolled = _isCourseEnrolled(course, purchases);
+                      final batchTitle = course.title;
+                      final batchPrice = course.price.toInt();
+                      const Color tagColor = Color(0xFF38BDF8);
+                      const IconData tagIcon = Icons.stars_rounded;
+                      final int discountPercent = course.originalPrice > course.price && course.originalPrice > 0
+                          ? (((course.originalPrice - course.price) / course.originalPrice) * 100).round()
+                          : 0;
 
-                  return InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => BatchDetailsScreen(batch: course),
-                        ),
-                      );
-                    },
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF0C2040), Color(0xFF071428)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                      return InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => BatchDetailsScreen(batch: course),
+                            ),
+                          );
+                        },
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFF1F4378), width: 1.2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF0070F3).withValues(alpha: 0.08),
-                            blurRadius: 16,
-                            offset: const Offset(0, 4),
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF0C2040), Color(0xFF071428)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: const Color(0xFF1F4378), width: 1.2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF0070F3).withValues(alpha: 0.08),
+                                blurRadius: 16,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Top Row: Tag badge + Discount pill + Menu (Edit / Delete / Details)
-                          Row(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: tagColor.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(color: tagColor.withValues(alpha: 0.35)),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(tagIcon, color: tagColor, size: 10),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      course.examCategory.isNotEmpty ? course.examCategory : 'FEATURED BATCH',
-                                      style: const TextStyle(
-                                        color: tagColor,
-                                        fontSize: 8.5,
-                                        fontWeight: FontWeight.w900,
-                                        letterSpacing: 0.3,
+                              // Top Row: Tag badge + Discount pill + Menu (Edit / Delete / Details)
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: tagColor.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(color: tagColor.withValues(alpha: 0.35)),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(tagIcon, color: tagColor, size: 10),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          course.examCategory.isNotEmpty ? course.examCategory : 'FEATURED BATCH',
+                                          style: const TextStyle(
+                                            color: tagColor,
+                                            fontSize: 8.5,
+                                            fontWeight: FontWeight.w900,
+                                            letterSpacing: 0.3,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (discountPercent > 0) ...[
+                                    const SizedBox(width: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        gradient: const LinearGradient(
+                                          colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+                                        ),
+                                        borderRadius: BorderRadius.circular(20),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: const Color(0xFFEF4444).withValues(alpha: 0.35),
+                                            blurRadius: 6,
+                                          ),
+                                        ],
+                                      ),
+                                      child: Text(
+                                        '$discountPercent% OFF',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 8.5,
+                                          fontWeight: FontWeight.w900,
+                                        ),
                                       ),
                                     ),
                                   ],
-                                ),
-                              ),
-                              if (discountPercent > 0) ...[
-                                const SizedBox(width: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    gradient: const LinearGradient(
-                                      colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
-                                    ),
-                                    borderRadius: BorderRadius.circular(20),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: const Color(0xFFEF4444).withValues(alpha: 0.35),
-                                        blurRadius: 6,
+                                  const Spacer(),
+                                  PopupMenuButton<String>(
+                                    icon: const Icon(Icons.more_vert, color: Colors.white60, size: 18),
+                                    color: const Color(0xFF091C38),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    itemBuilder: (ctx) => [
+                                      const PopupMenuItem(
+                                        value: 'details',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.visibility_outlined, size: 16, color: Color(0xFF38BDF8)),
+                                            SizedBox(width: 8),
+                                            Text('Batch Details', style: TextStyle(color: Colors.white, fontSize: 12)),
+                                          ],
+                                        ),
+                                      ),
+                                      const PopupMenuItem(
+                                        value: 'edit',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.edit_outlined, size: 16, color: Colors.amber),
+                                            SizedBox(width: 8),
+                                            Text('Edit Batch', style: TextStyle(color: Colors.white, fontSize: 12)),
+                                          ],
+                                        ),
+                                      ),
+                                      const PopupMenuItem(
+                                        value: 'delete',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.delete_outline, size: 16, color: Colors.redAccent),
+                                            SizedBox(width: 8),
+                                            Text('Delete Batch', style: TextStyle(color: Colors.redAccent, fontSize: 12)),
+                                          ],
+                                        ),
                                       ),
                                     ],
+                                    onSelected: (val) {
+                                      if (val == 'details') {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => BatchDetailsScreen(batch: course),
+                                          ),
+                                        );
+                                      } else if (val == 'edit') {
+                                        CreateEditBatchSheet.show(context, existingBatch: course);
+                                      } else if (val == 'delete') {
+                                        _confirmDeleteBatch(course);
+                                      }
+                                    },
                                   ),
-                                  child: Text(
-                                    '$discountPercent% OFF',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 8.5,
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+
+                              // Title
+                              Text(
+                                course.title,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: -0.3,
                                 ),
-                              ],
-                              const Spacer(),
-                              PopupMenuButton<String>(
-                                icon: const Icon(Icons.more_vert, color: Colors.white60, size: 18),
-                                color: const Color(0xFF091C38),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                itemBuilder: (ctx) => [
-                                  const PopupMenuItem(
-                                    value: 'details',
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.visibility_outlined, size: 16, color: Color(0xFF38BDF8)),
-                                        SizedBox(width: 8),
-                                        Text('Batch Details', style: TextStyle(color: Colors.white, fontSize: 12)),
-                                      ],
-                                    ),
-                                  ),
-                                  const PopupMenuItem(
-                                    value: 'edit',
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.edit_outlined, size: 16, color: Colors.amber),
-                                        SizedBox(width: 8),
-                                        Text('Edit Batch', style: TextStyle(color: Colors.white, fontSize: 12)),
-                                      ],
-                                    ),
-                                  ),
-                                  const PopupMenuItem(
-                                    value: 'delete',
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.delete_outline, size: 16, color: Colors.redAccent),
-                                        SizedBox(width: 8),
-                                        Text('Delete Batch', style: TextStyle(color: Colors.redAccent, fontSize: 12)),
-                                      ],
+                              ),
+                              const SizedBox(height: 2),
+
+                              // Subtitle / Instructor
+                              Row(
+                                children: [
+                                  const Icon(Icons.school_rounded, color: tagColor, size: 12),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      course.instructorName.isNotEmpty ? course.instructorName : 'Examinant Expert Faculty',
+                                      style: const TextStyle(
+                                        color: tagColor,
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                     ),
                                   ),
                                 ],
-                                onSelected: (val) {
-                                  if (val == 'details') {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => BatchDetailsScreen(batch: course),
-                                      ),
-                                    );
-                                  } else if (val == 'edit') {
-                                    CreateEditBatchSheet.show(context, existingBatch: course);
-                                  } else if (val == 'delete') {
-                                    _confirmDeleteBatch(course);
-                                  }
-                                },
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
+                              const SizedBox(height: 5),
 
-                          // Title
-                          Text(
-                            course.title,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: -0.3,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-
-                          // Subtitle / Instructor
-                          Row(
-                            children: [
-                              const Icon(Icons.school_rounded, color: tagColor, size: 12),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                child: Text(
-                                  course.instructorName.isNotEmpty ? course.instructorName : 'Examinant Expert Faculty',
-                                  style: const TextStyle(
-                                    color: tagColor,
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w700,
+                              // Description
+                              if (course.shortDescription.isNotEmpty || course.description.isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 6.0),
+                                  child: Text(
+                                    course.shortDescription.isNotEmpty ? course.shortDescription : course.description,
+                                    style: const TextStyle(color: Colors.white70, fontSize: 10, height: 1.35),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 5),
+                              const SizedBox(height: 4),
 
-                          // Description
-                          if (course.shortDescription.isNotEmpty || course.description.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 6.0),
-                              child: Text(
-                                course.shortDescription.isNotEmpty ? course.shortDescription : course.description,
-                                style: const TextStyle(color: Colors.white70, fontSize: 10, height: 1.35),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          const SizedBox(height: 4),
-
-                          // Key Specs & Attached Counts as Chip Badges
-                          Wrap(
-                            spacing: 6,
-                            runSpacing: 6,
-                            children: [
-                              _buildSpecChip('📁 ${course.resourceIds.length} Resources'),
-                              _buildSpecChip('📝 ${course.testSeriesIds.length} Test Series'),
-                              _buildSpecChip('Live + Recorded'),
-                              _buildSpecChip(course.validity),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          Divider(color: Colors.white.withValues(alpha: 0.08), height: 16),
-
-                          // Bottom Row: Price + Actions CTA
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              // Key Specs & Attached Counts as Chip Badges
+                              Wrap(
+                                spacing: 6,
+                                runSpacing: 6,
                                 children: [
-                                  Row(
-                                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                                    textBaseline: TextBaseline.alphabetic,
+                                  _buildSpecChip('📁 ${course.resourceIds.length} Resources'),
+                                  _buildSpecChip('📝 ${course.testSeriesIds.length} Test Series'),
+                                  _buildSpecChip('Live + Recorded'),
+                                  _buildSpecChip(course.validity),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              Divider(color: Colors.white.withValues(alpha: 0.08), height: 16),
+
+                              // Bottom Row: Price + Actions CTA
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(
-                                        '₹${course.price.toStringAsFixed(0)}',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 19,
-                                          fontWeight: FontWeight.w900,
-                                          letterSpacing: -0.5,
-                                        ),
+                                      Row(
+                                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                                        textBaseline: TextBaseline.alphabetic,
+                                        children: [
+                                          Text(
+                                            '₹${course.price.toStringAsFixed(0)}',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 19,
+                                              fontWeight: FontWeight.w900,
+                                              letterSpacing: -0.5,
+                                            ),
+                                          ),
+                                          if (course.originalPrice > course.price) ...[
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              '₹${course.originalPrice.toStringAsFixed(0)}',
+                                              style: const TextStyle(
+                                                color: Colors.white38,
+                                                fontSize: 11,
+                                                decoration: TextDecoration.lineThrough,
+                                              ),
+                                            ),
+                                          ],
+                                        ],
                                       ),
                                       if (course.originalPrice > course.price) ...[
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          '₹${course.originalPrice.toStringAsFixed(0)}',
-                                          style: const TextStyle(
-                                            color: Colors.white38,
-                                            fontSize: 11,
-                                            decoration: TextDecoration.lineThrough,
+                                        const SizedBox(height: 2),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                                            borderRadius: BorderRadius.circular(4),
+                                            border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+                                          ),
+                                          child: Text(
+                                            'Save ₹${(course.originalPrice - course.price).toStringAsFixed(0)}',
+                                            style: const TextStyle(
+                                              color: Color(0xFF10B981),
+                                              fontSize: 8.5,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
                                         ),
                                       ],
                                     ],
                                   ),
-                                  if (course.originalPrice > course.price) ...[
-                                    const SizedBox(height: 2),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                                        borderRadius: BorderRadius.circular(4),
-                                        border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
-                                      ),
-                                      child: Text(
-                                        'Save ₹${(course.originalPrice - course.price).toStringAsFixed(0)}',
-                                        style: const TextStyle(
-                                          color: Color(0xFF10B981),
-                                          fontSize: 8.5,
-                                          fontWeight: FontWeight.bold,
+                                  Row(
+                                    children: [
+                                      OutlinedButton(
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => BatchDetailsScreen(batch: course),
+                                            ),
+                                          );
+                                        },
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: const Color(0xFF38BDF8),
+                                          side: const BorderSide(color: Color(0xFF224E8C)),
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                                          minimumSize: Size.zero,
+                                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                         ),
+                                        child: const Text('Details >', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
                                       ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                              Row(
-                                children: [
-                                  OutlinedButton(
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => BatchDetailsScreen(batch: course),
+                                      const SizedBox(width: 6),
+                                      if (isEnrolled)
+                                        ElevatedButton.icon(
+                                          onPressed: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => BatchDetailsScreen(batch: course),
+                                              ),
+                                            );
+                                          },
+                                          icon: const Icon(Icons.check_circle_rounded, size: 13, color: Colors.white),
+                                          label: const Text(
+                                            'ENROLLED',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w900,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: const Color(0xFF10B981),
+                                            foregroundColor: Colors.white,
+                                            elevation: 3,
+                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                                            minimumSize: Size.zero,
+                                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                          ),
+                                        )
+                                      else
+                                        ElevatedButton.icon(
+                                          onPressed: () => _openBatchCheckout(batchTitle, batchPrice, batchId: course.id),
+                                          icon: const Icon(Icons.bolt_rounded, size: 13, color: Colors.white),
+                                          label: Text(
+                                            'Enroll Now (₹${course.price.toStringAsFixed(0)})',
+                                            style: const TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w900,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: const Color(0xFF0070F3),
+                                            foregroundColor: Colors.white,
+                                            elevation: 3,
+                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                                            minimumSize: Size.zero,
+                                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                          ),
                                         ),
-                                      );
-                                    },
-                                    style: OutlinedButton.styleFrom(
-                                      foregroundColor: const Color(0xFF38BDF8),
-                                      side: const BorderSide(color: Color(0xFF224E8C)),
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                                      minimumSize: Size.zero,
-                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                    ),
-                                    child: const Text('Details >', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  ElevatedButton.icon(
-                                    onPressed: () => _openBatchCheckout(batchTitle, batchPrice),
-                                    icon: const Icon(Icons.bolt_rounded, size: 13, color: Colors.white),
-                                    label: Text(
-                                      'Enroll Now (₹${course.price.toStringAsFixed(0)})',
-                                      style: const TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w900,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF0070F3),
-                                      foregroundColor: Colors.white,
-                                      elevation: 3,
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                                      minimumSize: Size.zero,
-                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                    ),
+                                    ],
                                   ),
                                 ],
                               ),
                             ],
                           ),
-                        ],
-                      ),
-                    ),
+                        ),
+                      );
+                    }).toList(),
                   );
-                }).toList(),
-              );
-            },
+                },
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -1549,12 +1592,12 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
   // ==========================================
   Widget _buildSection06OtherExams() {
     final otherExams = [
-      {'name': 'NEET UG 2027', 'sub': 'Medical Entrance Exam', 'q': '5000+ Questions', 't': '200+ Tests', 'color': const Color(0xFF10B981), 'icon': Icons.medical_services_rounded},
-      {'name': 'CUET UG 2027', 'sub': 'University Entrance', 'q': '3000+ Questions', 't': '120+ Tests', 'color': const Color(0xFFA855F7), 'icon': Icons.school_rounded},
-      {'name': 'GATE 2027', 'sub': 'Engineering Entrance', 'q': '4500+ Questions', 't': '180+ Tests', 'color': const Color(0xFFF59E0B), 'icon': Icons.engineering_rounded},
-      {'name': 'SSC CGL 2027', 'sub': 'Government Jobs', 'q': '6000+ Questions', 't': '250+ Tests', 'color': const Color(0xFF0070F3), 'icon': Icons.account_balance_rounded},
-      {'name': 'DEFENCE', 'sub': 'NDA, CDS & More', 'q': '2500+ Questions', 't': '100+ Tests', 'color': const Color(0xFF22C55E), 'icon': Icons.shield_rounded},
-      {'name': 'STATE EXAMS', 'sub': 'State Government Jobs', 'q': '4000+ Questions', 't': '150+ Tests', 'color': const Color(0xFFEC4899), 'icon': Icons.public_rounded},
+      {'name': 'NEET UG 2027', 'sub': 'Medical Entrance Exam', 'abbr': 'NEET', 'color': const Color(0xFF10B981), 'icon': Icons.medical_services_rounded},
+      {'name': 'CUET UG 2027', 'sub': 'University Entrance', 'abbr': 'CUET', 'color': const Color(0xFFA855F7), 'icon': Icons.school_rounded},
+      {'name': 'GATE 2027', 'sub': 'Engineering Entrance', 'abbr': 'GATE', 'color': const Color(0xFFF59E0B), 'icon': Icons.engineering_rounded},
+      {'name': 'SSC CGL 2027', 'sub': 'Government Jobs', 'abbr': 'SSC', 'color': const Color(0xFF0070F3), 'icon': Icons.account_balance_rounded},
+      {'name': 'DEFENCE', 'sub': 'NDA, CDS & More', 'abbr': 'DEFENCE', 'color': const Color(0xFF22C55E), 'icon': Icons.shield_rounded},
+      {'name': 'STATE EXAMS', 'sub': 'State Government Jobs', 'abbr': 'STATE', 'color': const Color(0xFFEC4899), 'icon': Icons.public_rounded},
     ];
 
     return _buildSectionShell(
@@ -1562,104 +1605,126 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
       sectionTag: 'OTHER EXAMS',
       sectionIcon: Icons.category_rounded,
       subtitle: 'One Platform. Many Possibilities.',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: StreamBuilder<List<CourseModel>>(
+        stream: _coursesStream,
+        builder: (context, snap) {
+          final courses = snap.data ?? [];
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Prepare for Other Exams 🌐', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900)),
-                  SizedBox(height: 2),
-                  Text('Explore batches for top competitive exams.', style: TextStyle(color: Colors.white54, fontSize: 9.5)),
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Prepare for Other Exams 🌐', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900)),
+                      SizedBox(height: 2),
+                      Text('Explore batches for top competitive exams.', style: TextStyle(color: Colors.white54, fontSize: 9.5)),
+                    ],
+                  ),
+                  InkWell(
+                    onTap: () => _scrollToKey(_section07Key),
+                    child: const Text('View Offers >', style: TextStyle(color: Colors.orange, fontSize: 9.5, fontWeight: FontWeight.bold)),
+                  ),
                 ],
               ),
-              InkWell(
-                onTap: () => _scrollToKey(_section07Key),
-                child: const Text('View Offers >', style: TextStyle(color: Colors.orange, fontSize: 9.5, fontWeight: FontWeight.bold)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
+              const SizedBox(height: 12),
 
-          // 6 Exam Cards Grid
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 1.4,
-              crossAxisSpacing: 6,
-              mainAxisSpacing: 6,
-            ),
-            itemCount: otherExams.length,
-            itemBuilder: (context, index) {
-              final e = otherExams[index];
-              final Color itemColor = e['color'] as Color;
-
-              return Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF081C38),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFF1A3966)),
+              // 6 Exam Cards Grid with Dynamic Counts
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 1.4,
+                  crossAxisSpacing: 6,
+                  mainAxisSpacing: 6,
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
+                itemCount: otherExams.length,
+                itemBuilder: (context, index) {
+                  final e = otherExams[index];
+                  final Color itemColor = e['color'] as Color;
+                  final examName = (e['name'] as String).toLowerCase();
+                  final abbr = (e['abbr'] as String).toLowerCase();
+
+                  final matching = courses.where((c) {
+                    final cat = c.examCategory.toLowerCase();
+                    return cat.contains(abbr) || cat.contains(examName);
+                  }).toList();
+
+                  final bCount = matching.length;
+                  final tCount = matching.fold<int>(0, (s, b) => s + b.testSeriesIds.length);
+                  final rCount = matching.fold<int>(0, (s, b) => s + b.resourceIds.length);
+
+                  final dynamicStat = bCount > 0
+                      ? '$bCount ${bCount == 1 ? 'Batch' : 'Batches'} • ${tCount > 0 ? '$tCount Tests' : '$rCount Resources'}'
+                      : 'Live Syllabus & Prep';
+
+                  return Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF081C38),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFF1A3966)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        CircleAvatar(
-                          radius: 12,
-                          backgroundColor: itemColor.withValues(alpha: 0.2),
-                          child: Icon(e['icon'] as IconData, color: itemColor, size: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            CircleAvatar(
+                              radius: 12,
+                              backgroundColor: itemColor.withValues(alpha: 0.2),
+                              child: Icon(e['icon'] as IconData, color: itemColor, size: 12),
+                            ),
+                            InkWell(
+                              onTap: () {
+                                setState(() => _selectedExam = e['name'] as String);
+                                _showSnack('Switched target exam to ${e['name']}');
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                decoration: BoxDecoration(color: itemColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(4)),
+                                child: Text('Explore >', style: TextStyle(color: itemColor, fontSize: 7.5, fontWeight: FontWeight.bold)),
+                              ),
+                            ),
+                          ],
                         ),
-                        InkWell(
-                          onTap: () {
-                            setState(() => _selectedExam = e['name'] as String);
-                            _showSnack('Switched target exam to ${e['name']}');
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                            decoration: BoxDecoration(color: itemColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(4)),
-                            child: Text('Explore >', style: TextStyle(color: itemColor, fontSize: 7.5, fontWeight: FontWeight.bold)),
-                          ),
-                        ),
+                        Text(e['name'] as String, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold), maxLines: 1),
+                        Text(e['sub'] as String, style: const TextStyle(color: Colors.white54, fontSize: 7.5), maxLines: 1),
+                        Text(dynamicStat, style: const TextStyle(color: Colors.white38, fontSize: 7), maxLines: 1),
                       ],
                     ),
-                    Text(e['name'] as String, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold), maxLines: 1),
-                    Text(e['sub'] as String, style: const TextStyle(color: Colors.white54, fontSize: 7.5), maxLines: 1),
-                    Text('${e['q']} • ${e['t']}', style: const TextStyle(color: Colors.white38, fontSize: 7)),
+                  );
+                },
+              ),
+              const SizedBox(height: 10),
+
+              // Your Goal, Our Guidance bar
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0A1E3C),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFF1B3B69)),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _MiniTag('Expert Faculty', Icons.school),
+                    _MiniTag('Smart Prep', Icons.psychology),
+                    _MiniTag('Proven Results', Icons.star),
+                    _MiniTag('24x7 Doubts', Icons.support_agent),
                   ],
                 ),
-              );
-            },
-          ),
-          const SizedBox(height: 10),
-
-          // Your Goal, Our Guidance bar
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF0A1E3C),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFF1B3B69)),
-            ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _MiniTag('Expert Faculty', Icons.school),
-                _MiniTag('Smart Prep', Icons.psychology),
-                _MiniTag('Proven Results', Icons.star),
-                _MiniTag('24x7 Doubts', Icons.support_agent),
-              ],
-            ),
-          ),
-        ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -1668,13 +1733,6 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
   // 07. SPECIAL OFFERS (Page 7)
   // ==========================================
   Widget _buildSection07SpecialOffers() {
-    final deals = [
-      {'off': '60% OFF', 'title': 'JEE Selection Batch', 'price': '₹1,999', 'cut': '₹4,999', 'save': 'Save ₹3,000', 'color': const Color(0xFF0070F3)},
-      {'off': '40% OFF', 'title': 'JEE Crash Course', 'price': '₹999', 'cut': '₹1,699', 'save': 'Save ₹700', 'color': const Color(0xFFA855F7)},
-      {'off': '30% OFF', 'title': 'Subject Wise Batches', 'price': '₹399', 'cut': '₹599', 'save': 'Save ₹200', 'color': const Color(0xFFF59E0B)},
-      {'off': '25% OFF', 'title': 'Defence Foundation', 'price': '₹1,499', 'cut': '₹1,999', 'save': 'Save ₹500', 'color': const Color(0xFF10B981)},
-    ];
-
     return _buildSectionShell(
       sectionNumber: '07',
       sectionTag: 'SPECIAL OFFERS',
@@ -1731,73 +1789,135 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
           ),
           const SizedBox(height: 12),
 
-          // 4 Deals Grid
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 1.45,
-              crossAxisSpacing: 6,
-              mainAxisSpacing: 6,
-            ),
-            itemCount: deals.length,
-            itemBuilder: (context, index) {
-              final d = deals[index];
-              final Color dealColor = d['color'] as Color;
+          // Dynamic Deals Grid from Firestore
+          StreamBuilder<List<CourseModel>>(
+            stream: _coursesStream,
+            builder: (context, snap) {
+              final courses = snap.data ?? [];
+              final discounted = courses.where((c) => c.originalPrice > c.price).toList();
+              final offerCourses = (discounted.isNotEmpty ? discounted : courses).take(4).toList();
 
-              final dealTitle = d['title'] as String;
-              final dealPrice = int.tryParse((d['price'] as String).replaceAll(RegExp(r'[^0-9]'), '')) ?? 999;
-              return InkWell(
-                onTap: () => _openBatchCheckout(dealTitle, dealPrice),
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
+              if (offerCourses.isEmpty) {
+                return Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: const Color(0xFF081C38),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFF1A3866)),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                            decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(3)),
-                            child: Text(d['off'] as String, style: const TextStyle(color: Colors.white, fontSize: 7, fontWeight: FontWeight.w900)),
+                  child: const Center(
+                    child: Text('Check back soon for exclusive batch offers!', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                  ),
+                );
+              }
+
+              return StreamBuilder<List<Map<String, dynamic>>>(
+                stream: FirestoreService().getUserPurchasesStream(),
+                builder: (context, purchaseSnap) {
+                  final purchases = purchaseSnap.data ?? [];
+
+                  return GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: 1.35,
+                      crossAxisSpacing: 6,
+                      mainAxisSpacing: 6,
+                    ),
+                    itemCount: offerCourses.length,
+                    itemBuilder: (context, index) {
+                      final c = offerCourses[index];
+                      final isEnrolled = _isCourseEnrolled(c, purchases);
+                      final Color dealColor = index % 2 == 0 ? const Color(0xFF0070F3) : const Color(0xFFA855F7);
+                      final hasDiscount = c.originalPrice > c.price;
+                      final offText = hasDiscount
+                          ? '${(((c.originalPrice - c.price) / c.originalPrice) * 100).round()}% OFF'
+                          : 'SPECIAL';
+                      final saveText = hasDiscount
+                          ? 'Save ₹${(c.originalPrice - c.price).round()}'
+                          : 'Top Rated';
+
+                      return InkWell(
+                        onTap: () {
+                          if (isEnrolled) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => BatchDetailsScreen(batch: c)),
+                            );
+                          } else {
+                            _openBatchCheckout(c.title, c.price.round(), batchId: c.id);
+                          }
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF081C38),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFF1A3866)),
                           ),
-                          Text(d['save'] as String, style: const TextStyle(color: Color(0xFF10B981), fontSize: 7.5, fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                      Text(dealTitle, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold), maxLines: 1),
-                      Row(
-                        children: [
-                          Text(d['price'] as String, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900)),
-                          const SizedBox(width: 4),
-                          Text(d['cut'] as String, style: const TextStyle(color: Colors.white38, fontSize: 9, decoration: TextDecoration.lineThrough)),
-                        ],
-                      ),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () => _openBatchCheckout(dealTitle, dealPrice),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: dealColor,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 4),
-                            minimumSize: Size.zero,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                    decoration: BoxDecoration(
+                                      color: isEnrolled ? Colors.green : Colors.redAccent,
+                                      borderRadius: BorderRadius.circular(3),
+                                    ),
+                                    child: Text(
+                                      isEnrolled ? 'ENROLLED' : offText,
+                                      style: const TextStyle(color: Colors.white, fontSize: 7, fontWeight: FontWeight.w900),
+                                    ),
+                                  ),
+                                  Text(saveText, style: const TextStyle(color: Color(0xFF10B981), fontSize: 7.5, fontWeight: FontWeight.bold)),
+                                ],
+                              ),
+                              Text(c.title, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold), maxLines: 1),
+                              Row(
+                                children: [
+                                  Text('₹${c.price.round()}', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900)),
+                                  if (hasDiscount) ...[
+                                    const SizedBox(width: 4),
+                                    Text('₹${c.originalPrice.round()}', style: const TextStyle(color: Colors.white38, fontSize: 9, decoration: TextDecoration.lineThrough)),
+                                  ],
+                                ],
+                              ),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    if (isEnrolled) {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(builder: (context) => BatchDetailsScreen(batch: c)),
+                                      );
+                                    } else {
+                                      _openBatchCheckout(c.title, c.price.round(), batchId: c.id);
+                                    }
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: isEnrolled ? const Color(0xFF10B981) : dealColor,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(vertical: 4),
+                                    minimumSize: Size.zero,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                                  ),
+                                  child: Text(isEnrolled ? 'Open Batch >' : 'Grab Now >', style: const TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold)),
+                                ),
+                              ),
+                            ],
                           ),
-                          child: const Text('Grab Now >', style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold)),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
+                      );
+                    },
+                  );
+                },
               );
             },
           ),
@@ -1988,16 +2108,53 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
   }
 
 
-  void _showRecommendationModal() {
-    String recommendedBatch = 'Selection Batch 2027';
-    String reason = 'Ideal for complete syllabus mastery with 12 months validity.';
-    int price = 1999;
+  Future<void> _showRecommendationModal() async {
+    List<CourseModel> batches = [];
+    try {
+      batches = await FirestoreService().getBatchesStream().first;
+    } catch (_) {}
 
-    if (_wizardTimeAvailable >= 2 || _wizardPrepLevel >= 2) {
-      recommendedBatch = 'JEE Crash Course 2027';
-      reason = 'Perfect for quick targeted revision in 30 days.';
-      price = 999;
+    final examW = _wizardExam.toLowerCase();
+    final prefix = examW.split(' ').first;
+
+    final candidates = batches.where((b) {
+      final cat = b.examCategory.toLowerCase();
+      return cat.contains(prefix) || cat.contains(examW);
+    }).toList();
+
+    CourseModel? recommendedBatch;
+    String reason = '';
+
+    if (candidates.isNotEmpty) {
+      if (_wizardTimeAvailable >= 2 || _wizardPrepLevel >= 2) {
+        recommendedBatch = candidates.firstWhere(
+          (b) => b.title.toLowerCase().contains('crash') || b.title.toLowerCase().contains('revision') || b.title.toLowerCase().contains('fast'),
+          orElse: () => candidates.first,
+        );
+        reason = 'Tailored for rapid high-impact preparation and target-focused revision.';
+      } else {
+        recommendedBatch = candidates.firstWhere(
+          (b) => b.title.toLowerCase().contains('conqueror') || b.title.toLowerCase().contains('selection') || b.title.toLowerCase().contains('complete') || b.title.toLowerCase().contains('foundation'),
+          orElse: () => candidates.first,
+        );
+        reason = 'Comprehensive full-length syllabus coverage with live classes and complete test series.';
+      }
+    } else if (batches.isNotEmpty) {
+      recommendedBatch = batches.first;
+      reason = 'Premier preparation batch designed by top faculty for maximum score.';
     }
+
+    if (recommendedBatch == null) {
+      if (mounted) _showSnack('No batches currently available for $_wizardExam.');
+      return;
+    }
+
+    final batchToOpen = recommendedBatch;
+    final int price = batchToOpen.price.round();
+    final isEnrolled = _cachedPurchasedBatchIds.contains(batchToOpen.id) ||
+        _cachedPurchasedBatchIds.contains(batchToOpen.title.toLowerCase());
+
+    if (!mounted) return;
 
     showDialog(
       context: context,
@@ -2028,11 +2185,18 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(recommendedBatch, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900)),
+                    Text(batchToOpen.title, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900)),
                     const SizedBox(height: 3),
                     Text(reason, style: const TextStyle(color: Colors.white54, fontSize: 9.5)),
                     const SizedBox(height: 6),
-                    Text('Price: ₹$price', style: const TextStyle(color: Color(0xFF10B981), fontSize: 12, fontWeight: FontWeight.bold)),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Price: ₹$price', style: const TextStyle(color: Color(0xFF10B981), fontSize: 12, fontWeight: FontWeight.bold)),
+                        if (batchToOpen.validity.isNotEmpty)
+                          Text(batchToOpen.validity, style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 9)),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -2046,10 +2210,17 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context);
-                _openBatchCheckout(recommendedBatch, price);
+                if (isEnrolled) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => BatchDetailsScreen(batch: batchToOpen)),
+                  );
+                } else {
+                  _openBatchCheckout(batchToOpen.title, price, batchId: batchToOpen.id);
+                }
               },
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0070F3)),
-              child: const Text('Enroll Now >', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(backgroundColor: isEnrolled ? const Color(0xFF10B981) : const Color(0xFF0070F3)),
+              child: Text(isEnrolled ? 'Open Batch >' : 'Enroll Now >', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ],
         );
@@ -2057,17 +2228,20 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
     );
   }
 
-  void _openBatchCheckout(String title, int price) {
+  void _openBatchCheckout(String title, int price, {String? batchId}) {
     _lastCheckoutTitle = title;
     _lastCheckoutPrice = price;
+    _lastCheckoutBatchId = batchId;
 
     PaymentService().payAndUnlock(
       context: context,
+      itemId: batchId,
       title: title,
       price: price.toDouble(),
       itemType: 'Batch',
       subtitle: 'Comprehensive preparation batch with live classes, mock tests & mentor access',
-      onSuccess: () {
+      onSuccess: () async {
+        await _loadCachedPurchases();
         if (mounted) setState(() {});
       },
     );

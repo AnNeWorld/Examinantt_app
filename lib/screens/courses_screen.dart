@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'notifications_screen.dart';
 import '../widgets/batch_page_sections.dart';
-import '../widgets/create_edit_batch_sheet.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../utils/app_theme.dart';
 import '../constants/app_colors.dart';
@@ -120,11 +119,6 @@ class _CoursesScreenState extends State<CoursesScreen>
         scrolledUnderElevation: 0,
         actions: [
           IconButton(
-            icon: Icon(Icons.add_circle_outline_rounded, color: isDark ? const Color(0xFF38BDF8) : AppTheme.primaryColor, size: 22),
-            tooltip: 'Create Batch',
-            onPressed: () => CreateEditBatchSheet.show(context),
-          ),
-          IconButton(
             icon: Icon(Icons.notifications_outlined, color: _getTextColor, size: 20),
             onPressed: () {
               Navigator.push(
@@ -152,14 +146,6 @@ class _CoursesScreenState extends State<CoursesScreen>
                 ],
               )
             : null,
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: 'fab_create_batch',
-        onPressed: () => CreateEditBatchSheet.show(context),
-        backgroundColor: const Color(0xFF0070F3),
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Create Batch', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
       ),
       body: isDark
           ? const BatchPageSections()

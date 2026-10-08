@@ -79,7 +79,14 @@ class LiveClass {
       if (enrolledStudentIds.contains(uid)) return true;
     }
     if (purchasedItemIds.contains(id)) return true;
-    if (batchId.isNotEmpty && purchasedBatchIds.contains(batchId)) return true;
+    if (batchId.isNotEmpty && (purchasedBatchIds.contains(batchId) || purchasedItemIds.contains(batchId))) return true;
+    if (batchName.isNotEmpty) {
+      final bNameLower = batchName.toLowerCase().trim();
+      if (purchasedBatchIds.any((b) => b.toLowerCase().trim() == bNameLower) ||
+          purchasedItemIds.any((b) => b.toLowerCase().trim() == bNameLower)) {
+        return true;
+      }
+    }
     return false;
   }
 
@@ -319,6 +326,8 @@ class CourseModel {
   final String bannerUrl;
   final List<String> resourceIds;
   final List<String> testSeriesIds;
+  final List<String> liveClassIds;
+  final List<String> enrolledStudentIds;
   final List<String> features;
   final String validity;
   final String startDate;
@@ -344,6 +353,8 @@ class CourseModel {
     this.bannerUrl = '',
     this.resourceIds = const [],
     this.testSeriesIds = const [],
+    this.liveClassIds = const [],
+    this.enrolledStudentIds = const [],
     this.features = const [],
     this.validity = 'Till Exam Day',
     this.startDate = '',
@@ -385,6 +396,20 @@ class CourseModel {
       parsedTestSeriesIds = (data['testSeries'] as List).map((e) => e.toString()).toList();
     }
 
+    List<String> parsedLiveClassIds = [];
+    if (data['liveClassIds'] is List) {
+      parsedLiveClassIds = (data['liveClassIds'] as List).map((e) => e.toString()).toList();
+    } else if (data['liveClasses'] is List) {
+      parsedLiveClassIds = (data['liveClasses'] as List).map((e) => e.toString()).toList();
+    }
+
+    List<String> parsedEnrolledStudentIds = [];
+    if (data['enrolledStudentIds'] is List) {
+      parsedEnrolledStudentIds = (data['enrolledStudentIds'] as List).map((e) => e.toString()).toList();
+    } else if (data['students'] is List) {
+      parsedEnrolledStudentIds = (data['students'] as List).map((e) => e.toString()).toList();
+    }
+
     List<String> parsedFeatures = [];
     if (data['features'] is List) {
       parsedFeatures = (data['features'] as List).map((e) => e.toString()).toList();
@@ -407,6 +432,8 @@ class CourseModel {
       bannerUrl: (data['bannerUrl'] ?? '').toString(),
       resourceIds: parsedResourceIds,
       testSeriesIds: parsedTestSeriesIds,
+      liveClassIds: parsedLiveClassIds,
+      enrolledStudentIds: parsedEnrolledStudentIds,
       features: parsedFeatures,
       validity: (data['validity'] ?? 'Till Exam Day').toString(),
       startDate: (data['startDate'] ?? '').toString(),
@@ -439,6 +466,8 @@ class CourseModel {
       'bannerUrl': bannerUrl,
       'resourceIds': resourceIds,
       'testSeriesIds': testSeriesIds,
+      'liveClassIds': liveClassIds,
+      'enrolledStudentIds': enrolledStudentIds,
       'features': features,
       'validity': validity,
       'startDate': startDate,
@@ -466,6 +495,8 @@ class CourseModel {
     String? bannerUrl,
     List<String>? resourceIds,
     List<String>? testSeriesIds,
+    List<String>? liveClassIds,
+    List<String>? enrolledStudentIds,
     List<String>? features,
     String? validity,
     String? startDate,
@@ -491,6 +522,8 @@ class CourseModel {
       bannerUrl: bannerUrl ?? this.bannerUrl,
       resourceIds: resourceIds ?? this.resourceIds,
       testSeriesIds: testSeriesIds ?? this.testSeriesIds,
+      liveClassIds: liveClassIds ?? this.liveClassIds,
+      enrolledStudentIds: enrolledStudentIds ?? this.enrolledStudentIds,
       features: features ?? this.features,
       validity: validity ?? this.validity,
       startDate: startDate ?? this.startDate,

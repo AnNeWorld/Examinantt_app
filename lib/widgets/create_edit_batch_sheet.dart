@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/content_models.dart';
 import '../models/test_model.dart';
 import '../services/firestore_service.dart';
+import '../services/content_service.dart';
 import '../services/test_service.dart';
 import '../utils/app_theme.dart';
 
@@ -52,10 +53,12 @@ class _CreateEditBatchSheetState extends State<CreateEditBatchSheet> {
 
   late Set<String> _selectedTestSeriesIds;
   late Set<String> _selectedResourceIds;
+  late Set<String> _selectedLiveClassIds;
 
   bool _isSaving = false;
   String _testSeriesSearch = '';
   String _resourceSearch = '';
+  String _liveClassSearch = '';
 
   @override
   void initState() {
@@ -82,6 +85,7 @@ class _CreateEditBatchSheetState extends State<CreateEditBatchSheet> {
 
     _selectedTestSeriesIds = Set.from(b?.testSeriesIds ?? []);
     _selectedResourceIds = Set.from(b?.resourceIds ?? []);
+    _selectedLiveClassIds = Set.from(b?.liveClassIds ?? []);
   }
 
   @override
@@ -128,11 +132,12 @@ class _CreateEditBatchSheetState extends State<CreateEditBatchSheet> {
         status: 'published',
         testSeriesIds: _selectedTestSeriesIds.toList(),
         resourceIds: _selectedResourceIds.toList(),
+        liveClassIds: _selectedLiveClassIds.toList(),
         totalModules: 12,
         totalLessons: 48,
         features: [
           'Full Syllabus Coverage',
-          'Interactive Live Classes',
+          '${_selectedLiveClassIds.length} Live Classes & Video Lectures',
           '${_selectedResourceIds.length} Study Resources & Notes',
           '${_selectedTestSeriesIds.length} Mock Test Series Included',
           '24/7 Doubt Resolution',
@@ -579,6 +584,178 @@ class _CreateEditBatchSheetState extends State<CreateEditBatchSheet> {
                                       _selectedResourceIds.add(res.id);
                                     } else {
                                       _selectedResourceIds.remove(res.id);
+                                    }
+                                  });
+                                },
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 24),
+
+                    // ==========================================
+                    // 5. ATTACH LIVE CLASSES & RECORDED VIDEOS
+                    // ==========================================
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.live_tv_rounded, color: Colors.redAccent, size: 18),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Attach Live Classes & Recorded Videos',
+                              style: TextStyle(
+                                color: textColor,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '${_selectedLiveClassIds.length} Linked',
+                            style: const TextStyle(
+                              color: Colors.redAccent,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Select live stream sessions & recorded lectures for this batch',
+                      style: TextStyle(color: subTextColor, fontSize: 11),
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Live Class Search Field
+                    Container(
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: cardBg,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: borderColor),
+                      ),
+                      child: TextField(
+                        onChanged: (val) => setState(() => _liveClassSearch = val.toLowerCase().trim()),
+                        style: TextStyle(color: textColor, fontSize: 12),
+                        decoration: InputDecoration(
+                          hintText: 'Search classes by title, topic, or instructor...',
+                          hintStyle: TextStyle(color: subTextColor, fontSize: 11),
+                          prefixIcon: Icon(Icons.search, size: 16, color: subTextColor),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    StreamBuilder<List<LiveClass>>(
+                      stream: ContentService().getLiveClasses(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+                          return const Center(child: Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: CircularProgressIndicator(),
+                          ));
+                        }
+
+                        var classesList = snapshot.data ?? [];
+                        if (_liveClassSearch.isNotEmpty) {
+                          classesList = classesList.where((c) =>
+                              c.title.toLowerCase().contains(_liveClassSearch) ||
+                              c.subject.toLowerCase().contains(_liveClassSearch) ||
+                              c.instructor.toLowerCase().contains(_liveClassSearch) ||
+                              c.chapter.toLowerCase().contains(_liveClassSearch)).toList();
+                        }
+
+                        if (classesList.isEmpty) {
+                          return Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: cardBg,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: borderColor),
+                            ),
+                            child: Center(
+                              child: Text(
+                                _liveClassSearch.isEmpty ? 'No Live Classes found' : 'No matching Classes',
+                                style: TextStyle(color: subTextColor, fontSize: 12),
+                              ),
+                            ),
+                          );
+                        }
+
+                        return Container(
+                          constraints: const BoxConstraints(maxHeight: 220),
+                          decoration: BoxDecoration(
+                            color: cardBg,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: borderColor),
+                          ),
+                          child: ListView.separated(
+                            shrinkWrap: true,
+                            itemCount: classesList.length,
+                            separatorBuilder: (_, index) => Divider(color: borderColor, height: 1),
+                            itemBuilder: (context, idx) {
+                              final c = classesList[idx];
+                              final isSelected = _selectedLiveClassIds.contains(c.id);
+
+                              return CheckboxListTile(
+                                value: isSelected,
+                                dense: true,
+                                activeColor: Colors.redAccent,
+                                checkColor: Colors.white,
+                                title: Text(
+                                  c.title,
+                                  style: TextStyle(
+                                    color: textColor,
+                                    fontSize: 12.5,
+                                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  '${c.subject} • ${c.instructor} • ${c.isLive ? "LIVE NOW" : (c.isUpcoming ? "Upcoming" : "Recorded")}',
+                                  style: TextStyle(color: subTextColor, fontSize: 10.5),
+                                ),
+                                secondary: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: c.isLive
+                                        ? Colors.red.withValues(alpha: 0.15)
+                                        : (c.isUpcoming
+                                            ? Colors.orange.withValues(alpha: 0.15)
+                                            : const Color(0xFF38BDF8).withValues(alpha: 0.15)),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    c.isLive ? 'LIVE' : (c.isUpcoming ? 'SCHED' : 'REC'),
+                                    style: TextStyle(
+                                      color: c.isLive
+                                          ? Colors.red
+                                          : (c.isUpcoming ? Colors.orange : const Color(0xFF38BDF8)),
+                                      fontSize: 8.5,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                onChanged: (bool? checked) {
+                                  setState(() {
+                                    if (checked == true) {
+                                      _selectedLiveClassIds.add(c.id);
+                                    } else {
+                                      _selectedLiveClassIds.remove(c.id);
                                     }
                                   });
                                 },

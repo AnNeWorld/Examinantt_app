@@ -5,6 +5,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../constants/images.dart';
 import '../constants/app_colors.dart';
+import '../constants/app_fonts.dart';
 import 'sign_up_login.dart';
 import 'signup_screen.dart';
 
@@ -67,9 +68,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  AppColors.primary.withOpacity(0.5),
-                  AppColors.primary.withOpacity(0.2),
-                  AppColors.primary.withOpacity(0.8),
+                  AppColors.primary.withValues(alpha: 0.5),
+                  AppColors.primary.withValues(alpha: 0.2),
+                  AppColors.primary.withValues(alpha: 0.8),
                 ],
               ),
             ),
@@ -94,10 +95,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       Container(
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
+                          color: Colors.white.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.3),
+                            color: Colors.white.withValues(alpha: 0.3),
                           ),
                         ),
                         child: Image.asset(
@@ -127,27 +128,15 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 // Center Logo and Text
                 Column(
                   children: [
-                    const Text(
+                    Text(
                       'Achieve Your',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 34,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.5,
-                        height: 1.1,
-                      ),
+                      style: AppTextStyles.displayMedium.white.extraBold.size(34),
                     ),
-                    const Text(
+                    Text(
                       'Dreams',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: AppColors.accent,
-                        fontSize: 36,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1.0,
-                        height: 1.2,
-                      ),
+                      style: AppTextStyles.displayLarge.accent.extraBold.size(36),
                     ),
                     const SizedBox(height: 16),
                     Padding(
@@ -155,11 +144,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       child: Text(
                         'Premium mock tests and personalized analytics designed to help you ace your exams.',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.85),
-                          fontSize: 15,
-                          height: 1.5,
-                        ),
+                        style: AppTextStyles.bodyMedium.withColor(Colors.white.withValues(alpha: 0.85)).size(15),
                       ),
                     ),
                     const SizedBox(height: 32),
@@ -176,7 +161,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           decoration: BoxDecoration(
                             color: _currentImageIndex == index
                                 ? AppColors.accent
-                                : Colors.white.withOpacity(0.4),
+                                : Colors.white.withValues(alpha: 0.4),
                             borderRadius: BorderRadius.circular(4),
                           ),
                         ),
@@ -199,8 +184,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.fromLTRB(28, 32, 28, 0),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(
-                          0.4,
+                        color: AppColors.primary.withValues(
+                          alpha: 0.4,
                         ), // Frosted Navy
                         border: const Border(
                           top: BorderSide(color: Colors.white24, width: 1),
@@ -232,20 +217,16 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                     foregroundColor:
                                         Colors.black, // Dark text on Gold
                                     elevation: 8,
-                                    shadowColor: AppColors.accent.withOpacity(
-                                      0.5,
+                                    shadowColor: AppColors.accent.withValues(
+                                      alpha: 0.5,
                                     ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(16),
                                     ),
                                   ),
-                                  child: const Text(
+                                  child: Text(
                                     'Log in',
-                                    style: TextStyle(
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 0.5,
-                                    ),
+                                    style: AppTextStyles.buttonLarge.withColor(Colors.black).bold.size(17),
                                   ),
                                 ),
                               ),
@@ -267,19 +248,16 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: Colors.white,
                                     side: BorderSide(
-                                      color: Colors.white.withOpacity(0.5),
+                                      color: Colors.white.withValues(alpha: 0.5),
                                       width: 1.5,
                                     ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(16),
                                     ),
                                   ),
-                                  child: const Text(
+                                  child: Text(
                                     'Create an account',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                    style: AppTextStyles.buttonLarge.white,
                                   ),
                                 ),
                               ),
@@ -288,30 +266,20 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                               RichText(
                                 textAlign: TextAlign.center,
                                 text: TextSpan(
-                                  style: TextStyle(
-                                    color: Colors.white.withOpacity(0.6),
-                                    fontSize: 12,
-                                    height: 1.6,
-                                  ),
-                                  children: const [
-                                    TextSpan(
+                                  style: AppTextStyles.caption.withColor(Colors.white.withValues(alpha: 0.6)).lineHeight(1.6),
+                                  children: [
+                                    const TextSpan(
                                       text:
                                           "By continuing, you agree to Examinantt's\n",
                                     ),
                                     TextSpan(
                                       text: 'Privacy Policy',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        color: Colors.white,
-                                      ),
+                                      style: AppTextStyles.caption.white.bold,
                                     ),
-                                    TextSpan(text: ' and '),
+                                    const TextSpan(text: ' and '),
                                     TextSpan(
                                       text: 'Terms of Use',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        color: Colors.white,
-                                      ),
+                                      style: AppTextStyles.caption.white.bold,
                                     ),
                                   ],
                                 ),
