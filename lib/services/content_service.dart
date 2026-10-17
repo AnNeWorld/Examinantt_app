@@ -5,10 +5,21 @@ import '../utils/app_logger.dart';
 class ContentService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
+  static List<LiveClass>? _cachedLiveClasses;
+  static List<CourseModel>? _cachedCourses;
+  static List<ResourceItem>? _cachedResources;
+
   // Live Classes Real-Time Stream (Direct from Firestore live_classes collection)
-  Stream<List<LiveClass>> getLiveClasses({String? batchId}) {
+  Stream<List<LiveClass>> getLiveClasses({String? batchId}) async* {
+    if (_cachedLiveClasses != null && _cachedLiveClasses!.isNotEmpty) {
+      var cached = _cachedLiveClasses!;
+      if (batchId != null && batchId.isNotEmpty) {
+        cached = cached.where((c) => c.batchId == batchId).toList();
+      }
+      yield cached;
+    }
     AppLogger.firestore("live_classes", "Listening to real-time live_classes stream from Firestore");
-    return _db.collection('live_classes').snapshots().map((snapshot) {
+    yield* _db.collection('live_classes').snapshots().map((snapshot) {
       if (snapshot.docs.isEmpty) {
         return <LiveClass>[];
       }
@@ -16,6 +27,8 @@ class ContentService {
       var list = snapshot.docs.map((doc) {
         return LiveClass.fromMap(doc.data(), doc.id);
       }).toList();
+
+      _cachedLiveClasses = list;
 
       if (batchId != null && batchId.isNotEmpty) {
         list = list.where((c) => c.batchId == batchId).toList();
@@ -35,14 +48,17 @@ class ContentService {
       return list;
     }).handleError((e) {
       AppLogger.e("Error in getLiveClasses stream", error: e, tag: "CONTENT_SERVICE");
-      return <LiveClass>[];
+      return _cachedLiveClasses ?? <LiveClass>[];
     });
   }
 
   // Real Courses / Batches Stream from Firestore
-  Stream<List<CourseModel>> getCoursesStream() {
+  Stream<List<CourseModel>> getCoursesStream() async* {
+    if (_cachedCourses != null && _cachedCourses!.isNotEmpty) {
+      yield _cachedCourses!;
+    }
     AppLogger.firestore("courses", "Listening to real-time courses stream from Firestore");
-    return _db.collection('courses').snapshots().map((snapshot) {
+    yield* _db.collection('courses').snapshots().map((snapshot) {
       final list = snapshot.docs
           .where((doc) {
             final data = doc.data();
@@ -50,11 +66,12 @@ class ContentService {
           })
           .map((doc) => CourseModel.fromMap(doc.data(), doc.id))
           .toList();
+      _cachedCourses = list;
       AppLogger.s("Real-time courses stream updated: ${list.length} courses direct from Firestore", tag: "CONTENT_SERVICE");
       return list;
     }).handleError((e) {
       AppLogger.e("Error in getCoursesStream", error: e, tag: "CONTENT_SERVICE");
-      return <CourseModel>[];
+      return _cachedCourses ?? <CourseModel>[];
     });
   }
 
@@ -84,15 +101,19 @@ class ContentService {
   }
 
   // Resources & PDFs
-  Stream<List<ResourceItem>> getResources() {
+  Stream<List<ResourceItem>> getResources() async* {
+    if (_cachedResources != null && _cachedResources!.isNotEmpty) {
+      yield _cachedResources!;
+    }
     AppLogger.firestore("resources", "Listening to resources collection stream");
-    return _db.collection('resources').snapshots().map((snapshot) {
+    yield* _db.collection('resources').snapshots().map((snapshot) {
       final list = snapshot.docs.map((doc) => ResourceItem.fromMap(doc.data(), doc.id)).toList();
+      _cachedResources = list;
       AppLogger.s("Resources stream updated: ${list.length} items from Firestore", tag: "RESOURCES");
       return list;
     }).handleError((e) {
       AppLogger.e("Resources stream error", error: e, tag: "RESOURCES");
-      return <ResourceItem>[];
+      return _cachedResources ?? <ResourceItem>[];
     });
   }
 

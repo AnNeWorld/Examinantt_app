@@ -1,3 +1,4 @@
+import 'package:examinantt_app/utils/app_navigator.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
@@ -27,26 +28,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
     'Consistency',
     'Score Trend',
     'Comparative Analysis',
-  ];
-
-  final List<String> _targetExams = [
-    'All Exams',
-    'Banking',
-    'Boards',
-    'Defence exams',
-    'Engineering entrance',
-    'JEE Mains',
-    'Medical entrance',
-    'NEET',
-    'Other',
-    'Railways',
-    'SSC',
-    'SSC CGL Tier 1',
-    'SSC CGL Tier 2',
-    'State PCS',
-    'State govt. Exam',
-    'Teaching exams',
-    'UPP Constable',
   ];
 
   @override
@@ -101,67 +82,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                 fontSize: 19,
               ),
             ),
-            actions: [
-              // Target Exam Filter dropdown
-              Container(
-                margin: const EdgeInsets.only(right: 12),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.42),
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.surfaceDark : Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: borderColor),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Exam: ',
-                      style: TextStyle(fontSize: 11, color: secondaryTextColor, fontWeight: FontWeight.w600),
-                    ),
-                    Flexible(
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: provider.selectedExam,
-                          isDense: true,
-                          dropdownColor: cardColor,
-                          icon: Icon(Icons.keyboard_arrow_down, size: 16, color: isDark ? AppColors.accent : AppTheme.primaryColor),
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: textColor,
-                          ),
-                          selectedItemBuilder: (context) {
-                            return _targetExams.map((exam) {
-                              return Align(
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  exam,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(color: textColor, fontSize: 11, fontWeight: FontWeight.bold),
-                                ),
-                              );
-                            }).toList();
-                          },
-                          items: _targetExams.map((exam) {
-                            return DropdownMenuItem<String>(
-                              value: exam,
-                              child: Text(exam, style: TextStyle(color: textColor, fontSize: 12), overflow: TextOverflow.ellipsis),
-                            );
-                          }).toList(),
-                          onChanged: (val) {
-                            if (val != null) {
-                              provider.setExam(val);
-                            }
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(88),
               child: Column(
@@ -195,7 +115,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                               child: Text(
                                 filter.label,
                                 style: TextStyle(
-                                  fontSize: 11,
+                                  fontSize: 13,
                                   fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                                   color: isSelected
                                       ? Colors.white
@@ -366,7 +286,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
             const SizedBox(height: 28),
             ElevatedButton(
               onPressed: () {
-                Navigator.push(
+                AppNavigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => const TestSeriesScreen(),
@@ -589,7 +509,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                               padding: const EdgeInsets.only(top: 4.0),
                               child: Text(
                                 data.accuracyTrend[idx].label,
-                                style: TextStyle(color: secondaryTextColor, fontSize: 9, fontWeight: FontWeight.bold),
+                                style: TextStyle(color: secondaryTextColor, fontSize: 11, fontWeight: FontWeight.bold),
                               ),
                             );
                           }
@@ -603,7 +523,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                         reservedSize: 32,
                         getTitlesWidget: (val, meta) => Text(
                           '${val.toInt()}%',
-                          style: TextStyle(color: secondaryTextColor, fontSize: 9),
+                          style: TextStyle(color: secondaryTextColor, fontSize: 11),
                         ),
                       ),
                     ),
@@ -740,7 +660,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                               padding: const EdgeInsets.only(top: 4.0),
                               child: Text(
                                 data.speedTrend[idx].label,
-                                style: TextStyle(color: secondaryTextColor, fontSize: 9, fontWeight: FontWeight.bold),
+                                style: TextStyle(color: secondaryTextColor, fontSize: 11, fontWeight: FontWeight.bold),
                               ),
                             );
                           }
@@ -754,7 +674,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                         reservedSize: 28,
                         getTitlesWidget: (val, meta) => Text(
                           '${val.toInt()}s',
-                          style: TextStyle(color: secondaryTextColor, fontSize: 9),
+                          style: TextStyle(color: secondaryTextColor, fontSize: 11),
                         ),
                       ),
                     ),
@@ -847,21 +767,21 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                           value: correctPct > 0 ? correctPct : 1,
                           title: '${correctPct.toStringAsFixed(0)}%',
                           radius: 46,
-                          titleStyle: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold),
+                          titleStyle: const TextStyle(fontSize: 12.5, color: Colors.white, fontWeight: FontWeight.bold),
                         ),
                         PieChartSectionData(
                           color: const Color(0xFFEF4444),
                           value: wrongPct > 0 ? wrongPct : 0.01,
                           title: '${wrongPct.toStringAsFixed(0)}%',
                           radius: 46,
-                          titleStyle: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold),
+                          titleStyle: const TextStyle(fontSize: 12.5, color: Colors.white, fontWeight: FontWeight.bold),
                         ),
                         PieChartSectionData(
                           color: const Color(0xFF94A3B8),
                           value: skippedPct > 0 ? skippedPct : 0.01,
                           title: '${skippedPct.toStringAsFixed(0)}%',
                           radius: 46,
-                          titleStyle: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold),
+                          titleStyle: const TextStyle(fontSize: 12.5, color: Colors.white, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -949,7 +869,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                           width: 48,
                           child: Text(
                             week.weekLabel,
-                            style: TextStyle(color: secondaryTextColor, fontSize: 10, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: secondaryTextColor, fontSize: 11.5, fontWeight: FontWeight.bold),
                           ),
                         ),
                         Expanded(
@@ -976,7 +896,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    Text('Less', style: TextStyle(color: secondaryTextColor, fontSize: 9)),
+                    Text('Less', style: TextStyle(color: secondaryTextColor, fontSize: 11.5)),
                     const SizedBox(width: 4),
                     _colorIndicator(const Color(0xFF1E293B)),
                     _colorIndicator(const Color(0xFFEF4444)),
@@ -984,7 +904,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                     _colorIndicator(const Color(0xFF1D64D0)),
                     _colorIndicator(const Color(0xFF10B981)),
                     const SizedBox(width: 4),
-                    Text('More', style: TextStyle(color: secondaryTextColor, fontSize: 9)),
+                    Text('More', style: TextStyle(color: secondaryTextColor, fontSize: 11.5)),
                   ],
                 ),
               ],
@@ -1088,7 +1008,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                               padding: const EdgeInsets.only(top: 4.0),
                               child: Text(
                                 data.scoreTrend[idx].label,
-                                style: TextStyle(color: secondaryTextColor, fontSize: 9, fontWeight: FontWeight.bold),
+                                style: TextStyle(color: secondaryTextColor, fontSize: 11, fontWeight: FontWeight.bold),
                               ),
                             );
                           }
@@ -1102,7 +1022,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                         reservedSize: 32,
                         getTitlesWidget: (val, meta) => Text(
                           '${val.toInt()}%',
-                          style: TextStyle(color: secondaryTextColor, fontSize: 9),
+                          style: TextStyle(color: secondaryTextColor, fontSize: 11),
                         ),
                       ),
                     ),
@@ -1266,7 +1186,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
               Text(
                 title,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 13,
                   fontWeight: FontWeight.bold,
                   color: secondaryTextColor,
                 ),
@@ -1287,7 +1207,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 19,
+              fontSize: 21,
               fontWeight: FontWeight.w900,
               color: textColor,
             ),
@@ -1298,7 +1218,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 10,
+              fontSize: 12,
               color: secondaryTextColor,
               fontWeight: FontWeight.w500,
             ),
@@ -1409,7 +1329,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
         children: [
           Text(val, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: color)),
           const SizedBox(height: 2),
-          Text(title, style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.bold)),
+          Text(title, style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -1447,7 +1367,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                   children: [
                     Text(
                       subj.subjectName,
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: textColor),
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: textColor),
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -1457,7 +1377,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                       ),
                       child: Text(
                         subj.statusBadge,
-                        style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: subj.badgeColor),
+                        style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: subj.badgeColor),
                       ),
                     ),
                   ],
@@ -1468,11 +1388,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                   children: [
                     Text(
                       'Accuracy: ${subj.accuracy.toStringAsFixed(1)}%',
-                      style: TextStyle(fontSize: 11, color: secondaryTextColor, fontWeight: FontWeight.w600),
+                      style: TextStyle(fontSize: 13, color: secondaryTextColor, fontWeight: FontWeight.w600),
                     ),
                     Text(
                       'Questions: ${subj.correctCount + subj.wrongCount}/${subj.totalQuestions}',
-                      style: TextStyle(fontSize: 11, color: secondaryTextColor),
+                      style: TextStyle(fontSize: 13, color: secondaryTextColor),
                     ),
                   ],
                 ),
@@ -1543,7 +1463,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                       const SizedBox(height: 2),
                       Text(
                         '$dateStr • Correct: ${act.correctAnswers} • Wrong: ${act.wrongAnswers}',
-                        style: TextStyle(fontSize: 10, color: secondaryTextColor),
+                        style: TextStyle(fontSize: 12.5, color: secondaryTextColor),
                       ),
                     ],
                   ),
@@ -1557,7 +1477,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                     ),
                     Text(
                       '${act.accuracy.toStringAsFixed(0)}% Acc',
-                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
                     ),
                   ],
                 ),
@@ -1597,7 +1517,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                     Text(
                       item.label,
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 13,
                         fontWeight: item.isYou ? FontWeight.bold : FontWeight.w500,
                         color: item.isYou ? (Theme.of(context).brightness == Brightness.dark ? AppColors.accent : AppTheme.primaryColor) : secondaryTextColor,
                       ),
@@ -1669,7 +1589,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
           Text(
             subtitle,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: 13,
               color: secondaryTextColor,
               fontWeight: FontWeight.w500,
             ),
@@ -1692,7 +1612,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
             children: [
               Container(width: 8, height: 8, decoration: BoxDecoration(color: i.color, shape: BoxShape.circle)),
               const SizedBox(width: 4),
-              Text(i.label, style: TextStyle(fontSize: 10, color: textColor, fontWeight: FontWeight.w600)),
+              Text(i.label, style: TextStyle(fontSize: 12, color: textColor, fontWeight: FontWeight.w600)),
             ],
           ),
         );

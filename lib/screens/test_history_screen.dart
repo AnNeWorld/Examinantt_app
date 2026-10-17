@@ -1,3 +1,4 @@
+import 'package:examinantt_app/utils/app_navigator.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -56,27 +57,48 @@ class TestHistoryScreen extends StatelessWidget {
                 );
               }
               if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return Center(
-                  child: Text(
-                    'No test history available.',
-                    style: TextStyle(color: isDark ? AppColors.textDarkSecondary : Colors.grey, fontSize: 16),
+                return RefreshIndicator(
+                  color: const Color(0xFFFFA000),
+                  backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
+                  onRefresh: () async {
+                    await Future.delayed(const Duration(milliseconds: 650));
+                  },
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                    child: SizedBox(
+                      height: MediaQuery.of(context).size.height * 0.7,
+                      child: Center(
+                        child: Text(
+                          'No test history available.',
+                          style: TextStyle(color: isDark ? AppColors.textDarkSecondary : Colors.grey, fontSize: 16),
+                        ),
+                      ),
+                    ),
                   ),
                 );
               }
 
               final results = snapshot.data!;
-              return ListView.separated(
-                padding: const EdgeInsets.all(20),
-                itemCount: results.length,
-                separatorBuilder: (context, index) => Divider(height: 32, color: dividerColor),
-                itemBuilder: (context, index) {
-                  final result = results[index];
-                  final formattedDate = DateFormat(
-                    'MMM d, yyyy - h:mm a',
-                  ).format(result.attemptedAt);
-
-                  return _buildHistoryItem(context, result, formattedDate);
+              return RefreshIndicator(
+                color: const Color(0xFFFFA000),
+                backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
+                onRefresh: () async {
+                  await Future.delayed(const Duration(milliseconds: 650));
                 },
+                child: ListView.separated(
+                  physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                  padding: const EdgeInsets.all(20),
+                  itemCount: results.length,
+                  separatorBuilder: (context, index) => Divider(height: 32, color: dividerColor),
+                  itemBuilder: (context, index) {
+                    final result = results[index];
+                    final formattedDate = DateFormat(
+                      'MMM d, yyyy - h:mm a',
+                    ).format(result.attemptedAt);
+
+                    return _buildHistoryItem(context, result, formattedDate);
+                  },
+                ),
               );
             },
           );
@@ -97,7 +119,7 @@ class TestHistoryScreen extends StatelessWidget {
 
     return InkWell(
       onTap: () {
-        Navigator.push(
+        AppNavigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => TestResultsScreen(result: result),

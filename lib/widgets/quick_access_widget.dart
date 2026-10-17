@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../utils/app_navigator.dart';
 import '../constants/app_colors.dart';
 import '../screens/resources_screen.dart';
 import '../screens/test_series_screen.dart';
@@ -162,9 +163,7 @@ class _QuickAccessCardState extends State<QuickAccessCard> with SingleTickerProv
     _rotationController.reset();
     _rotationController.forward();
 
-    await Future.delayed(const Duration(milliseconds: 350));
-    if (!mounted) return;
-    Navigator.push(
+    AppNavigator.push(
       context,
       MaterialPageRoute(builder: (context) => widget.destination),
     );
@@ -186,8 +185,8 @@ class _QuickAccessCardState extends State<QuickAccessCard> with SingleTickerProv
         // Proportional responsive dimensions
         final ringSize = (cardWidth * 0.40).clamp(32.0, 46.0);
         final innerIconSize = (ringSize * 0.42).clamp(14.0, 20.0);
-        final titleFontSize = (cardWidth * 0.125).clamp(10.0, 13.0);
-        final descFontSize = (cardWidth * 0.082).clamp(7.5, 9.5);
+        final titleFontSize = (cardWidth * 0.14).clamp(13.0, 15.0);
+        final descFontSize = (cardWidth * 0.11).clamp(11.5, 13.0);
         final vPadding = (cardHeight * 0.06).clamp(4.0, 8.0);
         final hPadding = (cardWidth * 0.05).clamp(4.0, 7.0);
 

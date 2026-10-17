@@ -51,6 +51,17 @@ class UserProvider with ChangeNotifier {
       }
 
       if (isExplicitLoggedIn && savedUid != null && savedEmail != null && savedEmail.isNotEmpty ) {
+        if (await isAccountDeleted(email: savedEmail, phone: savedPhone)) {
+          _user = null;
+          FirestoreService.activeUid = null;
+          await _clearSessionFromPrefs();
+          try {
+            await _auth.signOut();
+          } catch (_) {}
+          _isAuthInitialized = true;
+          notifyListeners();
+          return;
+        }
         FirestoreService.activeUid = savedUid;
         _user = UserModel(
           uid: savedUid,
@@ -95,8 +106,28 @@ class UserProvider with ChangeNotifier {
 
       if (fbUser != null ) {
         try {
+          if (await isAccountDeleted(email: fbUser.email, phone: fbUser.phoneNumber)) {
+            _user = null;
+            await _clearSessionFromPrefs();
+            try {
+              await _auth.signOut();
+            } catch (_) {}
+            _isAuthInitialized = true;
+            notifyListeners();
+            return;
+          }
           final doc = await _db.collection('users').doc(fbUser.uid).get();
           if (doc.exists && doc.data() != null) {
+            if (doc.data()!['isDeleted'] == true) {
+              _user = null;
+              await _clearSessionFromPrefs();
+              try {
+                await _auth.signOut();
+              } catch (_) {}
+              _isAuthInitialized = true;
+              notifyListeners();
+              return;
+            }
             _user = UserModel.fromMap(doc.data()!, doc.id);
             if (_user!.targetExam.isNotEmpty && _user!.targetExam != 'General') {
               _selectedExam = _user!.targetExam;
@@ -180,7 +211,87 @@ class UserProvider with ChangeNotifier {
     return formattedName.isNotEmpty ? formattedName : 'Student User';
   }
 
-  
+  /// Check if an email or phone number belongs to a permanently deleted account
+  Future<bool> isAccountDeleted({String? email, String? phone}) async {
+    try {
+      final cleanEmail = email?.trim().toLowerCase();
+      final digits = phone?.replaceAll(RegExp(r'[^0-9]'), '');
+      final phone10 = (digits != null && digits.length >= 10)
+          ? digits.substring(digits.length - 10)
+          : digits;
+
+      final prefs = await SharedPreferences.getInstance();
+      final blacklist = prefs.getStringList('permanently_deleted_identifiers') ?? [];
+
+      if (cleanEmail != null && cleanEmail.isNotEmpty && blacklist.contains(cleanEmail)) {
+        return true;
+      }
+      if (phone10 != null && phone10.isNotEmpty && (blacklist.contains(phone10) || blacklist.contains('+91$phone10') || blacklist.contains('+91 $phone10'))) {
+        return true;
+      }
+
+      // Check Firestore deleted_accounts collection
+      if (cleanEmail != null && cleanEmail.isNotEmpty) {
+        try {
+          final doc = await _db.collection('deleted_accounts').doc('email_$cleanEmail').get();
+          if (doc.exists) {
+            if (!blacklist.contains(cleanEmail)) {
+              blacklist.add(cleanEmail);
+              await prefs.setStringList('permanently_deleted_identifiers', blacklist);
+            }
+            return true;
+          }
+        } catch (e) {
+          debugPrint("Firestore check deleted email: $e");
+        }
+      }
+
+      if (phone10 != null && phone10.isNotEmpty) {
+        try {
+          final doc = await _db.collection('deleted_accounts').doc('phone_$phone10').get();
+          if (doc.exists) {
+            if (!blacklist.contains(phone10)) {
+              blacklist.add(phone10);
+              await prefs.setStringList('permanently_deleted_identifiers', blacklist);
+            }
+            return true;
+          }
+        } catch (e) {
+          debugPrint("Firestore check deleted phone: $e");
+        }
+      }
+
+      // Check if user document has isDeleted == true
+      if (cleanEmail != null && cleanEmail.isNotEmpty) {
+        try {
+          final query = await _db.collection('users').where('email', isEqualTo: cleanEmail).limit(1).get();
+          if (query.docs.isNotEmpty && query.docs.first.data()['isDeleted'] == true) {
+            return true;
+          }
+        } catch (e) {
+          debugPrint("Firestore check isDeleted for email: $e");
+        }
+      }
+
+      if (phone10 != null && phone10.isNotEmpty) {
+        try {
+          final query = await _db.collection('users').where('phone', isEqualTo: phone10).limit(1).get();
+          if (query.docs.isNotEmpty && query.docs.first.data()['isDeleted'] == true) {
+            return true;
+          }
+          final query2 = await _db.collection('users').where('phone', isEqualTo: '+91 $phone10').limit(1).get();
+          if (query2.docs.isNotEmpty && query2.docs.first.data()['isDeleted'] == true) {
+            return true;
+          }
+        } catch (e) {
+          debugPrint("Firestore check isDeleted for phone: $e");
+        }
+      }
+    } catch (e) {
+      debugPrint("Error in isAccountDeleted check: $e");
+    }
+    return false;
+  }
 
   Future<String?> login(String identifier, String password, {String? name, String? phone}) async {
     final cleanIdentifier = identifier.trim();
@@ -197,6 +308,16 @@ class UserProvider with ChangeNotifier {
     final isPhone = (digits.length >= 10 && digits.length <= 13 && !cleanIdentifier.contains('@'));
     final phone10 = isPhone ? (digits.length >= 10 ? digits.substring(digits.length - 10) : digits) : '';
 
+    // Direct check if identifier was deleted
+    if (await isAccountDeleted(
+      email: !isPhone ? cleanIdentifier.toLowerCase() : null,
+      phone: isPhone ? phone10 : null,
+    )) {
+      _isLoading = false;
+      notifyListeners();
+      return 'This account was permanently deleted. You cannot log in with this ${isPhone ? "mobile number" : "email"}.';
+    }
+
     String targetEmail = cleanIdentifier.toLowerCase();
     String? resolvedPhone = isPhone ? phone10 : null;
     String? resolvedName;
@@ -211,7 +332,17 @@ class UserProvider with ChangeNotifier {
 
         if (querySnap.docs.isNotEmpty) {
           final data = querySnap.docs.first.data();
+          if (data['isDeleted'] == true) {
+            _isLoading = false;
+            notifyListeners();
+            return 'This account was permanently deleted. You cannot log in with this mobile number.';
+          }
           targetEmail = (data['email'] ?? '').toString().toLowerCase();
+          if (await isAccountDeleted(email: targetEmail)) {
+            _isLoading = false;
+            notifyListeners();
+            return 'This account was permanently deleted. You cannot log in with this mobile number.';
+          }
           resolvedName = data['name'];
           resolvedPhone = (data['phone'] ?? '').toString().isNotEmpty ? data['phone'] : phone10;
         } else {
@@ -222,7 +353,17 @@ class UserProvider with ChangeNotifier {
               .get();
           if (querySnap2.docs.isNotEmpty) {
             final data = querySnap2.docs.first.data();
+            if (data['isDeleted'] == true) {
+              _isLoading = false;
+              notifyListeners();
+              return 'This account was permanently deleted. You cannot log in with this mobile number.';
+            }
             targetEmail = (data['email'] ?? '').toString().toLowerCase();
+            if (await isAccountDeleted(email: targetEmail)) {
+              _isLoading = false;
+              notifyListeners();
+              return 'This account was permanently deleted. You cannot log in with this mobile number.';
+            }
             resolvedName = data['name'];
             resolvedPhone = data['phone'];
           } else {
@@ -233,6 +374,13 @@ class UserProvider with ChangeNotifier {
         debugPrint("Error looking up user by phone: $e");
         targetEmail = '$phone10@examinantt.com';
       }
+    }
+
+    // Secondary check on targetEmail
+    if (await isAccountDeleted(email: targetEmail)) {
+      _isLoading = false;
+      notifyListeners();
+      return 'This account was permanently deleted. You cannot log in with this ${isPhone ? "mobile number" : "email"}.';
     }
 
     try {
@@ -253,6 +401,12 @@ class UserProvider with ChangeNotifier {
         final doc = await _db.collection('users').doc(uid).get();
         if (doc.exists && doc.data() != null) {
           final data = doc.data()!;
+          if (data['isDeleted'] == true || await isAccountDeleted(email: targetEmail, phone: resolvedPhone)) {
+            await logout();
+            _isLoading = false;
+            notifyListeners();
+            return 'This account was permanently deleted. Access has been revoked.';
+          }
           _user = UserModel.fromMap(data, doc.id);
           if (_user!.phone.isEmpty && resolvedPhone != null && resolvedPhone.isNotEmpty) {
             _user = UserModel(
@@ -270,6 +424,12 @@ class UserProvider with ChangeNotifier {
             await _db.collection('users').doc(uid).set({'phone': resolvedPhone}, SetOptions(merge: true));
           }
         } else {
+          if (await isAccountDeleted(email: targetEmail, phone: resolvedPhone)) {
+            await logout();
+            _isLoading = false;
+            notifyListeners();
+            return 'This account was permanently deleted.';
+          }
           final derivedName = resolvedName ?? (name != null && name.trim().isNotEmpty
               ? name.trim()
               : (fbUser.displayName ?? _nameFromEmail(targetEmail)));
@@ -341,11 +501,20 @@ class UserProvider with ChangeNotifier {
 
     final cleanEmail = email.trim().toLowerCase();
     final cleanPassword = password.trim();
+    final digits = phone.replaceAll(RegExp(r'[^0-9]'), '');
+    final phone10 = digits.length >= 10 ? digits.substring(digits.length - 10) : digits;
 
     if (cleanEmail.isEmpty || cleanPassword.isEmpty) {
       _isLoading = false;
       notifyListeners();
       return "All required fields must be filled!";
+    }
+
+    // Check if account with this email or phone was permanently deleted
+    if (await isAccountDeleted(email: cleanEmail, phone: phone10)) {
+      _isLoading = false;
+      notifyListeners();
+      return 'This mobile number or email belongs to a deleted account and cannot be registered again.';
     }
 
     String uid = 'user_${cleanEmail.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_')}';
@@ -409,6 +578,98 @@ class UserProvider with ChangeNotifier {
     await _clearSessionFromPrefs();
     _user = null;
     notifyListeners();
+  }
+
+  /// Permanently deletes the current user's account and blacklists the email and phone number
+  /// so that it can never be used to log in or register again.
+  Future<String?> deleteAccount() async {
+    if (_user == null) {
+      return "No user logged in to delete.";
+    }
+
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final uid = _user!.uid;
+      final email = _user!.email.trim().toLowerCase();
+      final digits = _user!.phone.replaceAll(RegExp(r'[^0-9]'), '');
+      final phone10 = digits.length >= 10 ? digits.substring(digits.length - 10) : digits;
+
+      // 1. Record in local blacklist (SharedPreferences)
+      final prefs = await SharedPreferences.getInstance();
+      final blacklist = prefs.getStringList('permanently_deleted_identifiers') ?? [];
+      if (email.isNotEmpty && !blacklist.contains(email)) blacklist.add(email);
+      if (phone10.isNotEmpty && !blacklist.contains(phone10)) blacklist.add(phone10);
+      await prefs.setStringList('permanently_deleted_identifiers', blacklist);
+
+      // 2. Record in Firestore 'deleted_accounts' collection
+      final batch = _db.batch();
+      if (email.isNotEmpty) {
+        final emailRef = _db.collection('deleted_accounts').doc('email_$email');
+        batch.set(emailRef, {
+          'type': 'email',
+          'identifier': email,
+          'uid': uid,
+          'deletedAt': FieldValue.serverTimestamp(),
+        });
+      }
+      if (phone10.isNotEmpty) {
+        final phoneRef = _db.collection('deleted_accounts').doc('phone_$phone10');
+        batch.set(phoneRef, {
+          'type': 'phone',
+          'identifier': phone10,
+          'uid': uid,
+          'deletedAt': FieldValue.serverTimestamp(),
+        });
+      }
+
+      // 3. Mark user in 'users' collection as isDeleted: true
+      if (uid.isNotEmpty) {
+        final userRef = _db.collection('users').doc(uid);
+        batch.set(userRef, {
+          'isDeleted': true,
+          'deletedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+      }
+
+      try {
+        await batch.commit();
+      } catch (e) {
+        debugPrint("Error committing deleteAccount batch to Firestore: $e");
+      }
+
+      // 4. In-memory database purge
+      if (email.isNotEmpty) {
+        _userDatabase.remove(email);
+      }
+
+      // 5. Try deleting from Firebase Auth (if token is fresh)
+      try {
+        final currentUser = _auth.currentUser;
+        if (currentUser != null) {
+          await currentUser.delete();
+        }
+      } catch (e) {
+        debugPrint("Firebase Auth user delete note (signing out instead): $e");
+        try {
+          await _auth.signOut();
+        } catch (_) {}
+      }
+
+      // 6. Clear session prefs and notify
+      await _clearSessionFromPrefs();
+      _user = null;
+      _isLoading = false;
+      notifyListeners();
+      return null;
+    } catch (e) {
+      debugPrint("Error in deleteAccount: $e");
+      await logout();
+      _isLoading = false;
+      notifyListeners();
+      return null;
+    }
   }
 
   Future<void> updateProfile(String name, String email, String phone) async {

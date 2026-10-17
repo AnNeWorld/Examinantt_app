@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';  
+import '../utils/app_navigator.dart';  
 import '../providers/user_provider.dart';
 import '../providers/theme_provider.dart';
 import '../widgets/quick_access_widget.dart';
-import '../widgets/locked_home_sections.dart';
-import '../widgets/unlocked_home_sections.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'notifications_screen.dart';
-import '../models/notification_model.dart';
+import '../widgets/notification_bell_action.dart';
 import '../services/firestore_service.dart';
 import 'courses_screen.dart';
 import '../constants/app_colors.dart';
@@ -26,8 +23,12 @@ import 'doubts_screen.dart';
 import 'pyqs_screen.dart';
 import 'test_series_detail_screen.dart';
 
+import 'profile_screen.dart';
+import '../widgets/app_drawer.dart';
+
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final void Function(int index)? onSelectTab;
+  const HomeScreen({super.key, this.onSelectTab});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -35,8 +36,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
-  Color get _getCardColor => _isDark ? AppColors.surfaceDark : Colors.white;
-  Color get _getBorderColor => _isDark ? AppColors.greyDark : Colors.grey.shade200;
   Color get _getTextColor => _isDark ? AppColors.textDark : AppColors.text;
   Color get _getSecondaryTextColor => _isDark ? AppColors.textDarkSecondary : AppColors.textLight;
 
@@ -79,184 +78,169 @@ class _HomeScreenState extends State<HomeScreen> {
 
         return Scaffold(
               backgroundColor: bgColor,
+              drawer: AppDrawer(
+                currentIndex: 0,
+                onSelectTab: widget.onSelectTab,
+              ),
               appBar: AppBar(
                 backgroundColor: bgColor,
                 elevation: 0,
                 scrolledUnderElevation: 0,
                 toolbarHeight: 52,
-                title: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(1.5),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [AppColors.accent, AppColors.primary],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                      ),
-                      child: CircleAvatar(
-                        radius: 15,
-                        backgroundColor: _isDark ? AppColors.surfaceDark : Colors.white,
-                        child: Text(
-                          initial,
-                          style: TextStyle(
-                            color: AppColors.accent,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ),
+                leading: Builder(
+                  builder: (context) => IconButton(
+                    icon: Icon(
+                      Icons.menu_rounded,
+                      color: _getTextColor,
+                      size: 25,
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Hi, $name 👋',
-                            style: TextStyle(
-                              color: _getTextColor,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: -0.2,
+                    tooltip: 'Menu',
+                    onPressed: () => Scaffold.of(context).openDrawer(),
+                  ),
+                ),
+                titleSpacing: 0,
+                title: InkWell(
+                  onTap: () {
+                    if (widget.onSelectTab != null) {
+                      widget.onSelectTab!(4);
+                    } else {
+                      AppNavigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                      );
+                    }
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(1.5),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              colors: [AppColors.accent, AppColors.primary],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
                             ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
                           ),
-                          Row(
-                            children: [
-                              Container(
-                                width: 5,
-                                height: 5,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFF10B981),
-                                  shape: BoxShape.circle,
-                                ),
+                          child: CircleAvatar(
+                            radius: 15,
+                            backgroundColor: _isDark ? AppColors.surfaceDark : Colors.white,
+                            child: Text(
+                              initial,
+                              style: TextStyle(
+                                color: AppColors.accent,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w900,
                               ),
-                              const SizedBox(width: 4),
-                              Flexible(
-                                child: Text(
-                                  'Target: ${userProvider.selectedExam}',
-                                  style: TextStyle(
-                                    color: _getSecondaryTextColor,
-                                    fontSize: 9.5,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Hi, $name 👋',
+                                style: TextStyle(
+                                  color: _getTextColor,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: -0.2,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                              InkWell(
+                                onTap: () => _showChangeExamDialog(userProvider.selectedExam),
+                                borderRadius: BorderRadius.circular(4),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 5,
+                                      height: 5,
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFF10B981),
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Flexible(
+                                      child: Text(
+                                        'Target: ${userProvider.selectedExam}',
+                                        style: TextStyle(
+                                          color: _getSecondaryTextColor,
+                                          fontSize: 9.5,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 2),
+                                    Icon(
+                                      Icons.keyboard_arrow_down_rounded,
+                                      color: _getSecondaryTextColor,
+                                      size: 13,
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
                 actions: [
-                  StreamBuilder<List<NotificationModel>>(
-                    stream: FirestoreService().getNotificationsStream(),
-                    builder: (context, snapshot) {
-                      final count = snapshot.data?.length ?? 0;
-                      return Container(
-                        margin: const EdgeInsets.only(right: 12),
-                        decoration: BoxDecoration(
-                          color: _getCardColor,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: _getBorderColor),
-                        ),
-                        child: Badge(
-                          label: Text(
-                            '$count',
-                            style: const TextStyle(
-                              fontSize: 8,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          isLabelVisible: count > 0,
-                          backgroundColor: AppColors.accent,
-                          offset: const Offset(-1, 1),
-                          child: IconButton(
-                            padding: const EdgeInsets.all(6),
-                            constraints: const BoxConstraints(),
-                            icon: Icon(
-                              Icons.notifications_outlined,
-                              color: _getTextColor,
-                              size: 18,
-                            ),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const NotificationsScreen(),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      );
-                    },
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: NotificationBellAction(color: _getTextColor),
                   ),
                 ],
               ),
-              body: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: StreamBuilder<List<Map<String, dynamic>>>(
-                  stream: FirestoreService().getUserPurchasesStream(explicitUid: user?.uid),
-                  builder: (context, purchaseSnap) {
-                    final purchases = purchaseSnap.data ?? [];
-                    final bool hasEnrolledBatch = purchases.any((p) {
-                      final type = (p['type'] ?? '').toString().toLowerCase();
-                      final title = (p['title'] ?? '').toString().toLowerCase();
-                      final id = (p['id'] ?? '').toString().toLowerCase();
-                      return type == 'batch' || title.contains('batch') || id.contains('batch');
-                    });
-                    final bool hasPurchasedBatch = hasEnrolledBatch;
+              body: RefreshIndicator(
+                color: const Color(0xFFFFA000),
+                backgroundColor: isDark ? const Color(0xFF0F1E36) : Colors.white,
+                onRefresh: () async {
+                  await Future.delayed(const Duration(milliseconds: 650));
+                  if (mounted) {
+                    setState(() {});
+                  }
+                },
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                  child: StreamBuilder<List<Map<String, dynamic>>>(
+                    stream: FirestoreService().getUserPurchasesStream(explicitUid: user?.uid),
+                    builder: (context, purchaseSnap) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 8),
 
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 4),
-                        // Target Exam Header Banner
-                        _buildTargetExamHeader(userProvider.selectedExam),
-                        const SizedBox(height: 6),
+                          // 1. Poster Banner Slider ALWAYS at the very top
+                          _buildHeroSlider(),
+                          const SizedBox(height: 10),
 
-                        // 1. Poster Banner Slider ALWAYS at the very top
-                        _buildHeroSlider().animate().fadeIn(duration: 350.ms),
-                        const SizedBox(height: 10),
+                          // Quick Access 6 cards (Learn, Practice, Tests, PYQs, Doubts, Analytics)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 12),
+                            child: QuickAccessWidget(),
+                          ),
+                          const SizedBox(height: 10),
 
-                        // Quick Access 6 cards (Learn, Practice, Tests, PYQs, Doubts, Analytics)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 12),
-                          child: QuickAccessWidget(),
-                        ).animate().fadeIn(delay: 50.ms, duration: 400.ms),
-                        const SizedBox(height: 10),
-
-                        // 2. Sections: If dark mode, render Locked/Unlocked sections. If light mode, render clean white sections.
-                        if (isDark) ...[
-                          if (!hasPurchasedBatch) ...[
-                            LockedHomeSections(
-                              onExploreBatches: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (context) => const CoursesScreen()),
-                                );
-                              },
-                            ).animate().fadeIn(delay: 50.ms, duration: 400.ms),
-                          ] else ...[
-                            const UnlockedHomeSections().animate().fadeIn(delay: 50.ms, duration: 400.ms),
-                          ],
-                        ] else ...[
-                          _buildLightHomeSections(context, userProvider.selectedExam),
+                          // 2. Unified Sections for both Dark and Light Mode (same functions and features)
+                          _buildHomeSections(context, userProvider.selectedExam, isDark),
+                          const SizedBox(height: 36),
                         ],
-                        const SizedBox(height: 36),
-                      ],
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
               ),
             );
@@ -264,108 +248,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // TARGET EXAM HEADER & DIALOG (Home Page)
-  // ---------------------------------------------------------------------------
-
-  Widget _buildTargetExamHeader(String selectedExam) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 2.0),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 7.0),
-        decoration: BoxDecoration(
-          color: _isDark ? const Color(0xFF0F172A) : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: _isDark ? Colors.white12 : Colors.grey.shade200,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: _isDark ? 0.2 : 0.04),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: InkWell(
-                onTap: () => _showChangeExamDialog(selectedExam),
-                borderRadius: BorderRadius.circular(8),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: AppColors.accent.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.school_rounded,
-                        color: AppColors.accent,
-                        size: 14,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Preparing for: ',
-                      style: TextStyle(
-                        color: _isDark ? Colors.white60 : Colors.black54,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    Flexible(
-                      child: Text(
-                        selectedExam,
-                        style: const TextStyle(
-                          color: Color(0xFFFFA000),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12.5,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    const Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      color: Color(0xFFFFA000),
-                      size: 16,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            InkWell(
-              onTap: () => _showChangeExamDialog(selectedExam),
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFA000).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: const Color(0xFFFFA000).withValues(alpha: 0.4),
-                  ),
-                ),
-                child: const Text(
-                  'Change ⇄',
-                  style: TextStyle(
-                    color: Color(0xFFFFA000),
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   void _showChangeExamDialog(String currentExam) {
     final exams = [
@@ -525,7 +407,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   builder: (BuildContext context) {
                     return GestureDetector(
                       onTap: () {
-                        Navigator.push(
+                        AppNavigator.push(
                           context,
                           MaterialPageRoute(builder: (context) => const CoursesScreen()),
                         );
@@ -604,9 +486,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ===========================================================================
-  // LIGHT-MODE CLEAN HOME SECTIONS (Zero dark mode elements when theme is light)
+  // UNIFIED HOME SECTIONS (Identical functions in both Dark & Light modes)
   // ===========================================================================
-  Widget _buildLightHomeSections(BuildContext context, String selectedExam) {
+  Widget _buildHomeSections(BuildContext context, String selectedExam, bool isDark) {
+    final cardBg = isDark ? AppColors.surfaceDark : Colors.white;
+    final cardBorder = isDark ? const Color(0xFF1E293B) : Colors.grey.shade200;
+    final titleColor = isDark ? Colors.white : AppTheme.darkSlate;
+    final subtitleColor = isDark ? Colors.white70 : const Color(0xFF64748B);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14),
       child: Column(
@@ -625,12 +512,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 margin: const EdgeInsets.only(bottom: 16),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: cardBg,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.3)),
+                  border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.45 : 0.3)),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFEF4444).withValues(alpha: 0.08),
+                      color: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.14 : 0.08),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -652,24 +539,31 @@ class _HomeScreenState extends State<HomeScreen> {
                             children: [
                               Icon(Icons.circle, color: Colors.white, size: 7),
                               SizedBox(width: 4),
-                              Text('LIVE NOW', style: TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.w900)),
+                              Text('LIVE NOW', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900)),
                             ],
                           ),
                         ),
                         Row(
                           children: [
-                            Text(hero.instructor, style: const TextStyle(color: Color(0xFF64748B), fontSize: 11.5, fontWeight: FontWeight.w600)),
+                            Text(
+                              hero.instructor,
+                              style: TextStyle(
+                                color: subtitleColor,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                             const SizedBox(width: 8),
                             InkWell(
                               onTap: () {
-                                Navigator.push(
+                                AppNavigator.push(
                                   context,
                                   MaterialPageRoute(builder: (_) => const LiveClassesScreen(initialTab: 0)),
                                 );
                               },
                               child: const Row(
                                 children: [
-                                  Text('All Classes', style: TextStyle(color: Color(0xFFFF7A00), fontSize: 11, fontWeight: FontWeight.bold)),
+                                  Text('All Classes', style: TextStyle(color: Color(0xFFFF7A00), fontSize: 13, fontWeight: FontWeight.bold)),
                                   SizedBox(width: 2),
                                   Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFFFF7A00), size: 10),
                                 ],
@@ -682,19 +576,19 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 8),
                     Text(
                       hero.title,
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppTheme.darkSlate),
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: titleColor),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       '${hero.subject} • ${hero.chapter}',
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                      style: TextStyle(fontSize: 13, color: isDark ? Colors.white60 : Colors.grey.shade600),
                     ),
                     const SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          Navigator.push(
+                          AppNavigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (_) => AmazonLivePlayerScreen(liveClass: hero),
@@ -702,7 +596,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           );
                         },
                         icon: const Icon(Icons.play_circle_fill, size: 16),
-                        label: const Text('Join Live Interactive Stream', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                        label: const Text('Join Live Interactive Stream', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFEF4444),
                           foregroundColor: Colors.white,
@@ -724,21 +618,21 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Text(
                 'Featured Batches ($selectedExam)',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w900,
-                  color: AppTheme.darkSlate,
+                  color: titleColor,
                   letterSpacing: -0.3,
                 ),
               ),
               TextButton(
                 onPressed: () {
-                  Navigator.push(
+                  AppNavigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const CoursesScreen()),
                   );
                 },
-                child: const Text('View All →', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                child: const Text('View All →', style: TextStyle(color: Color(0xFFFF7A00), fontWeight: FontWeight.bold, fontSize: 12.5)),
               ),
             ],
           ),
@@ -753,12 +647,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 return Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: cardBg,
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.grey.shade200),
+                    border: Border.all(color: cardBorder),
                   ),
-                  child: const Center(
-                    child: Text('Explore latest batches in the Batches tab', style: TextStyle(color: Color(0xFF64748B), fontSize: 13)),
+                  child: Center(
+                    child: Text('Explore latest batches in the Batches tab', style: TextStyle(color: subtitleColor, fontSize: 13)),
                   ),
                 );
               }
@@ -769,12 +663,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: cardBg,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.grey.shade200),
+                      border: Border.all(color: cardBorder),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.03),
+                          color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
                           blurRadius: 10,
                           offset: const Offset(0, 3),
                         ),
@@ -785,10 +679,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF0070F3).withValues(alpha: 0.1),
+                            color: const Color(0xFF0070F3).withValues(alpha: isDark ? 0.2 : 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(Icons.school_rounded, color: Color(0xFF0070F3), size: 24),
+                          child: Icon(Icons.school_rounded, color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0070F3), size: 24),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -797,26 +691,26 @@ class _HomeScreenState extends State<HomeScreen> {
                             children: [
                               Text(
                                 c.title,
-                                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppTheme.darkSlate),
+                                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: titleColor),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 2),
                               Text(
                                 c.badge.isNotEmpty ? c.badge.toUpperCase() : 'PREMIUM BATCH',
-                                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFFFF7A00)),
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFFFF7A00)),
                               ),
                               const SizedBox(height: 2),
                               Text(
                                 c.price == 0 ? 'FREE' : '₹${c.price.toInt()} Complete Course',
-                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
+                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
                               ),
                             ],
                           ),
                         ),
                         ElevatedButton(
                           onPressed: () {
-                            Navigator.push(
+                            AppNavigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (_) => TestSeriesDetailScreen(
@@ -841,7 +735,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             elevation: 0,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           ),
-                          child: const Text('Explore', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                          child: const Text('Explore', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                         ),
                       ],
                     ),
@@ -856,13 +750,19 @@ class _HomeScreenState extends State<HomeScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFEFF6FF), Color(0xFFDBEAFE)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              gradient: isDark
+                  ? const LinearGradient(
+                      colors: [Color(0xFF0F1E36), Color(0xFF1E293B)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    )
+                  : const LinearGradient(
+                      colors: [Color(0xFFEFF6FF), Color(0xFFDBEAFE)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFBFDBFE)),
+              border: Border.all(color: isDark ? const Color(0xFF1E3A5F) : const Color(0xFFBFDBFE)),
             ),
             child: Row(
               children: [
@@ -879,21 +779,28 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'All-India Mock Test Series',
-                        style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14.5, color: Color(0xFF1E3A8A)),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 16,
+                          color: isDark ? Colors.white : const Color(0xFF1E3A8A),
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         'Practice chapter tests with instant percentile analytics',
-                        style: TextStyle(fontSize: 11.5, color: Colors.blue.shade900.withValues(alpha: 0.8)),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isDark ? Colors.white70 : Colors.blue.shade900.withValues(alpha: 0.8),
+                        ),
                       ),
                     ],
                   ),
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    Navigator.push(
+                    AppNavigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const TestSeriesScreen()),
                     );
@@ -902,10 +809,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     backgroundColor: const Color(0xFF1D4ED8),
                     foregroundColor: Colors.white,
                     elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: const Text('Practice', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5)),
+                  child: const Text('Practice', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                 ),
               ],
             ),
@@ -918,7 +825,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: InkWell(
                   onTap: () {
-                    Navigator.push(
+                    AppNavigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const PyqsScreen()),
                     );
@@ -927,31 +834,31 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: cardBg,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.grey.shade200),
+                      border: Border.all(color: cardBorder),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.02),
+                          color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.02),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
                       ],
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
                         CircleAvatar(
                           radius: 16,
-                          backgroundColor: Color(0xFFEDE9FE),
-                          child: Icon(Icons.history_edu_rounded, color: Color(0xFF8B5CF6), size: 16),
+                          backgroundColor: isDark ? const Color(0xFF2E1065) : const Color(0xFFEDE9FE),
+                          child: const Icon(Icons.history_edu_rounded, color: Color(0xFF8B5CF6), size: 16),
                         ),
-                        SizedBox(width: 10),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('15+ Yrs PYQs', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5, color: AppTheme.darkSlate)),
-                              Text('Solved Papers', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                              Text('15+ Yrs PYQs', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: titleColor)),
+                              Text('Solved Papers', style: TextStyle(fontSize: 12, color: subtitleColor)),
                             ],
                           ),
                         ),
@@ -964,7 +871,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: InkWell(
                   onTap: () {
-                    Navigator.push(
+                    AppNavigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const ResourcesScreen()),
                     );
@@ -973,31 +880,31 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: cardBg,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.grey.shade200),
+                      border: Border.all(color: cardBorder),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.02),
+                          color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.02),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
                       ],
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
                         CircleAvatar(
                           radius: 16,
-                          backgroundColor: Color(0xFFD1FAE5),
-                          child: Icon(Icons.picture_as_pdf_rounded, color: Color(0xFF10B981), size: 16),
+                          backgroundColor: isDark ? const Color(0xFF064E3B) : const Color(0xFFD1FAE5),
+                          child: const Icon(Icons.picture_as_pdf_rounded, color: Color(0xFF10B981), size: 16),
                         ),
-                        SizedBox(width: 10),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Formula PDFs', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5, color: AppTheme.darkSlate)),
-                              Text('Revision Sheets', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                              Text('Formula PDFs', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: titleColor)),
+                              Text('Revision Sheets', style: TextStyle(fontSize: 12, color: subtitleColor)),
                             ],
                           ),
                         ),
@@ -1013,7 +920,7 @@ class _HomeScreenState extends State<HomeScreen> {
           // 5. Ask Doubts & Community Banner
           InkWell(
             onTap: () {
-              Navigator.push(
+              AppNavigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const DoubtsScreen()),
               );
@@ -1022,36 +929,36 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: cardBg,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey.shade200),
+                border: Border.all(color: cardBorder),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
+                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
                     blurRadius: 10,
                     offset: const Offset(0, 3),
                   ),
                 ],
               ),
-              child: const Row(
+              child: Row(
                 children: [
                   CircleAvatar(
                     radius: 20,
-                    backgroundColor: Color(0xFFFFF7ED),
-                    child: Icon(Icons.help_outline_rounded, color: Color(0xFFFF7A00), size: 22),
+                    backgroundColor: isDark ? const Color(0xFF451A03) : const Color(0xFFFFF7ED),
+                    child: const Icon(Icons.help_outline_rounded, color: Color(0xFFFF7A00), size: 22),
                   ),
-                  SizedBox(width: 12),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Have a Doubt in any Question?', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5, color: AppTheme.darkSlate)),
-                        SizedBox(height: 2),
-                        Text('Ask expert faculty & get step-by-step solutions under 15 mins', style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B))),
+                        Text('Have a Doubt in any Question?', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: titleColor)),
+                        const SizedBox(height: 2),
+                        Text('Ask expert faculty & get step-by-step solutions under 15 mins', style: TextStyle(fontSize: 12.5, color: subtitleColor)),
                       ],
                     ),
                   ),
-                  Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFFFF7A00), size: 14),
+                  const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFFFF7A00), size: 14),
                 ],
               ),
             ),

@@ -1,3 +1,4 @@
+import 'package:examinantt_app/utils/app_navigator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -7,6 +8,8 @@ import '../providers/user_provider.dart';
 import '../utils/app_theme.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_fonts.dart';
+import 'ask_doubt_screen.dart';
+import '../widgets/notification_bell_action.dart';
 
 class DoubtsScreen extends StatefulWidget {
   const DoubtsScreen({super.key});
@@ -16,122 +19,21 @@ class DoubtsScreen extends StatefulWidget {
 }
 
 class _DoubtsScreenState extends State<DoubtsScreen> {
-  final TextEditingController _doubtController = TextEditingController();
-  String _selectedSubject = 'Maths';
   final FirebaseFirestore _db = FirebaseFirestore.instance;
+  late final Stream<QuerySnapshot> _doubtsStream;
 
-  
-
+  @override
+  void initState() {
+    super.initState();
+    _doubtsStream = _db.collection('doubts').orderBy('createdAt', descending: true).snapshots();
+  }
 
   void _askDoubt() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-        final cardColor = isDark ? AppColors.surfaceDark : Colors.white;
-        final textColor = isDark ? AppColors.textDark : AppTheme.darkSlate;
-        final secondaryTextColor = isDark ? AppColors.textDarkSecondary : Colors.grey;
-
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              backgroundColor: cardColor,
-              title: Text('Ask a Doubt', style: AppTextStyles.titleLarge.withColor(textColor).bold),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    DropdownButtonFormField<String>(
-                      dropdownColor: cardColor,
-                      initialValue: _selectedSubject,
-                      style: AppTextStyles.bodyMedium.withColor(textColor),
-                      items: ['Maths', 'Reasoning', 'English', 'General Awareness']
-                          .map((s) => DropdownMenuItem(value: s, child: Text(s, style: AppTextStyles.bodyMedium.withColor(textColor))))
-                          .toList(),
-                      onChanged: (val) {
-                        setDialogState(() {
-                          _selectedSubject = val!;
-                        });
-                      },
-                      decoration: InputDecoration(
-                        labelText: 'Subject',
-                        labelStyle: AppTextStyles.caption.withColor(secondaryTextColor),
-                        enabledBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(color: secondaryTextColor.withValues(alpha: 0.5)),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: _doubtController,
-                      maxLines: 4,
-                      style: AppTextStyles.bodyMedium.withColor(textColor),
-                      decoration: InputDecoration(
-                        hintText: 'Type your question here...',
-                        hintStyle: AppTextStyles.caption.withColor(secondaryTextColor),
-                        border: const OutlineInputBorder(),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: secondaryTextColor.withValues(alpha: 0.5)),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: isDark ? AppColors.accent : AppTheme.primaryColor),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text('Cancel', style: TextStyle(color: isDark ? AppColors.accent : AppTheme.primaryColor)),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (_doubtController.text.trim().isNotEmpty) {
-                      final userProvider = Provider.of<UserProvider>(context, listen: false);
-                      final studentName = userProvider.user?.name ?? 'Student';
-                      final text = _doubtController.text.trim();
-                      final now = DateTime.now();
-                      final timeFormatted = DateFormat('dd MMM, hh:mm a').format(now);
-                      final docData = {
-                        'studentName': studentName,
-                        'subject': _selectedSubject,
-                        'question': text,
-                        'isAnswered': false,
-                        'answersCount': 0,
-                        'time': timeFormatted,
-                        'answers': <Map<String, dynamic>>[],
-                        'createdAt': FieldValue.serverTimestamp(),
-                      };
-
-                      try {
-                        await _db.collection('doubts').add(docData);
-                      } catch (e) {
-                        debugPrint("Error saving doubt to Firestore: $e");
-                      }
-
-                      _doubtController.clear();
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Doubt posted successfully!'),
-                          ),
-                        );
-                      }
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isDark ? AppColors.accent : AppTheme.primaryColor,
-                  ),
-                  child: const Text('Post', style: TextStyle(color: Colors.white)),
-                ),
-              ],
-            );
-          },
-        );
-      },
+    AppNavigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const AskDoubtScreen(),
+      ),
     );
   }
 
@@ -146,82 +48,102 @@ class _DoubtsScreenState extends State<DoubtsScreen> {
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: Text('Doubt Forum', style: TextStyle(fontSize: 18, color: textColor)),
+        title: Text('Doubt Forum', style: TextStyle(fontSize: 18, color: textColor, fontWeight: FontWeight.bold)),
         backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
         foregroundColor: textColor,
         elevation: 0,
+        actions: [
+          NotificationBellAction(color: textColor),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _askDoubt,
+        backgroundColor: const Color(0xFFFFA000),
+        icon: const Icon(Icons.edit_note_rounded, color: Colors.black),
+        label: const Text(
+          'Ask a Doubt',
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+          ),
+        ),
       ),
       body: Column(
         children: [
           // Ask a doubt CTA
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: cardColor,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isDark ? AppColors.greyDark : AppTheme.primaryColor.withValues(alpha: 0.2),
+            child: InkWell(
+              onTap: _askDoubt,
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: cardColor,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark ? AppColors.greyDark : AppTheme.primaryColor.withValues(alpha: 0.2),
+                  ),
                 ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: (isDark ? AppColors.accent : AppTheme.primaryColor).withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.psychology_alt,
-                      color: isDark ? AppColors.accent : AppTheme.primaryColor,
-                      size: 28,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Stuck on a question?',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: textColor,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Ask our experts and get solutions quickly.',
-                          style: TextStyle(color: secondaryTextColor, fontSize: 12),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  ElevatedButton(
-                    onPressed: _askDoubt,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isDark ? AppColors.accent : AppTheme.primaryColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: (isDark ? AppColors.accent : AppTheme.primaryColor).withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.psychology_alt,
+                        color: isDark ? AppColors.accent : AppTheme.primaryColor,
+                        size: 28,
                       ),
                     ),
-                    child: const Text(
-                      'Ask',
-                      style: TextStyle(color: Colors.white),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Stuck on a question?',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: textColor,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Ask our experts and get solutions quickly.',
+                            style: TextStyle(color: secondaryTextColor, fontSize: 12),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 12),
+                    ElevatedButton(
+                      onPressed: _askDoubt,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isDark ? AppColors.accent : AppTheme.primaryColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      child: const Text(
+                        'Ask',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ).animate().fade().slideY(begin: 0.1),
           ),
 
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: _db.collection('doubts').orderBy('createdAt', descending: true).snapshots(),
+              stream: _doubtsStream,
               builder: (context, snapshot) {
                 List<Map<String, dynamic>> doubtsList = [];
                 if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
@@ -233,32 +155,44 @@ class _DoubtsScreenState extends State<DoubtsScreen> {
                   doubtsList = [];
                 }
 
-                if (doubtsList.isEmpty) {
-                  return Center(
-                    child: Text(
-                      'No doubts posted yet. Be the first to ask!',
-                      style: TextStyle(color: secondaryTextColor),
-                    ),
-                  );
-                }
-
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: doubtsList.length,
-                  itemBuilder: (context, index) {
-                    final doubt = doubtsList[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 16.0),
-                      child: _buildDoubtCard(
-                        doubt: doubt,
-                        isDark: isDark,
-                        cardColor: cardColor,
-                        textColor: textColor,
-                        secondaryTextColor: secondaryTextColor,
-                      ),
-                    );
+                return RefreshIndicator(
+                  color: const Color(0xFFFFA000),
+                  backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
+                  onRefresh: () async {
+                    await Future.delayed(const Duration(milliseconds: 650));
+                    if (mounted) setState(() {});
                   },
-                ).animate().fade().slideY(begin: 0.1);
+                  child: doubtsList.isEmpty
+                      ? SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                          child: Container(
+                            height: 350,
+                            alignment: Alignment.center,
+                            child: Text(
+                              'No doubts posted yet. Be the first to ask!',
+                              style: TextStyle(color: secondaryTextColor),
+                            ),
+                          ),
+                        )
+                      : ListView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemCount: doubtsList.length,
+                          itemBuilder: (context, index) {
+                            final doubt = doubtsList[index];
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 16.0),
+                              child: _buildDoubtCard(
+                                doubt: doubt,
+                                isDark: isDark,
+                                cardColor: cardColor,
+                                textColor: textColor,
+                                secondaryTextColor: secondaryTextColor,
+                              ),
+                            );
+                          },
+                        ),
+                );
               },
             ),
           ),
@@ -294,7 +228,7 @@ class _DoubtsScreenState extends State<DoubtsScreen> {
 
     return GestureDetector(
       onTap: () {
-        Navigator.push(
+        AppNavigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => DoubtDetailScreen(
@@ -405,7 +339,7 @@ class _DoubtsScreenState extends State<DoubtsScreen> {
                 ),
                 TextButton(
                   onPressed: () {
-                    Navigator.push(
+                    AppNavigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => DoubtDetailScreen(
@@ -543,14 +477,14 @@ class _DoubtDetailScreenState extends State<DoubtDetailScreen> {
                       backgroundColor: (isDark ? AppColors.accent : AppTheme.primaryColor).withValues(alpha: 0.1),
                       child: Text(
                         studentName.isNotEmpty ? studentName[0].toUpperCase() : 'S',
-                        style: TextStyle(color: isDark ? AppColors.accent : AppTheme.primaryColor, fontWeight: FontWeight.bold, fontSize: 11),
+                        style: TextStyle(color: isDark ? AppColors.accent : AppTheme.primaryColor, fontWeight: FontWeight.bold, fontSize: 12),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         studentName,
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: textColor),
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: textColor),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -561,7 +495,7 @@ class _DoubtDetailScreenState extends State<DoubtDetailScreen> {
                       decoration: BoxDecoration(color: Colors.blue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
                       child: Text(
                         subject,
-                        style: const TextStyle(color: Colors.blue, fontSize: 10, fontWeight: FontWeight.bold),
+                        style: const TextStyle(color: Colors.blue, fontSize: 12, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ],
@@ -581,7 +515,7 @@ class _DoubtDetailScreenState extends State<DoubtDetailScreen> {
               alignment: Alignment.centerLeft,
               child: Text(
                 'ANSWERS / SOLUTIONS',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: secondaryTextColor, letterSpacing: 0.8),
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: secondaryTextColor, letterSpacing: 0.8),
               ),
             ),
           ),
@@ -591,7 +525,7 @@ class _DoubtDetailScreenState extends State<DoubtDetailScreen> {
           Expanded(
             child: answers.isEmpty
                 ? Center(
-                    child: Text('No solutions yet. Provide yours below!', style: TextStyle(color: secondaryTextColor, fontSize: 13)),
+                    child: Text('No solutions yet. Provide yours below!', style: TextStyle(color: secondaryTextColor, fontSize: 14)),
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -615,18 +549,18 @@ class _DoubtDetailScreenState extends State<DoubtDetailScreen> {
                             Row(
                               children: [
                                 CircleAvatar(
-                                  radius: 10,
+                                  radius: 12,
                                   backgroundColor: (isDark ? AppColors.accent : AppTheme.primaryColor).withValues(alpha: 0.1),
                                   child: Text(
                                     author.isNotEmpty ? author[0].toUpperCase() : 'E',
-                                    style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: isDark ? AppColors.accent : AppTheme.primaryColor),
+                                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isDark ? AppColors.accent : AppTheme.primaryColor),
                                   ),
                                 ),
-                                const SizedBox(width: 6),
+                                const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
                                     author,
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: textColor),
+                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: textColor),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -634,12 +568,12 @@ class _DoubtDetailScreenState extends State<DoubtDetailScreen> {
                                 if (answerData['createdAt'] != null)
                                   Text(
                                     answerData['createdAt'].toString(),
-                                    style: TextStyle(fontSize: 10, color: secondaryTextColor),
+                                    style: TextStyle(fontSize: 12, color: secondaryTextColor),
                                   ),
                               ],
                             ),
                             const SizedBox(height: 6),
-                            Text(answerText, style: TextStyle(fontSize: 13, color: isDark ? AppColors.textDark : Colors.black87)),
+                            Text(answerText, style: TextStyle(fontSize: 14, color: isDark ? AppColors.textDark : Colors.black87)),
                           ],
                         ),
                       );

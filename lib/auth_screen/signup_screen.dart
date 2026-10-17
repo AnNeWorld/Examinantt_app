@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
@@ -187,12 +186,20 @@ class _SignupScreenState extends State<SignupScreen> {
           ),
 
           SafeArea(
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(
-                parent: BouncingScrollPhysics(),
-              ),
-              child: Column(
-                children: [
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isTablet = constraints.maxWidth >= 600;
+                final double cardMaxWidth = isTablet
+                    ? (constraints.maxWidth * 0.78).clamp(560.0, 680.0)
+                    : double.infinity;
+
+                return SingleChildScrollView(
+                  physics: const ClampingScrollPhysics(),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: cardMaxWidth),
+                      child: Column(
+                        children: [
                   const SizedBox(height: 12),
 
                   // Top bar with Back Button
@@ -301,7 +308,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         ),
                       ],
                     ),
-                  ).animate().fadeIn(duration: 500.ms).slideY(begin: -0.1, end: 0),
+                  ),
 
                   const SizedBox(height: 20),
 
@@ -313,10 +320,6 @@ class _SignupScreenState extends State<SignupScreen> {
                     decoration: BoxDecoration(
                       color: const Color(0xFF071938).withValues(alpha: 0.94),
                       borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.12),
-                        width: 1.2,
-                      ),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withValues(alpha: 0.4),
@@ -701,20 +704,19 @@ class _SignupScreenState extends State<SignupScreen> {
                         ],
                       ),
                     ),
-                  ).animate().fadeIn(delay: 200.ms).slideY(
-                        begin: 0.1,
-                        end: 0,
-                        curve: Curves.easeOutCubic,
-                        duration: 500.ms,
-                      ),
+                  ),
 
                   const SizedBox(height: 36),
                 ],
               ),
             ),
           ),
-        ],
-      ),
-    );
+        );
+      },
+    ),
+  ),
+],
+),
+);
   }
 }

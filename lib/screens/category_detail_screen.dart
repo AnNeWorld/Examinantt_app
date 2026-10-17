@@ -1,3 +1,4 @@
+import 'package:examinantt_app/utils/app_navigator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../utils/app_theme.dart';
@@ -222,7 +223,7 @@ class CategoryDetailScreen extends StatelessWidget {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.push(
+                      AppNavigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => TestSeriesDetailScreen(

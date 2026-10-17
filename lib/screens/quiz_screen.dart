@@ -632,7 +632,7 @@ class _QuizScreenState extends State<QuizScreen> {
               backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(2)),
             ),
-            child: Text('Zoom (+)', style: TextStyle(fontSize: 10, color: isDark ? AppColors.accent : Colors.blue, fontWeight: FontWeight.bold)),
+            child: Text('Zoom (+)', style: TextStyle(fontSize: 12, color: isDark ? AppColors.accent : Colors.blue, fontWeight: FontWeight.bold)),
           ),
           const SizedBox(width: 6),
           OutlinedButton(
@@ -644,13 +644,13 @@ class _QuizScreenState extends State<QuizScreen> {
               backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(2)),
             ),
-            child: Text('Zoom (-)', style: TextStyle(fontSize: 10, color: isDark ? AppColors.accent : Colors.blue, fontWeight: FontWeight.bold)),
+            child: Text('Zoom (-)', style: TextStyle(fontSize: 12, color: isDark ? AppColors.accent : Colors.blue, fontWeight: FontWeight.bold)),
           ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               'INSTRUCTIONS: Please note that this is a mock test for practice purposes.',
-              style: TextStyle(fontSize: 10, color: bannerTextColor, overflow: TextOverflow.ellipsis),
+              style: TextStyle(fontSize: 12, color: bannerTextColor, overflow: TextOverflow.ellipsis),
             ),
           ),
         ],

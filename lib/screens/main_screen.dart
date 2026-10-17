@@ -13,23 +13,38 @@ import '../providers/user_provider.dart';
 
 import '../providers/theme_provider.dart';
 
+import '../widgets/app_drawer.dart';
+
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  final int initialIndex;
+  const MainScreen({super.key, this.initialIndex = 0});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _currentIndex = 0;
+  late int _currentIndex;
+  late final List<Widget> _screens;
 
-  final List<Widget> _screens = const [
-    HomeScreen(),
-    CoursesScreen(),
-    TestSeriesScreen(),
-    ResourcesScreen(),
-    ProfileScreen(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _screens = [
+      HomeScreen(
+        onSelectTab: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+      ),
+      const CoursesScreen(),
+      const TestSeriesScreen(),
+      const ResourcesScreen(),
+      const ProfileScreen(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +63,15 @@ class _MainScreenState extends State<MainScreen> {
           },
           child: Scaffold(
             backgroundColor: isDark ? AppColors.backgroundDark : Colors.white,
-            body: SlideIndexedStack(
+            drawer: AppDrawer(
+              currentIndex: _currentIndex,
+              onSelectTab: (index) {
+                setState(() {
+                  _currentIndex = index;
+                });
+              },
+            ),
+            body: IndexedStack(
               index: _currentIndex,
               children: _screens,
             ),
@@ -72,80 +95,6 @@ class _MainScreenState extends State<MainScreen> {
               ],
             ),
           ),
-        );
-      },
-    );
-  }
-}
-
-class SlideIndexedStack extends StatefulWidget {
-  final int index;
-  final List<Widget> children;
-  final Duration duration;
-
-  const SlideIndexedStack({
-    super.key,
-    required this.index,
-    required this.children,
-    this.duration = const Duration(milliseconds: 300),
-  });
-
-  @override
-  State<SlideIndexedStack> createState() => _SlideIndexedStackState();
-}
-
-class _SlideIndexedStackState extends State<SlideIndexedStack> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<Offset> _slideAnimation;
-  int _index = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _index = widget.index;
-    _controller = AnimationController(vsync: this, duration: widget.duration);
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0.0, -1.0), // Starts from top (slides down)
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
-    _controller.forward();
-  }
-
-  @override
-  void didUpdateWidget(SlideIndexedStack oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.index != widget.index) {
-      _controller.reset();
-      setState(() {
-        _index = widget.index;
-      });
-      _controller.forward();
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return IndexedStack(
-          index: _index,
-          children: widget.children.map((childWidget) {
-            final isCurrent = widget.children.indexOf(childWidget) == _index;
-            if (isCurrent) {
-              return SlideTransition(
-                position: _slideAnimation,
-                child: childWidget,
-              );
-            }
-            return childWidget;
-          }).toList(),
         );
       },
     );

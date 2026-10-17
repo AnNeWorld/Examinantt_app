@@ -6,8 +6,12 @@ import '../utils/app_logger.dart';
 
 class TestService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
+  static List<TestCategory>? _cachedCategories;
 
-  Future<List<TestCategory>> getCourses() async {
+  Future<List<TestCategory>> getCourses({bool forceRefresh = false}) async {
+    if (!forceRefresh && _cachedCategories != null && _cachedCategories!.isNotEmpty) {
+      return _cachedCategories!;
+    }
     List<TestCategory> items = [];
     try {
       final collections = ['testSeries', 'test_series', 'testseries', 'categories'];
@@ -35,9 +39,10 @@ class TestService {
       }
 
       items = uniqueMap.values.toList();
+      _cachedCategories = items;
     } catch (e, stack) {
       AppLogger.e("Error fetching categories", error: e, stackTrace: stack, tag: "TEST_SERVICE");
-      items = [];
+      items = _cachedCategories ?? [];
     }
     return items;
   }
@@ -66,12 +71,17 @@ class TestService {
         }
       }
       if (!controller.isClosed) {
-        controller.add(uniqueMap.values.toList());
+        final mergedList = uniqueMap.values.toList();
+        _cachedCategories = mergedList;
+        controller.add(mergedList);
       }
     }
 
     controller = StreamController<List<TestCategory>>.broadcast(
       onListen: () {
+        if (_cachedCategories != null && _cachedCategories!.isNotEmpty && !controller.isClosed) {
+          controller.add(_cachedCategories!);
+        }
         sub1 = _db.collection('testSeries').snapshots().listen((snapshot) {
           list1 = snapshot.docs
               .where((doc) => doc.data()['isActive'] != false)

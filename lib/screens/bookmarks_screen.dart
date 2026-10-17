@@ -48,32 +48,46 @@ class BookmarksScreen extends StatelessWidget {
                   );
                 }
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.bookmark_border_rounded, size: 80, color: isDark ? AppColors.greyDark : Colors.grey[300]),
-                          const SizedBox(height: 16),
-                          Text(
-                            'No Bookmarks Yet',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : AppTheme.darkSlate,
+                  return RefreshIndicator(
+                    color: const Color(0xFFFFA000),
+                    backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
+                    onRefresh: () async {
+                      await Future.delayed(const Duration(milliseconds: 650));
+                      if (context.mounted) {}
+                    },
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                      child: SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.7,
+                        child: Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.bookmark_border_rounded, size: 80, color: isDark ? AppColors.greyDark : Colors.grey[300]),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No Bookmarks Yet',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark ? Colors.white : AppTheme.darkSlate,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'You can bookmark questions during your mock tests to review them later.',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: isDark ? AppColors.textDarkSecondary : Colors.grey[500],
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'You can bookmark questions during your mock tests to review them later.',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: isDark ? AppColors.textDarkSecondary : Colors.grey[500],
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   );
@@ -81,10 +95,17 @@ class BookmarksScreen extends StatelessWidget {
 
                 final bookmarks = snapshot.data!;
 
-                return ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: bookmarks.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 12),
+                return RefreshIndicator(
+                  color: const Color(0xFFFFA000),
+                  backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
+                  onRefresh: () async {
+                    await Future.delayed(const Duration(milliseconds: 650));
+                  },
+                  child: ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                    padding: const EdgeInsets.all(16),
+                    itemCount: bookmarks.length,
+                    separatorBuilder: (context, index) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     final bookmark = bookmarks[index];
                     final questionId = bookmark['questionId']?.toString() ?? '';

@@ -1,3 +1,4 @@
+import 'package:examinantt_app/utils/app_navigator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
@@ -390,7 +391,7 @@ class TestResultsScreen extends StatelessWidget {
       if (context.mounted) {
         Navigator.pop(context); // close dialog
         if (questions.isNotEmpty) {
-          Navigator.push(
+          AppNavigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => SolutionsScreen(

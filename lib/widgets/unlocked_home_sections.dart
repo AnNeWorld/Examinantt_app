@@ -1,3 +1,4 @@
+import '../utils/app_navigator.dart';
 import 'package:flutter/material.dart';
 import '../models/test_model.dart';
 import '../services/test_service.dart';
@@ -183,7 +184,7 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                     style: const TextStyle(
                       color: Color(0xFF38BDF8),
                       fontWeight: FontWeight.w800,
-                      fontSize: 11,
+                      fontSize: 12.5,
                       letterSpacing: 1.1,
                     ),
                     maxLines: 1,
@@ -265,7 +266,7 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                             ),
                             const Text(
                               'All 9 premium features are unlocked and active',
-                              style: TextStyle(color: Color(0xFF10B981), fontSize: 11, fontWeight: FontWeight.w600),
+                              style: TextStyle(color: Color(0xFF10B981), fontSize: 13, fontWeight: FontWeight.w600),
                             ),
                           ],
                         ),
@@ -312,9 +313,9 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                         return InkWell(
                           onTap: () {
                             Navigator.pop(context);
-                            Navigator.push(
+                            AppNavigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => b['dest'] as Widget),
+                              b['dest'] as Widget,
                             );
                           },
                           borderRadius: BorderRadius.circular(12),
@@ -348,7 +349,7 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                                             b['title'] as String,
                                             style: const TextStyle(
                                               color: Colors.white,
-                                              fontSize: 13,
+                                              fontSize: 15,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
@@ -363,11 +364,11 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                                             child: const Row(
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
-                                                Icon(Icons.check, color: Color(0xFF10B981), size: 9),
+                                                Icon(Icons.check, color: Color(0xFF10B981), size: 10),
                                                 SizedBox(width: 2),
                                                 Text(
                                                   'UNLOCKED',
-                                                  style: TextStyle(color: Color(0xFF10B981), fontSize: 7.5, fontWeight: FontWeight.w800),
+                                                  style: TextStyle(color: Color(0xFF10B981), fontSize: 11.5, fontWeight: FontWeight.w800),
                                                 ),
                                               ],
                                             ),
@@ -377,7 +378,7 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                                       const SizedBox(height: 3),
                                       Text(
                                         b['desc'] as String,
-                                        style: const TextStyle(color: Colors.white60, fontSize: 10.5, height: 1.25),
+                                        style: const TextStyle(color: Colors.white60, fontSize: 13, height: 1.25),
                                       ),
                                     ],
                                   ),
@@ -394,10 +395,10 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                                     children: [
                                       Text(
                                         'Open',
-                                        style: TextStyle(color: itemColor, fontSize: 10, fontWeight: FontWeight.bold),
+                                        style: TextStyle(color: itemColor, fontSize: 12.5, fontWeight: FontWeight.bold),
                                       ),
                                       const SizedBox(width: 2),
-                                      Icon(Icons.arrow_forward_ios_rounded, color: itemColor, size: 8),
+                                      Icon(Icons.arrow_forward_ios_rounded, color: itemColor, size: 9),
                                     ],
                                   ),
                                 ),
@@ -421,7 +422,7 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text('Start Studying', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                      child: const Text('Start Studying', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],
@@ -436,9 +437,9 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
   Widget _buildModalStatPill(String title, String subtitle, Color color) {
     return Column(
       children: [
-        Text(title, style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w900)),
+        Text(title, style: TextStyle(color: color, fontSize: 15, fontWeight: FontWeight.w900)),
         const SizedBox(height: 1),
-        Text(subtitle, style: const TextStyle(color: Colors.white54, fontSize: 8.5)),
+        Text(subtitle, style: const TextStyle(color: Colors.white54, fontSize: 12)),
       ],
     );
   }
@@ -504,7 +505,7 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                             'LIVE NOW',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 9.5,
+                              fontSize: 12,
                               fontWeight: FontWeight.w900,
                               letterSpacing: 0.5,
                             ),
@@ -515,18 +516,18 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                     if (heroClass.activeViewers.isNotEmpty && heroClass.activeViewers != '0')
                       Row(
                         children: [
-                          const Icon(Icons.remove_red_eye_outlined, color: Color(0xFF38BDF8), size: 13),
+                          const Icon(Icons.remove_red_eye_outlined, color: Color(0xFF38BDF8), size: 14),
                           const SizedBox(width: 4),
                           Text(
                             '${heroClass.activeViewers} watching',
-                            style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 11, fontWeight: FontWeight.bold),
+                            style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 12.5, fontWeight: FontWeight.bold),
                           ),
                         ],
                       )
                     else
                       Text(
                         heroClass.time,
-                        style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600),
+                        style: const TextStyle(color: Colors.white70, fontSize: 12.5, fontWeight: FontWeight.w600),
                       ),
                   ],
                 ),
@@ -548,7 +549,7 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                           ),
                           child: Text(
                             heroClass.subject.toUpperCase(),
-                            style: TextStyle(color: color, fontSize: 8.5, fontWeight: FontWeight.w900),
+                            style: TextStyle(color: color, fontSize: 11.5, fontWeight: FontWeight.w900),
                           ),
                         ),
                         if (heroClass.examCategory.isNotEmpty) ...[
@@ -561,7 +562,7 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                             ),
                             child: Text(
                               heroClass.examCategory.toUpperCase(),
-                              style: const TextStyle(color: Colors.white70, fontSize: 8.5, fontWeight: FontWeight.w700),
+                              style: const TextStyle(color: Colors.white70, fontSize: 11.5, fontWeight: FontWeight.w700),
                             ),
                           ),
                         ],
@@ -570,12 +571,12 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                     const SizedBox(height: 6),
                     Text(
                       heroClass.title,
-                      style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w900),
+                      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       heroClass.chapter,
-                      style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                      style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -589,7 +590,7 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                           backgroundColor: color.withValues(alpha: 0.2),
                           child: Text(
                             heroClass.instructor.isNotEmpty ? heroClass.instructor[0] : 'E',
-                            style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 11),
+                            style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -599,11 +600,11 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                             children: [
                               Text(
                                 heroClass.instructor,
-                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11.5),
+                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.5),
                               ),
                               Text(
                                 heroClass.qualification,
-                                style: const TextStyle(color: Colors.white54, fontSize: 9.5),
+                                style: const TextStyle(color: Colors.white54, fontSize: 12),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -631,22 +632,20 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                       flex: 3,
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          Navigator.push(
+                          AppNavigator.push(
                             context,
-                            MaterialPageRoute(
-                              builder: (context) => VideoPlayerScreen(
+                            VideoPlayerScreen(
                                 title: heroClass.title,
                                 instructor: heroClass.instructor,
                                 videoUrl: heroClass.videoUrl,
                                 isLive: true,
                               ),
-                            ),
                           );
                         },
                         icon: const Icon(Icons.play_circle_fill_rounded, size: 16),
                         label: const Text(
                           'JOIN LIVE STREAM',
-                          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11.5),
+                          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13.5),
                         ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFFF5722),
@@ -661,11 +660,9 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                       flex: 2,
                       child: OutlinedButton(
                         onPressed: () {
-                          Navigator.push(
+                          AppNavigator.push(
                             context,
-                            MaterialPageRoute(
-                              builder: (context) => const LiveClassesScreen(initialTab: 0),
-                            ),
+                            const LiveClassesScreen(initialTab: 0),
                           );
                         },
                         style: OutlinedButton.styleFrom(
@@ -674,7 +671,7 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
-                        child: const Text('All Classes', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold)),
+                        child: const Text('All Classes', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                       ),
                     ),
                   ],
@@ -785,19 +782,19 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                   children: [
                     const Text(
                       'ACTIVE ENROLLMENT',
-                      style: TextStyle(color: Color(0xFF38BDF8), fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                      style: TextStyle(color: Color(0xFF38BDF8), fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 0.5),
                     ),
                     const SizedBox(height: 2),
                     const Text(
                       'You are preparing for',
-                      style: TextStyle(color: Colors.white54, fontSize: 10),
+                      style: TextStyle(color: Colors.white54, fontSize: 13),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       displayExam,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 20,
+                        fontSize: 22,
                         fontWeight: FontWeight.w900,
                         letterSpacing: -0.5,
                       ),
@@ -814,11 +811,11 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.star, color: Colors.amber, size: 11),
+                          Icon(Icons.star, color: Colors.amber, size: 12),
                           SizedBox(width: 4),
                           Text(
                             'Selection Batch ★',
-                            style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
@@ -826,11 +823,11 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                     const SizedBox(height: 6),
                     const Row(
                       children: [
-                        Icon(Icons.check_circle, color: Color(0xFF10B981), size: 12),
+                        Icon(Icons.check_circle, color: Color(0xFF10B981), size: 14),
                         SizedBox(width: 4),
                         Text(
                           'Batch Validity: Till Exam Day',
-                          style: TextStyle(color: Color(0xFF10B981), fontSize: 9.5, fontWeight: FontWeight.bold),
+                          style: TextStyle(color: Color(0xFF10B981), fontSize: 12.5, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -841,55 +838,73 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
               // Right side metrics (Days + Circular Ring)
               GestureDetector(
                 onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const AnalyticsScreen()));
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const AnalyticsScreen()));
                 },
                 child: Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0A1E3C),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFF1E3F70)),
+                    color: const Color(0xFF071938),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFF1B3563)),
                   ),
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF132F5C),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Column(
-                          children: [
-                            Text('DAYS TO EXAM', style: TextStyle(color: Colors.white54, fontSize: 8, fontWeight: FontWeight.w800)),
-                            SizedBox(height: 2),
-                            Text('187', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
-                            Text('Days Remaining', style: TextStyle(color: Colors.white54, fontSize: 8)),
-                          ],
+                      const Text(
+                        'DAYS TO EXAM',
+                        style: TextStyle(
+                          color: Color(0xFF38BDF8),
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.5,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 2),
+                      const Text(
+                        '187',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          height: 1.1,
+                        ),
+                      ),
+                      const Text(
+                        'Days Left',
+                        style: TextStyle(color: Colors.white60, fontSize: 10.5),
+                      ),
+                      const SizedBox(height: 6),
                       SizedBox(
-                        width: 70,
-                        height: 70,
+                        width: 58,
+                        height: 58,
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
-                            CircularProgressIndicator(
+                            const CircularProgressIndicator(
                               value: 0.64,
-                              strokeWidth: 6,
-                              backgroundColor: const Color(0xFF152D54),
-                              color: const Color(0xFF38BDF8),
+                              strokeWidth: 4.5,
+                              backgroundColor: Color(0xFF152D54),
+                              color: Color(0xFF38BDF8),
                             ),
                             const Column(
+                              mainAxisSize: MainAxisSize.min,
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
                                   '64%',
-                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 13,
+                                  ),
                                 ),
                                 Text(
-                                  'Overall Prep',
-                                  style: TextStyle(color: Colors.white54, fontSize: 7),
+                                  'Prep',
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ],
                             ),
@@ -902,172 +917,148 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const Divider(color: Color(0xFF142B4D), height: 28, thickness: 1),
 
-          // Your Batch Includes container
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0B1B36), Color(0xFF071224)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFF1B3C6B)),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF0070F3).withValues(alpha: 0.08),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(5),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF38BDF8).withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(Icons.card_giftcard_rounded, color: Color(0xFF38BDF8), size: 14),
-                        ),
-                        const SizedBox(width: 8),
-                        const Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Your Batch Includes',
-                              style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: -0.2),
-                            ),
-                            Text(
-                              '9 of 9 Features Active',
-                              style: TextStyle(color: Color(0xFF10B981), fontSize: 8.5, fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
-                      ],
+          // Your Batch Includes header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF38BDF8).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    InkWell(
-                      onTap: () => _showAllBenefitsModal(batchBenefits, displayExam),
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF38BDF8).withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.3)),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'View All Benefits',
-                              style: TextStyle(color: Color(0xFF38BDF8), fontSize: 9.5, fontWeight: FontWeight.bold),
-                            ),
-                            SizedBox(width: 3),
-                            Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF38BDF8), size: 8),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-
-                // 9 Batch Benefits Grid
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    childAspectRatio: 1.08,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
+                    child: const Icon(Icons.card_giftcard_rounded, color: Color(0xFF38BDF8), size: 14),
                   ),
-                  itemCount: batchBenefits.length,
-                  itemBuilder: (context, index) {
-                    final item = batchBenefits[index];
-                    final Color itemColor = item['color'] as Color;
-
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => item['dest'] as Widget));
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0A1F3D),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: itemColor.withValues(alpha: 0.3)),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(5),
-                                  decoration: BoxDecoration(
-                                    color: itemColor.withValues(alpha: 0.18),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Icon(item['icon'] as IconData, color: itemColor, size: 15),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.all(2),
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFF10B981),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(Icons.check, color: Colors.white, size: 8),
-                                ),
-                              ],
-                            ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  item['title'] as String,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 9.5,
-                                    fontWeight: FontWeight.w700,
-                                    height: 1.15,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  item['tag'] as String,
-                                  style: TextStyle(
-                                    color: itemColor.withValues(alpha: 0.9),
-                                    fontSize: 7.5,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+                  const SizedBox(width: 8),
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Your Batch Includes',
+                        style: TextStyle(color: Colors.white, fontSize: 14.5, fontWeight: FontWeight.w800, letterSpacing: -0.2),
                       ),
-                    );
-                  },
+                      Text(
+                        '9 of 9 Features Active',
+                        style: TextStyle(color: Color(0xFF10B981), fontSize: 12, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              InkWell(
+                onTap: () => _showAllBenefitsModal(batchBenefits, displayExam),
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF38BDF8).withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.3)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'View All Benefits',
+                        style: TextStyle(color: Color(0xFF38BDF8), fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(width: 3),
+                      Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF38BDF8), size: 9),
+                    ],
+                  ),
                 ),
-              ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // 9 Batch Benefits Grid
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              childAspectRatio: 1.08,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
             ),
+            itemCount: batchBenefits.length,
+            itemBuilder: (context, index) {
+              final item = batchBenefits[index];
+              final Color itemColor = item['color'] as Color;
+
+              return GestureDetector(
+                onTap: () {
+                  AppNavigator.push(context, item['dest'] as Widget);
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF091830),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFF162D50)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(5),
+                            decoration: BoxDecoration(
+                              color: itemColor.withValues(alpha: 0.18),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(item['icon'] as IconData, color: itemColor, size: 15),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF10B981),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.check, color: Colors.white, size: 8),
+                          ),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item['title'] as String,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              height: 1.15,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            item['tag'] as String,
+                            style: TextStyle(
+                              color: itemColor.withValues(alpha: 0.9),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -1094,12 +1085,12 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                   children: [
                     Text(
                       'Exam Preparation Overview ⓘ',
-                      style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900),
+                      style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900),
                     ),
                     SizedBox(height: 2),
                     Text(
                       'Track your overall progress across all subjects',
-                      style: TextStyle(color: Colors.white54, fontSize: 9.5),
+                      style: TextStyle(color: Colors.white54, fontSize: 13),
                     ),
                   ],
                 ),
@@ -1110,164 +1101,140 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                   color: const Color(0xFF0D2244),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Text('187 Days Left', style: TextStyle(color: Colors.orange, fontSize: 9, fontWeight: FontWeight.bold)),
+                child: const Text('187 Days Left', style: TextStyle(color: Colors.orange, fontSize: 12, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
           const SizedBox(height: 8),
 
           // Quote banner
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: const Color(0xFF091C38),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFF1E4072)),
-            ),
-            child: const Row(
-              children: [
-                Icon(Icons.format_quote_rounded, color: Color(0xFF38BDF8), size: 14),
-                SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    'Consistency today, excellence tomorrow. Keep going! You\'re doing great.',
-                    style: TextStyle(color: Colors.white70, fontSize: 9, fontStyle: FontStyle.italic),
-                  ),
+          const Row(
+            children: [
+              Icon(Icons.format_quote_rounded, color: Color(0xFF38BDF8), size: 16),
+              SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'Consistency today, excellence tomorrow. Keep going! You\'re doing great.',
+                  style: TextStyle(color: Colors.white70, fontSize: 12.5, fontStyle: FontStyle.italic),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
-          // Overall Preparation Box + Progress
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFF091B36),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFF1E3D6E)),
-            ),
-            child: Column(
-              children: [
-                Row(
+          // Overall Preparation + Progress
+          Row(
+            children: [
+              SizedBox(
+                width: 86,
+                height: 86,
+                child: Stack(
+                  alignment: Alignment.center,
                   children: [
-                    SizedBox(
-                      width: 75,
-                      height: 75,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          CircularProgressIndicator(
-                            value: 0.64,
-                            strokeWidth: 8,
-                            backgroundColor: const Color(0xFF132A4F),
-                            color: const Color(0xFF0070F3),
-                          ),
-                          const Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text('64%', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900)),
-                              Text('Prepared', style: TextStyle(color: Colors.white54, fontSize: 7)),
-                            ],
-                          ),
-                        ],
-                      ),
+                    const CircularProgressIndicator(
+                      value: 0.64,
+                      strokeWidth: 6,
+                      backgroundColor: Color(0xFF132A4F),
+                      color: Color(0xFF0070F3),
                     ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'You\'re ahead of 62% of your batchmates',
-                            style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: const Text(
-                              '↑ +8% Improved from last week',
-                              style: TextStyle(color: Color(0xFF10B981), fontSize: 9, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          const Row(
-                            children: [
-                              Icon(Icons.schedule, color: Colors.white54, size: 10),
-                              SizedBox(width: 3),
-                              Text('Study Time: 128h 45m', style: TextStyle(color: Colors.white70, fontSize: 8.5)),
-                            ],
-                          ),
-                          const Row(
-                            children: [
-                              Icon(Icons.assignment_turned_in_outlined, color: Colors.white54, size: 10),
-                              SizedBox(width: 3),
-                              Text('Tests Attempted: 48', style: TextStyle(color: Colors.white70, fontSize: 8.5)),
-                            ],
-                          ),
-                        ],
-                      ),
+                    const Column(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '64%',
+                          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900),
+                        ),
+                        SizedBox(height: 1),
+                        Text(
+                          'Prepared',
+                          style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const AnalyticsScreen()));
-                    },
-                    icon: const Icon(Icons.bar_chart_rounded, size: 14),
-                    label: const Text('VIEW DETAILED ANALYSIS >', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0070F3),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Subject Wise Progress
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFF091B36),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFF1E3D6E)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Subject Wise Progress', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-                    InkWell(
-                      onTap: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => const AnalyticsScreen()));
-                      },
-                      child: const Text('View All >', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 9.5, fontWeight: FontWeight.bold)),
+                    const Text(
+                      'You\'re ahead of 62% of your batchmates',
+                      style: TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text(
+                        '↑ +8% Improved from last week',
+                        style: TextStyle(color: Color(0xFF10B981), fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    const Row(
+                      children: [
+                        Icon(Icons.schedule, color: Colors.white54, size: 13),
+                        SizedBox(width: 4),
+                        Text('Study Time: 128h 45m', style: TextStyle(color: Colors.white70, fontSize: 12.5)),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    const Row(
+                      children: [
+                        Icon(Icons.assignment_turned_in_outlined, color: Colors.white54, size: 13),
+                        SizedBox(width: 4),
+                        Text('Tests Attempted: 48', style: TextStyle(color: Colors.white70, fontSize: 12.5)),
+                      ],
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                _buildSubjectProgressRow('Physics', 0.71, '71%', 'Good', const Color(0xFF3B82F6), Icons.science_outlined),
-                const SizedBox(height: 6),
-                _buildSubjectProgressRow('Chemistry', 0.63, '63%', 'Average', const Color(0xFF10B981), Icons.biotech_outlined),
-                const SizedBox(height: 6),
-                _buildSubjectProgressRow('Mathematics', 0.58, '58%', 'Focus', const Color(0xFFF97316), Icons.functions_outlined),
-              ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                AppNavigator.push(context, const AnalyticsScreen());
+              },
+              icon: const Icon(Icons.bar_chart_rounded, size: 16),
+              label: const Text('VIEW DETAILED ANALYSIS >', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0070F3),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 9),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
             ),
           ),
+          const Divider(color: Color(0xFF142B4D), height: 28, thickness: 1),
+
+          // Subject Wise Progress (cleanly sitting directly inside section card)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Subject Wise Progress', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+              InkWell(
+                onTap: () {
+                  AppNavigator.push(context, const AnalyticsScreen());
+                },
+                child: const Text('View All >', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 13, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          _buildSubjectProgressRow('Physics', 0.71, '71%', 'Good', const Color(0xFF3B82F6), Icons.science_outlined),
+          const SizedBox(height: 8),
+          _buildSubjectProgressRow('Chemistry', 0.63, '63%', 'Average', const Color(0xFF10B981), Icons.biotech_outlined),
+          const SizedBox(height: 8),
+          _buildSubjectProgressRow('Mathematics', 0.58, '58%', 'Focus', const Color(0xFFF97316), Icons.functions_outlined),
         ],
       ),
     );
@@ -1276,7 +1243,7 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
   Widget _buildSubjectProgressRow(String subject, double progress, String percentage, String status, Color color, IconData icon) {
     return InkWell(
       onTap: () {
-        Navigator.push(context, MaterialPageRoute(builder: (context) => const AnalyticsScreen()));
+        AppNavigator.push(context, const AnalyticsScreen());
       },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1286,22 +1253,22 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
             children: [
               Row(
                 children: [
-                  Icon(icon, color: color, size: 12),
-                  const SizedBox(width: 4),
-                  Text(subject, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                  Icon(icon, color: color, size: 14),
+                  const SizedBox(width: 5),
+                  Text(subject, style: const TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.bold)),
                 ],
               ),
               Row(
                 children: [
-                  Text(percentage, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                  Text(percentage, style: const TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.bold)),
                   const SizedBox(width: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: color.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(4),
                     ),
-                    child: Text(status, style: TextStyle(color: color, fontSize: 8, fontWeight: FontWeight.bold)),
+                    child: Text(status, style: TextStyle(color: color, fontSize: 11.5, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
@@ -1355,7 +1322,7 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                           children: [
                             const Text(
                               'Today\'s Study Plan',
-                              style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900),
+                              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900),
                             ),
                             const SizedBox(width: 8),
                             Container(
@@ -1375,13 +1342,13 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.calendar_today_rounded, color: Colors.white, size: 9),
+                                  const Icon(Icons.calendar_today_rounded, color: Colors.white, size: 11),
                                   const SizedBox(width: 4),
                                   Text(
                                     DateFormat('d MMM').format(DateTime.now()),
                                     style: const TextStyle(
                                       color: Colors.white,
-                                      fontSize: 9,
+                                      fontSize: 12,
                                       fontWeight: FontWeight.w900,
                                       letterSpacing: 0.2,
                                     ),
@@ -1392,15 +1359,15 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                           ],
                         ),
                         const SizedBox(height: 2),
-                        const Text('Personalized daily plan for consistent progress', style: TextStyle(color: Colors.white54, fontSize: 9.5), overflow: TextOverflow.ellipsis),
+                        const Text('Personalized daily plan for consistent progress', style: TextStyle(color: Colors.white54, fontSize: 12.5), overflow: TextOverflow.ellipsis),
                       ],
                     ),
                   ),
                   const SizedBox(width: 8),
                   OutlinedButton.icon(
                     onPressed: () => _showSnack('Plan Settings opened'),
-                    icon: const Icon(Icons.settings, size: 11),
-                    label: const Text('Settings', style: TextStyle(fontSize: 9)),
+                    icon: const Icon(Icons.settings, size: 13),
+                    label: const Text('Settings', style: TextStyle(fontSize: 12)),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.white70,
                       side: const BorderSide(color: Color(0xFF1E3A68)),
@@ -1414,14 +1381,48 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
               const SizedBox(height: 10),
 
               // Plan KPI row
-              Row(
-                children: [
-                  Expanded(child: _buildBadgeMini('Tasks', '${_completedPlanTasks.length}/${planItems.length}', 'Completed', Icons.checklist, const Color(0xFFA855F7))),
-                  const SizedBox(width: 4),
-                  Expanded(child: _buildBadgeMini('Progress', planItems.isNotEmpty ? '${((_completedPlanTasks.length / planItems.length) * 100).toInt()}%' : '0%', 'Real-time', Icons.pie_chart, const Color(0xFF10B981))),
-                  const SizedBox(width: 4),
-                  Expanded(child: _buildBadgeMini('Pending', '${planItems.length - _completedPlanTasks.length}', 'Remaining', Icons.hourglass_bottom, const Color(0xFFF59E0B))),
-                ],
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.03),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        children: [
+                          const Icon(Icons.checklist, color: Color(0xFFA855F7), size: 16),
+                          const SizedBox(height: 2),
+                          Text('${_completedPlanTasks.length}/${planItems.length}', style: const TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.w900)),
+                          const Text('Tasks', style: TextStyle(color: Colors.white54, fontSize: 11.5)),
+                        ],
+                      ),
+                    ),
+                    Container(height: 24, width: 1, color: const Color(0xFF142B4D)),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          const Icon(Icons.pie_chart, color: Color(0xFF10B981), size: 16),
+                          const SizedBox(height: 2),
+                          Text(planItems.isNotEmpty ? '${((_completedPlanTasks.length / planItems.length) * 100).toInt()}%' : '0%', style: const TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.w900)),
+                          const Text('Progress', style: TextStyle(color: Colors.white54, fontSize: 11.5)),
+                        ],
+                      ),
+                    ),
+                    Container(height: 24, width: 1, color: const Color(0xFF142B4D)),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          const Icon(Icons.hourglass_bottom, color: Color(0xFFF59E0B), size: 16),
+                          const SizedBox(height: 2),
+                          Text('${planItems.length - _completedPlanTasks.length}', style: const TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.w900)),
+                          const Text('Pending', style: TextStyle(color: Colors.white54, fontSize: 11.5)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 12),
 
@@ -1432,9 +1433,8 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                   padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF091C36),
+                    color: Colors.white.withValues(alpha: 0.02),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFF1B3864)),
                   ),
                   child: const Column(
                     children: [
@@ -1442,36 +1442,29 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                       SizedBox(height: 6),
                       Text(
                         'No study tasks scheduled for today',
-                        style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: Colors.white70, fontSize: 13.5, fontWeight: FontWeight.bold),
                       ),
                       SizedBox(height: 2),
                       Text(
                         'Explore batches and resources to begin your daily learning plan.',
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.white38, fontSize: 9),
+                        style: TextStyle(color: Colors.white38, fontSize: 12),
                       ),
                     ],
                   ),
                 )
               else
-                ListView.builder(
+                ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: planItems.length,
+                  separatorBuilder: (context, index) => const Divider(color: Color(0xFF142B4D), height: 16, thickness: 0.8),
                   itemBuilder: (context, index) {
                     final task = planItems[index];
                     final isDone = _completedPlanTasks.contains(index);
 
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 6),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF091C36),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: isDone ? const Color(0xFF10B981).withValues(alpha: 0.3) : const Color(0xFF1B3864),
-                        ),
-                      ),
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
                       child: Row(
                         children: [
                           InkWell(
@@ -1488,14 +1481,14 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                             child: Icon(
                               isDone ? Icons.check_circle : Icons.radio_button_unchecked,
                               color: isDone ? const Color(0xFF10B981) : Colors.white38,
-                              size: 18,
+                              size: 19,
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 10),
                           Expanded(
                             child: InkWell(
                               onTap: () {
-                                Navigator.push(context, MaterialPageRoute(builder: (context) => task['dest'] as Widget));
+                                AppNavigator.push(context, task['dest'] as Widget);
                               },
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1504,75 +1497,64 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                                     task['title'] as String,
                                     style: TextStyle(
                                       color: isDone ? Colors.white54 : Colors.white,
-                                      fontSize: 10,
+                                      fontSize: 13.5,
                                       fontWeight: FontWeight.bold,
                                       decoration: isDone ? TextDecoration.lineThrough : null,
                                     ),
                                   ),
+                                  const SizedBox(height: 2),
                                   Text(
                                     task['sub'] as String,
-                                    style: const TextStyle(color: Colors.white54, fontSize: 8.5),
+                                    style: const TextStyle(color: Colors.white54, fontSize: 12),
                                   ),
                                 ],
                               ),
                             ),
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: isDone
-                                  ? const Color(0xFF10B981).withValues(alpha: 0.15)
-                                  : const Color(0xFF0070F3).withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              task['duration'] as String,
-                              style: TextStyle(
-                                color: isDone ? const Color(0xFF10B981) : const Color(0xFF38BDF8),
-                                fontSize: 8.5,
-                                fontWeight: FontWeight.bold,
-                              ),
+                          const SizedBox(width: 8),
+                          Text(
+                            task['duration'] as String,
+                            style: TextStyle(
+                              color: isDone ? const Color(0xFF10B981) : const Color(0xFF38BDF8),
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                           const SizedBox(width: 6),
                           InkWell(
                             onTap: () {
-                              Navigator.push(context, MaterialPageRoute(builder: (context) => task['dest'] as Widget));
+                              AppNavigator.push(context, task['dest'] as Widget);
                             },
-                            child: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white54, size: 10),
+                            child: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white38, size: 9),
                           ),
                         ],
                       ),
                     );
                   },
                 ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
+              const Divider(color: Color(0xFF142B4D), height: 16, thickness: 0.8),
 
               // Daily Goal & Streak mini bar
-              GestureDetector(
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AnalyticsScreen())),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0C203E),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFF173562)),
-                  ),
+              InkWell(
+                onTap: () => AppNavigator.push(context, const AnalyticsScreen()),
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 4),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Row(
+                      Row(
                         children: [
                           Icon(Icons.local_fire_department_rounded, color: Colors.orange, size: 14),
-                          SizedBox(width: 4),
-                          Text('Daily Goal Active', style: TextStyle(color: Colors.white70, fontSize: 9, fontWeight: FontWeight.bold)),
+                          SizedBox(width: 6),
+                          Text('Daily Goal Active', style: TextStyle(color: Colors.white70, fontSize: 12.5, fontWeight: FontWeight.bold)),
                         ],
                       ),
                       Row(
                         children: [
-                          const Text('View Detailed Plan', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 8.5, fontWeight: FontWeight.bold)),
-                          const SizedBox(width: 2),
-                          const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF38BDF8), size: 7.5),
+                          Text('View Detailed Plan', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 12, fontWeight: FontWeight.bold)),
+                          SizedBox(width: 3),
+                          Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF38BDF8), size: 9),
                         ],
                       ),
                     ],
@@ -1614,7 +1596,7 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                 children: [
                   Row(
                     children: [
-                      const Text('Live Classroom', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900)),
+                      const Text('Live Classroom', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900)),
                       const SizedBox(width: 5),
                       Icon(Icons.circle, color: isCurrentlyLive ? Colors.red : const Color(0xFF10B981), size: 8),
                       const SizedBox(width: 4),
@@ -1625,239 +1607,200 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                             color: Colors.red.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: const Text('LIVE NOW', style: TextStyle(color: Colors.redAccent, fontSize: 8, fontWeight: FontWeight.w900)),
+                          child: const Text('LIVE NOW', style: TextStyle(color: Colors.redAccent, fontSize: 11.5, fontWeight: FontWeight.w900)),
                         ),
                     ],
                   ),
                   InkWell(
                     onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const LiveClassesScreen(initialTab: 1)));
+                      AppNavigator.push(context, const LiveClassesScreen(initialTab: 1));
                     },
-                    child: const Text('View Full Schedule >', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 9.5, fontWeight: FontWeight.bold)),
+                    child: const Text('View Full Schedule >', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 12.5, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
               const SizedBox(height: 6),
 
-              // Green banner
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.check_circle_outline, color: Color(0xFF10B981), size: 12),
-                    SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        'You\'re all set! Join live classes, interact with faculty and learn in real time.',
-                        style: TextStyle(color: Color(0xFF10B981), fontSize: 8.5, fontWeight: FontWeight.w600),
-                      ),
+              // Banner
+              const Row(
+                children: [
+                  Icon(Icons.check_circle_outline, color: Color(0xFF10B981), size: 16),
+                  SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'You\'re all set! Join live classes, interact with faculty and learn in real time.',
+                      style: TextStyle(color: Color(0xFF10B981), fontSize: 12, fontWeight: FontWeight.w600),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
 
-              // Hero Live / Upcoming Card
+              // Hero Live / Upcoming
               if (heroClass != null)
                 GestureDetector(
                   onTap: () {
                     if (isCurrentlyLive) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => VideoPlayerScreen(
+                      AppNavigator.push(
+                            context,
+                            VideoPlayerScreen(
                             title: heroClass.title,
                             instructor: heroClass.instructor,
                             videoUrl: heroClass.videoUrl,
                             isLive: true,
                           ),
-                        ),
-                      );
+                          );
                     } else {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const LiveClassesScreen(initialTab: 0)));
+                      AppNavigator.push(context, const LiveClassesScreen(initialTab: 0));
                     }
                   },
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: isCurrentlyLive
-                            ? const [Color(0xFF260D1E), Color(0xFF0F1A3B)]
-                            : const [Color(0xFF0F264C), Color(0xFF0A1832)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: isCurrentlyLive ? Colors.red : const Color(0xFFF59E0B),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.circle, color: Colors.white, size: 7),
+                                const SizedBox(width: 3),
+                                Text(
+                                  isCurrentlyLive ? 'LIVE NOW' : 'UPCOMING SESSION',
+                                  style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w900),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            isCurrentlyLive ? '${heroClass.remainingTime} left' : heroClass.time,
+                            style: const TextStyle(color: Colors.white70, fontSize: 12),
+                          ),
+                        ],
                       ),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: isCurrentlyLive ? Colors.redAccent.withValues(alpha: 0.6) : const Color(0xFF224B85),
-                        width: isCurrentlyLive ? 1.5 : 1.0,
+                      const SizedBox(height: 10),
+
+                      Row(
+                        children: [
+                          Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              color: heroClass.color.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(Icons.school, color: heroClass.color, size: 30),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  heroClass.subject.toUpperCase(),
+                                  style: TextStyle(color: heroClass.color, fontSize: 11.5, fontWeight: FontWeight.w900),
+                                ),
+                                Text(
+                                  heroClass.title,
+                                  style: const TextStyle(color: Colors.white, fontSize: 15.5, fontWeight: FontWeight.w900),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  heroClass.chapter,
+                                  style: const TextStyle(color: Colors.white54, fontSize: 12.5),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${heroClass.instructor} • ${heroClass.qualification}',
+                                  style: const TextStyle(color: Colors.white70, fontSize: 12.5, fontWeight: FontWeight.w600),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: isCurrentlyLive ? Colors.red : const Color(0xFFF59E0B),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.circle, color: Colors.white, size: 6),
-                                  const SizedBox(width: 3),
-                                  Text(
-                                    isCurrentlyLive ? 'LIVE NOW' : 'UPCOMING SESSION',
-                                    style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Text(
-                              isCurrentlyLive ? '${heroClass.remainingTime} left' : heroClass.time,
-                              style: const TextStyle(color: Colors.white70, fontSize: 8.5),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
+                      const SizedBox(height: 8),
 
-                        Row(
-                          children: [
-                            Container(
-                              width: 60,
-                              height: 60,
-                              decoration: BoxDecoration(
-                                color: heroClass.color.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: heroClass.color.withValues(alpha: 0.4)),
-                              ),
-                              child: Icon(Icons.school, color: heroClass.color, size: 30),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    heroClass.subject.toUpperCase(),
-                                    style: TextStyle(color: heroClass.color, fontSize: 8, fontWeight: FontWeight.w900),
-                                  ),
-                                  Text(
-                                    heroClass.title,
-                                    style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  Text(
-                                    heroClass.chapter,
-                                    style: const TextStyle(color: Colors.white54, fontSize: 8.5),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    '${heroClass.instructor} • ${heroClass.qualification}',
-                                    style: const TextStyle(color: Colors.white70, fontSize: 8.5, fontWeight: FontWeight.w600),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Icon(Icons.people_alt_outlined, color: Colors.white54, size: 13),
+                          const SizedBox(width: 4),
+                          Text('${heroClass.activeViewers} Students Live', style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                          const SizedBox(width: 12),
+                          const Icon(Icons.chat_bubble_outline, color: Colors.white54, size: 13),
+                          const SizedBox(width: 4),
+                          const Text('Live Chat Active', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
 
-                        Row(
-                          children: [
-                            const Icon(Icons.people_alt_outlined, color: Colors.white54, size: 11),
-                            const SizedBox(width: 3),
-                            Text('${heroClass.activeViewers} Students Live', style: const TextStyle(color: Colors.white54, fontSize: 8.5)),
-                            const SizedBox(width: 12),
-                            const Icon(Icons.chat_bubble_outline, color: Colors.white54, size: 11),
-                            const SizedBox(width: 3),
-                            const Text('Live Chat Active', style: TextStyle(color: Colors.white54, fontSize: 8.5)),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-
-                        Row(
-                          children: [
-                            Expanded(
-                              flex: 2,
-                              child: ElevatedButton.icon(
-                                onPressed: () {
-                                  if (isCurrentlyLive) {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => VideoPlayerScreen(
-                                          title: heroClass.title,
-                                          instructor: heroClass.instructor,
-                                          videoUrl: heroClass.videoUrl,
-                                          isLive: true,
-                                        ),
+                      Row(
+                        children: [
+                          Expanded(
+                            flex: 2,
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                if (isCurrentlyLive) {
+                                  AppNavigator.push(
+                            context,
+                            VideoPlayerScreen(
+                                        title: heroClass.title,
+                                        instructor: heroClass.instructor,
+                                        videoUrl: heroClass.videoUrl,
+                                        isLive: true,
                                       ),
-                                    );
-                                  } else {
-                                    Navigator.push(context, MaterialPageRoute(builder: (context) => const LiveClassesScreen(initialTab: 0)));
-                                  }
-                                },
-                                icon: const Icon(Icons.play_circle_fill_rounded, size: 14),
-                                label: Text(isCurrentlyLive ? 'JOIN LIVE NOW' : 'VIEW DETAILS', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: isCurrentlyLive ? const Color(0xFFFF5722) : const Color(0xFFFF7A00),
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(vertical: 8),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                ),
+                          );
+                                } else {
+                                  AppNavigator.push(context, const LiveClassesScreen(initialTab: 0));
+                                }
+                              },
+                              icon: const Icon(Icons.play_circle_fill_rounded, size: 16),
+                              label: Text(isCurrentlyLive ? 'JOIN LIVE NOW' : 'VIEW DETAILS', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: isCurrentlyLive ? const Color(0xFFFF5722) : const Color(0xFFFF7A00),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 9),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              flex: 1,
-                              child: OutlinedButton(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const LiveClassesScreen(initialTab: 2),
-                                    ),
-                                  );
-                                },
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: Colors.white,
-                                  side: const BorderSide(color: Color(0xFF224B85)),
-                                  padding: const EdgeInsets.symmetric(vertical: 8),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                ),
-                                child: const Text('Recordings', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            flex: 1,
+                            child: OutlinedButton(
+                              onPressed: () {
+                                AppNavigator.push(
+                                  context,
+                                  const LiveClassesScreen(initialTab: 2),
+                                );
+                              },
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.white,
+                                side: const BorderSide(color: Color(0xFF224B85)),
+                                padding: const EdgeInsets.symmetric(vertical: 9),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                               ),
+                              child: const Text('Recordings', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                             ),
-                          ],
-                        ),
-                      ],
-                    ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 )
               else
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                  margin: const EdgeInsets.only(bottom: 6),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF071938),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFF1B3A68)),
-                  ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                   child: Row(
                     children: [
                       Container(
@@ -1875,12 +1818,12 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                           children: [
                             Text(
                               'No Live Classes Active',
-                              style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                              style: TextStyle(color: Colors.white, fontSize: 14.5, fontWeight: FontWeight.bold),
                             ),
                             SizedBox(height: 2),
                             Text(
                               'Live sessions scheduled by faculty will appear here in real-time.',
-                              style: TextStyle(color: Color(0xFF94A3B8), fontSize: 9.5),
+                              style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12.5),
                             ),
                           ],
                         ),
@@ -1888,21 +1831,17 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                     ],
                   ),
                 ),
-              const SizedBox(height: 12),
+              const Divider(color: Color(0xFF142B4D), height: 28, thickness: 1),
 
               // Upcoming classes list
-              const Text('Upcoming Classes', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 6),
+              const Text('Upcoming Classes', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
 
               if (upcomingClasses.isEmpty)
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF081C38),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Center(
-                    child: Text('No more scheduled classes today. Check full schedule.', style: TextStyle(color: Colors.white54, fontSize: 9.5)),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8.0),
+                  child: Center(
+                    child: Text('No more scheduled classes today. Check full schedule.', style: TextStyle(color: Colors.white54, fontSize: 12.5)),
                   ),
                 )
               else
@@ -1912,16 +1851,10 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
 
                   return GestureDetector(
                     onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const LiveClassesScreen(initialTab: 1)));
+                      AppNavigator.push(context, const LiveClassesScreen(initialTab: 1));
                     },
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 6),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF081C38),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFF1B3A68)),
-                      ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 5),
                       child: Row(
                         children: [
                           Container(
@@ -1939,17 +1872,17 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                               children: [
                                 Text(
                                   '${c.subject.toUpperCase()} • ${c.time}',
-                                  style: TextStyle(color: itemColor, fontSize: 8, fontWeight: FontWeight.w800),
+                                  style: TextStyle(color: itemColor, fontSize: 11.5, fontWeight: FontWeight.w800),
                                 ),
                                 Text(
                                   c.title,
-                                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                  style: const TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.bold),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 Text(
                                   '${c.chapter} • ${c.instructor}',
-                                  style: const TextStyle(color: Colors.white54, fontSize: 8),
+                                  style: const TextStyle(color: Colors.white54, fontSize: 12),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -1970,13 +1903,13 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                             },
                             icon: Icon(
                               isReminderSet ? Icons.notifications_active : Icons.notifications_none,
-                              size: 11,
+                              size: 13,
                               color: isReminderSet ? Colors.amber : const Color(0xFF38BDF8),
                             ),
                             label: Text(
                               isReminderSet ? 'Set' : 'Remind',
                               style: TextStyle(
-                                fontSize: 8.5,
+                                fontSize: 12,
                                 color: isReminderSet ? Colors.amber : const Color(0xFF38BDF8),
                                 fontWeight: FontWeight.bold,
                               ),
@@ -1993,8 +1926,9 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                   );
                 }),
 
+              const Divider(color: Color(0xFF142B4D), height: 28, thickness: 1),
+
               // 4 Live Classroom Benefits
-              const SizedBox(height: 8),
               Row(
                 children: [
                   Expanded(child: _buildClassFeatureItem('Live Interaction', 'Instant doubt clearing', Icons.forum_rounded, 0)),
@@ -2016,21 +1950,20 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
   Widget _buildClassFeatureItem(String title, String sub, IconData icon, [int tabIndex = 0]) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(context, MaterialPageRoute(builder: (context) => LiveClassesScreen(initialTab: tabIndex)));
+        AppNavigator.push(context, LiveClassesScreen(initialTab: tabIndex));
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
         decoration: BoxDecoration(
-          color: const Color(0xFF091C36),
+          color: Colors.white.withValues(alpha: 0.03),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFF16325B)),
         ),
         child: Column(
           children: [
-            Icon(icon, color: const Color(0xFF38BDF8), size: 14),
+            Icon(icon, color: const Color(0xFF38BDF8), size: 16),
             const SizedBox(height: 2),
-            Text(title, style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-            Text(sub, style: const TextStyle(color: Colors.white38, fontSize: 6.5), textAlign: TextAlign.center, maxLines: 1),
+            Text(title, style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+            Text(sub, style: const TextStyle(color: Colors.white38, fontSize: 10.5), textAlign: TextAlign.center, maxLines: 1),
           ],
         ),
       ),
@@ -2060,18 +1993,18 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Continue Learning', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900)),
+                        Text('Continue Learning', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900)),
                         SizedBox(height: 2),
-                        Text('Pick up where you left off', style: TextStyle(color: Colors.white54, fontSize: 9.5), overflow: TextOverflow.ellipsis),
+                        Text('Pick up where you left off', style: TextStyle(color: Colors.white54, fontSize: 12.5), overflow: TextOverflow.ellipsis),
                       ],
                     ),
                   ),
                   const SizedBox(width: 8),
                   InkWell(
                     onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const CoursesScreen()));
+                      AppNavigator.push(context, const CoursesScreen());
                     },
-                    child: const Text('View All Courses >', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 9.5, fontWeight: FontWeight.bold)),
+                    child: const Text('View All Courses >', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 12.5, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
@@ -2093,13 +2026,13 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                       SizedBox(height: 8),
                       Text(
                         'No ongoing lectures found',
-                        style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: Colors.white70, fontSize: 14.5, fontWeight: FontWeight.bold),
                       ),
                       SizedBox(height: 4),
                       Text(
                         'Browse batches and live classes to start your journey.',
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.white38, fontSize: 9.5),
+                        style: TextStyle(color: Colors.white38, fontSize: 12.5),
                       ),
                     ],
                   ),
@@ -2109,130 +2042,106 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                 Builder(
                   builder: (context) {
                     final heroClass = classes.first;
-                    return Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF0C2448), Color(0xFF07172F)],
-                        ),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFF1E4378)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => VideoPlayerScreen(
-                                        title: heroClass.title,
-                                        instructor: heroClass.instructor,
-                                        videoUrl: heroClass.videoUrl,
-                                        isLive: heroClass.isLive,
-                                      ),
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                AppNavigator.push(
+                            context,
+                            VideoPlayerScreen(
+                                      title: heroClass.title,
+                                      instructor: heroClass.instructor,
+                                      videoUrl: heroClass.videoUrl,
+                                      isLive: heroClass.isLive,
                                     ),
-                                  );
-                                },
-                                child: Container(
-                                  width: 75,
-                                  height: 60,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF173562),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: const Color(0xFF2A5796)),
-                                  ),
-                                  child: const Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      Icon(Icons.video_library_rounded, color: Colors.white24, size: 28),
-                                      CircleAvatar(
-                                        radius: 14,
-                                        backgroundColor: Color(0xFF10B981),
-                                        child: Icon(Icons.play_arrow_rounded, color: Colors.white, size: 16),
-                                      ),
-                                    ],
-                                  ),
+                          );
+                              },
+                              child: Container(
+                                width: 75,
+                                height: 60,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF173562),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                child: const Stack(
+                                  alignment: Alignment.center,
                                   children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF38BDF8).withValues(alpha: 0.15),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text(
-                                        '${heroClass.subject.toUpperCase()} • IN PROGRESS',
-                                        style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 7.5, fontWeight: FontWeight.w900),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      heroClass.title,
-                                      style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    Text(
-                                      heroClass.chapter,
-                                      style: const TextStyle(color: Colors.white54, fontSize: 8.5),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.person_outline, color: Colors.white54, size: 10),
-                                        const SizedBox(width: 3),
-                                        Text(heroClass.instructor, style: const TextStyle(color: Colors.white70, fontSize: 8)),
-                                      ],
+                                    Icon(Icons.video_library_rounded, color: Colors.white24, size: 28),
+                                    CircleAvatar(
+                                      radius: 14,
+                                      backgroundColor: Color(0xFF10B981),
+                                      child: Icon(Icons.play_arrow_rounded, color: Colors.white, size: 16),
                                     ),
                                   ],
                                 ),
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: ElevatedButton.icon(
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => VideoPlayerScreen(
-                                          title: heroClass.title,
-                                          instructor: heroClass.instructor,
-                                          videoUrl: heroClass.videoUrl,
-                                          isLive: heroClass.isLive,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  icon: const Icon(Icons.play_circle_fill_rounded, size: 14),
-                                  label: const Text('Resume Learning', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF0070F3),
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(vertical: 8),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${heroClass.subject.toUpperCase()} • IN PROGRESS',
+                                    style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 11.5, fontWeight: FontWeight.w900),
                                   ),
-                                ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    heroClass.title,
+                                    style: const TextStyle(color: Colors.white, fontSize: 15.5, fontWeight: FontWeight.w900),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    heroClass.chapter,
+                                    style: const TextStyle(color: Colors.white54, fontSize: 12.5),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.person_outline, color: Colors.white54, size: 12),
+                                      const SizedBox(width: 3),
+                                      Text(heroClass.instructor, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                                    ],
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              AppNavigator.push(
+                            context,
+                            VideoPlayerScreen(
+                                     title: heroClass.title,
+                                     instructor: heroClass.instructor,
+                                     videoUrl: heroClass.videoUrl,
+                                     isLive: heroClass.isLive,
+                                   ),
+                          );
+                            },
+                            icon: const Icon(Icons.play_circle_fill_rounded, size: 16),
+                            label: const Text('Resume Learning', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0070F3),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 9),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
                           ),
-                        ],
-                      ),
+                        ),
+                        const Divider(color: Color(0xFF142B4D), height: 28, thickness: 1),
+                      ],
                     );
                   },
                 ),
@@ -2243,12 +2152,12 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Other Lectures', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                      const Text('Other Lectures', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
                       InkWell(
                         onTap: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => const LiveClassesScreen(initialTab: 0)));
+                          AppNavigator.push(context, const LiveClassesScreen(initialTab: 0));
                         },
-                        child: const Text('See All >', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 9.5, fontWeight: FontWeight.bold)),
+                        child: const Text('See All >', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 12.5, fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),
@@ -2263,17 +2172,15 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                         final item = classes[index + 1];
                         return GestureDetector(
                           onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => VideoPlayerScreen(
+                            AppNavigator.push(
+                            context,
+                            VideoPlayerScreen(
                                   title: item.title,
                                   instructor: item.instructor,
                                   videoUrl: item.videoUrl,
                                   isLive: item.isLive,
                                 ),
-                              ),
-                            );
+                          );
                           },
                           child: Container(
                             width: 140,
@@ -2289,30 +2196,30 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                               children: [
                                 Text(
                                   item.subject.toUpperCase(),
-                                  style: TextStyle(color: item.color, fontSize: 7, fontWeight: FontWeight.bold),
+                                  style: TextStyle(color: item.color, fontSize: 11, fontWeight: FontWeight.bold),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
                                   item.title,
-                                  style: const TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.bold),
+                                  style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 Text(
                                   item.chapter,
-                                  style: const TextStyle(color: Colors.white54, fontSize: 8),
+                                  style: const TextStyle(color: Colors.white54, fontSize: 11.5),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 const Spacer(),
                                 Row(
                                   children: [
-                                    const Icon(Icons.person, color: Colors.white38, size: 9),
+                                    const Icon(Icons.person, color: Colors.white38, size: 11),
                                     const SizedBox(width: 3),
                                     Expanded(
                                       child: Text(
                                         item.instructor,
-                                        style: const TextStyle(color: Colors.white70, fontSize: 7.5),
+                                        style: const TextStyle(color: Colors.white70, fontSize: 11),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
@@ -2355,21 +2262,21 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Performance & Analytics 📈', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900)),
+                    Text('Performance & Analytics 📈', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900)),
                     SizedBox(height: 2),
-                    Text('Track progress and improve every day', style: TextStyle(color: Colors.white54, fontSize: 9.5), overflow: TextOverflow.ellipsis),
+                    Text('Track progress and improve every day', style: TextStyle(color: Colors.white54, fontSize: 12.5), overflow: TextOverflow.ellipsis),
                   ],
                 ),
               ),
               const SizedBox(width: 8),
               ElevatedButton.icon(
                 onPressed: () => _showSnack('Analytics Report downloaded! 📥'),
-                icon: const Icon(Icons.download, size: 10),
-                label: const Text('Report', style: TextStyle(fontSize: 8.5)),
+                icon: const Icon(Icons.download, size: 12),
+                label: const Text('Report', style: TextStyle(fontSize: 12)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF16345C),
                   foregroundColor: const Color(0xFF38BDF8),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
@@ -2388,7 +2295,7 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                   onTap: () => setState(() => _activeAnalyticsTab = e.key),
                   child: Container(
                     margin: const EdgeInsets.only(right: 6),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
                       color: isSel ? const Color(0xFF0070F3) : const Color(0xFF0C2244),
                       borderRadius: BorderRadius.circular(8),
@@ -2398,7 +2305,7 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                       e.value,
                       style: TextStyle(
                         color: isSel ? Colors.white : Colors.white70,
-                        fontSize: 9,
+                        fontSize: 12,
                         fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
                       ),
                     ),
@@ -2450,109 +2357,93 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                           Expanded(child: _buildAnalyticsMetricCard('Study Time', studyTimeStr, 'Duration', Icons.timer_outlined, const Color(0xFFF59E0B))),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                                         const Divider(color: Color(0xFF142B4D), height: 28, thickness: 1),
 
-                      // Overall Progress graph card
+                      // Overall Progress graph
                       GestureDetector(
                         onTap: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => const AnalyticsScreen()));
+                          AppNavigator.push(context, const AnalyticsScreen());
                         },
-                        child: Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF081C38),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFF1B3B69)),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Text('Overall Progress Trend', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                                  Text(latestScoreStr, style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 9, fontWeight: FontWeight.bold)),
-                                ],
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Overall Progress Trend', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                                Text(latestScoreStr, style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 12.5, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            SizedBox(
+                              height: 70,
+                              width: double.infinity,
+                              child: CustomPaint(
+                                painter: _ProgressChartPainter(),
                               ),
-                              const SizedBox(height: 8),
-                              SizedBox(
-                                height: 70,
-                                width: double.infinity,
-                                child: CustomPaint(
-                                  painter: _ProgressChartPainter(),
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: results.take(4).map((r) => Text(
-                                  '${r.attemptedAt.day}/${r.attemptedAt.month}',
-                                  style: const TextStyle(color: Colors.white38, fontSize: 7),
-                                )).toList(),
-                              ),
-                            ],
-                          ),
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: results.take(4).map((r) => Text(
+                                '${r.attemptedAt.day}/${r.attemptedAt.month}',
+                                style: const TextStyle(color: Colors.white38, fontSize: 11),
+                              )).toList(),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      const Divider(color: Color(0xFF142B4D), height: 28, thickness: 1),
 
                       // Strengths & Weaknesses
                       GestureDetector(
                         onTap: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => const AnalyticsScreen()));
+                          AppNavigator.push(context, const AnalyticsScreen());
                         },
-                        child: Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF081C38),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFF1B3B69)),
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Row(
-                                      children: [
-                                        Icon(Icons.thumb_up_alt_rounded, color: Color(0xFF10B981), size: 12),
-                                        SizedBox(width: 4),
-                                        Text('Your Strengths', style: TextStyle(color: Color(0xFF10B981), fontSize: 9.5, fontWeight: FontWeight.bold)),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    if (topStrengths.isNotEmpty)
-                                      ...topStrengths.map((s) => _buildBulletItem('${s.subjectName} (${s.accuracy.toStringAsFixed(0)}%)'))
-                                    else
-                                      _buildBulletItem('Complete tests to unlock strengths'),
-                                  ],
-                                ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Row(
+                                    children: [
+                                      Icon(Icons.thumb_up_alt_rounded, color: Color(0xFF10B981), size: 14),
+                                      SizedBox(width: 5),
+                                      Text('Your Strengths', style: TextStyle(color: Color(0xFF10B981), fontSize: 13.5, fontWeight: FontWeight.bold)),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  if (topStrengths.isNotEmpty)
+                                    ...topStrengths.map((s) => _buildBulletItem('${s.subjectName} (${s.accuracy.toStringAsFixed(0)}%)'))
+                                  else
+                                    _buildBulletItem('Complete tests to unlock strengths'),
+                                ],
                               ),
-                              Container(width: 1, height: 60, color: const Color(0xFF1B3B69)),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Row(
-                                      children: [
-                                        Icon(Icons.warning_amber_rounded, color: Colors.orangeAccent, size: 12),
-                                        SizedBox(width: 4),
-                                        Text('Areas to Improve', style: TextStyle(color: Colors.orangeAccent, fontSize: 9.5, fontWeight: FontWeight.bold)),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    if (topWeaknesses.isNotEmpty)
-                                      ...topWeaknesses.map((w) => _buildBulletItem('${w.subjectName} (${w.accuracy.toStringAsFixed(0)}%)'))
-                                    else
-                                      _buildBulletItem('Complete tests to track weak areas'),
-                                  ],
-                                ),
+                            ),
+                            Container(width: 1, height: 60, color: const Color(0xFF142B4D)),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Row(
+                                    children: [
+                                      Icon(Icons.warning_amber_rounded, color: Colors.orangeAccent, size: 14),
+                                      SizedBox(width: 5),
+                                      Text('Areas to Improve', style: TextStyle(color: Colors.orangeAccent, fontSize: 13.5, fontWeight: FontWeight.bold)),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  if (topWeaknesses.isNotEmpty)
+                                    ...topWeaknesses.map((w) => _buildBulletItem('${w.subjectName} (${w.accuracy.toStringAsFixed(0)}%)'))
+                                  else
+                                    _buildBulletItem('Complete tests to track weak areas'),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -2569,22 +2460,21 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
   Widget _buildAnalyticsMetricCard(String title, String val, String change, IconData icon, Color color) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(context, MaterialPageRoute(builder: (context) => const AnalyticsScreen()));
+        AppNavigator.push(context, const AnalyticsScreen());
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
         decoration: BoxDecoration(
-          color: const Color(0xFF091C36),
+          color: Colors.white.withValues(alpha: 0.03),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFF1A3864)),
         ),
         child: Column(
           children: [
-            Icon(icon, color: color, size: 13),
+            Icon(icon, color: color, size: 15),
             const SizedBox(height: 2),
-            Text(val, style: const TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.w900), maxLines: 1),
-            Text(title, style: const TextStyle(color: Colors.white54, fontSize: 7)),
-            Text('↑ $change', style: TextStyle(color: color, fontSize: 7, fontWeight: FontWeight.bold)),
+            Text(val, style: const TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.w900), maxLines: 1),
+            Text(title, style: const TextStyle(color: Colors.white54, fontSize: 11)),
+            Text('↑ $change', style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold)),
           ],
         ),
       ),
@@ -2598,7 +2488,7 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
         children: [
           const Icon(Icons.circle, color: Colors.white38, size: 4),
           const SizedBox(width: 4),
-          Expanded(child: Text(text, style: const TextStyle(color: Colors.white70, fontSize: 8), maxLines: 1)),
+          Expanded(child: Text(text, style: const TextStyle(color: Colors.white70, fontSize: 12), maxLines: 1)),
         ],
       ),
     );
@@ -2623,9 +2513,9 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Community & Support 👥', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900)),
+          const Text('Community & Support 👥', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900)),
           const SizedBox(height: 2),
-          const Text('Learn together, grow together. Never feel alone on your journey.', style: TextStyle(color: Colors.white54, fontSize: 9.5)),
+          const Text('Learn together, grow together. Never feel alone on your journey.', style: TextStyle(color: Colors.white54, fontSize: 12.5)),
           const SizedBox(height: 10),
 
           // 4 Action Buttons
@@ -2637,7 +2527,7 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                   'Join Discussions',
                   Icons.groups_rounded,
                   const Color(0xFF38BDF8),
-                  () => Navigator.push(context, MaterialPageRoute(builder: (context) => const CommunityScreen())),
+                  () => AppNavigator.push(context, const CommunityScreen()),
                 ),
               ),
               const SizedBox(width: 6),
@@ -2647,7 +2537,7 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                   'Instant Solutions',
                   Icons.help_center_rounded,
                   const Color(0xFF10B981),
-                  () => Navigator.push(context, MaterialPageRoute(builder: (context) => const DoubtsScreen())),
+                  () => AppNavigator.push(context, const DoubtsScreen()),
                 ),
               ),
               const SizedBox(width: 6),
@@ -2657,100 +2547,88 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                   'Top Performers',
                   Icons.emoji_events_rounded,
                   const Color(0xFFF59E0B),
-                  () => Navigator.push(context, MaterialPageRoute(builder: (context) => const LeaderboardScreen())),
+                  () => AppNavigator.push(context, const LeaderboardScreen()),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
 
-          // Talk to Our Support Team Card
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0F264C), Color(0xFF071730)],
-              ),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFF1E4378)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(
-                  children: [
-                    Icon(Icons.support_agent_rounded, color: Color(0xFF38BDF8), size: 16),
-                    SizedBox(width: 6),
-                    Text('Talk to Our Support Team', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-                  ],
-                ),
-                const SizedBox(height: 2),
-                const Text('Average response time: Under 2 minutes', style: TextStyle(color: Color(0xFF10B981), fontSize: 8)),
-                const SizedBox(height: 8),
+          const Divider(color: Color(0xFF142B4D), height: 28, thickness: 1),
 
-                ...supportOptions.map((opt) {
-                  return InkWell(
-                    onTap: () {
-                      _showSnack(opt['action'] as String);
-                      if (opt['title'] == 'Help Center') {
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => const HelpSupportScreen()));
-                      }
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 4),
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0A1E3C),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(opt['icon'] as IconData, color: const Color(0xFF38BDF8), size: 13),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(opt['title'] as String, style: const TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.bold)),
-                                Text(opt['sub'] as String, style: const TextStyle(color: Colors.white54, fontSize: 7.5)),
-                              ],
-                            ),
+          // Talk to Our Support Team
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.support_agent_rounded, color: Color(0xFF38BDF8), size: 18),
+                  SizedBox(width: 6),
+                  Text('Talk to Our Support Team', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+                ],
+              ),
+              const SizedBox(height: 2),
+              const Text('Average response time: Under 2 minutes', style: TextStyle(color: Color(0xFF10B981), fontSize: 12)),
+              const SizedBox(height: 10),
+
+              ...supportOptions.map((opt) {
+                return InkWell(
+                  onTap: () {
+                    _showSnack(opt['action'] as String);
+                    if (opt['title'] == 'Help Center') {
+                      AppNavigator.push(context, const HelpSupportScreen());
+                    }
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 5),
+                    child: Row(
+                      children: [
+                        Icon(opt['icon'] as IconData, color: const Color(0xFF38BDF8), size: 16),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(opt['title'] as String, style: const TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.bold)),
+                              Text(opt['sub'] as String, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                            ],
                           ),
-                          const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white38, size: 9),
-                        ],
-                      ),
+                        ),
+                        const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white38, size: 9),
+                      ],
                     ),
-                  );
-                }),
-              ],
-            ),
+                  ),
+                );
+              }),
+            ],
           ),
-          const SizedBox(height: 12),
+          const Divider(color: Color(0xFF142B4D), height: 28, thickness: 1),
 
           // What's Happening in the Community Feed
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('What\'s Happening in Community', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+              const Text('What\'s Happening in Community', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
               InkWell(
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const CommunityScreen())),
-                child: const Text('View All >', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 9.5, fontWeight: FontWeight.bold)),
+                onTap: () => AppNavigator.push(context, const CommunityScreen()),
+                child: const Text('View All >', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 12.5, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
 
           StreamBuilder<List<CommunityMessage>>(
             stream: FirestoreService().streamCommunityMessages(channel: 'general'),
             builder: (context, snapshot) {
               final List<CommunityMessage> messages = snapshot.data ?? [];
               if (messages.isEmpty) {
-                return Container(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  alignment: Alignment.center,
-                  child: const Text(
-                    'No community posts yet. Join the conversation!',
-                    style: TextStyle(color: Colors.white38, fontSize: 10),
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: Center(
+                    child: Text(
+                      'No community posts yet. Join the conversation!',
+                      style: TextStyle(color: Colors.white38, fontSize: 13),
+                    ),
                   ),
                 );
               }
@@ -2758,33 +2636,27 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                 children: messages.take(4).map((CommunityMessage msg) {
                   final initial = msg.senderName.isNotEmpty ? msg.senderName[0] : 'S';
                   return GestureDetector(
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const CommunityScreen())),
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 5),
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF081C38),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFF173562)),
-                      ),
+                    onTap: () => AppNavigator.push(context, const CommunityScreen()),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
                       child: Row(
                         children: [
                           CircleAvatar(
-                            radius: 12,
+                            radius: 13,
                             backgroundColor: const Color(0xFF38BDF8).withValues(alpha: 0.2),
-                            child: Text(initial, style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 10, fontWeight: FontWeight.bold)),
+                            child: Text(initial, style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 12, fontWeight: FontWeight.bold)),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 10),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(msg.senderName, style: const TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.bold)),
-                                Text(msg.text, style: const TextStyle(color: Colors.white60, fontSize: 8), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                Text(msg.senderName, style: const TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.bold)),
+                                Text(msg.text, style: const TextStyle(color: Colors.white60, fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
                               ],
                             ),
                           ),
-                          const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white24, size: 8),
+                          const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white24, size: 9),
                         ],
                       ),
                     ),
@@ -2804,16 +2676,15 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
         decoration: BoxDecoration(
-          color: const Color(0xFF091C36),
+          color: Colors.white.withValues(alpha: 0.03),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: const Color(0xFF1B3864)),
         ),
         child: Column(
           children: [
-            Icon(icon, color: color, size: 16),
+            Icon(icon, color: color, size: 18),
             const SizedBox(height: 3),
-            Text(title, style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-            Text(sub, style: const TextStyle(color: Colors.white38, fontSize: 6.5), textAlign: TextAlign.center, maxLines: 1),
+            Text(title, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+            Text(sub, style: const TextStyle(color: Colors.white38, fontSize: 11), textAlign: TextAlign.center, maxLines: 1),
           ],
         ),
       ),
@@ -2845,7 +2716,7 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Resources & Study Tools 📄', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900)),
+              const Text('Resources & Study Tools 📄', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900)),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
@@ -2854,9 +2725,9 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(Icons.workspace_premium, color: Colors.amber, size: 10),
+                    Icon(Icons.workspace_premium, color: Colors.amber, size: 12),
                     SizedBox(width: 2),
-                    Text('Premium Access', style: TextStyle(color: Colors.amber, fontSize: 8, fontWeight: FontWeight.bold)),
+                    Text('Premium Access', style: TextStyle(color: Colors.amber, fontSize: 11.5, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
@@ -2874,7 +2745,7 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                   onTap: () => setState(() => _activeResourceTab = e.key),
                   child: Container(
                     margin: const EdgeInsets.only(right: 6),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: isSel ? const Color(0xFF0070F3) : const Color(0xFF0B1E3B),
                       borderRadius: BorderRadius.circular(6),
@@ -2882,7 +2753,7 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                     ),
                     child: Text(
                       e.value,
-                      style: TextStyle(color: isSel ? Colors.white : Colors.white70, fontSize: 8.5, fontWeight: isSel ? FontWeight.bold : FontWeight.normal),
+                      style: TextStyle(color: isSel ? Colors.white : Colors.white70, fontSize: 12, fontWeight: isSel ? FontWeight.bold : FontWeight.normal),
                     ),
                   ),
                 );
@@ -2908,7 +2779,7 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
 
               return GestureDetector(
                 onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => tool['dest'] as Widget));
+                  AppNavigator.push(context, tool['dest'] as Widget);
                 },
                 child: Container(
                   padding: const EdgeInsets.all(8),
@@ -2925,7 +2796,7 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                           color: toolColor.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: Icon(tool['icon'] as IconData, color: toolColor, size: 16),
+                        child: Icon(tool['icon'] as IconData, color: toolColor, size: 18),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
@@ -2935,13 +2806,13 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
                           children: [
                             Text(
                               tool['title'] as String,
-                              style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                              style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                             Text(
                               tool['count'] as String,
-                              style: TextStyle(color: toolColor, fontSize: 8, fontWeight: FontWeight.bold),
+                              style: TextStyle(color: toolColor, fontSize: 12, fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
@@ -2954,104 +2825,91 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
           ),
           const SizedBox(height: 12),
 
-          // Download Center List
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: const Color(0xFF091B36),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFF1E3D6E)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Download Center', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-                    InkWell(
-                      onTap: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => const ResourcesScreen()));
-                      },
-                      child: const Text('View All >', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 9.5, fontWeight: FontWeight.bold)),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
+          const Divider(color: Color(0xFF142B4D), height: 28, thickness: 1),
 
-                StreamBuilder<List<ResourceItem>>(
-                  stream: ContentService().getResources(),
-                  builder: (context, snapshot) {
-                    final resList = snapshot.data ?? [];
-                    if (snapshot.connectionState == ConnectionState.waiting && resList.isEmpty) {
-                      return const Center(child: Padding(padding: EdgeInsets.all(12.0), child: CircularProgressIndicator(strokeWidth: 2)));
-                    }
-                    if (resList.isEmpty) {
-                      return const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12.0),
-                        child: Center(
-                          child: Text(
-                            'No downloadable documents found in this batch',
-                            style: TextStyle(color: Colors.white38, fontSize: 10),
+          // Download Center List
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Download Center', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+                  InkWell(
+                    onTap: () {
+                      AppNavigator.push(context, const ResourcesScreen());
+                    },
+                    child: const Text('View All >', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 12.5, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+
+              StreamBuilder<List<ResourceItem>>(
+                stream: ContentService().getResources(),
+                builder: (context, snapshot) {
+                  final resList = snapshot.data ?? [];
+                  if (snapshot.connectionState == ConnectionState.waiting && resList.isEmpty) {
+                    return const Center(child: Padding(padding: EdgeInsets.all(12.0), child: CircularProgressIndicator(strokeWidth: 2)));
+                  }
+                  if (resList.isEmpty) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12.0),
+                      child: Center(
+                        child: Text(
+                          'No downloadable documents found in this batch',
+                          style: TextStyle(color: Colors.white38, fontSize: 13),
+                        ),
+                      ),
+                    );
+                  }
+                  return Column(
+                    children: resList.take(4).map((doc) {
+                      return GestureDetector(
+                        onTap: () {
+                          if (doc.url.isNotEmpty) {
+                            AppNavigator.push(
+                              context,
+                              PdfViewerScreen(
+                                  pdfData: doc,
+                                ),
+                            );
+                          } else {
+                            _showSnack('Opening ${doc.title}... 📄');
+                          }
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.picture_as_pdf, color: Colors.redAccent, size: 18),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(doc.title, style: const TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.bold), maxLines: 1),
+                                    Text('${doc.subject} • ${doc.type}', style: const TextStyle(color: Colors.white38, fontSize: 12)),
+                                  ],
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.download_rounded, color: Color(0xFF38BDF8), size: 18),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                onPressed: () {
+                                  _showSnack('Downloaded ${doc.title} successfully! 📄');
+                                },
+                              ),
+                            ],
                           ),
                         ),
                       );
-                    }
-                    return Column(
-                      children: resList.take(4).map((doc) {
-                        return GestureDetector(
-                          onTap: () {
-                            if (doc.url.isNotEmpty) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => PdfViewerScreen(
-                                    pdfData: doc,
-                                  ),
-                                ),
-                              );
-                            } else {
-                              _showSnack('Opening ${doc.title}... 📄');
-                            }
-                          },
-                          child: Container(
-                            margin: const EdgeInsets.only(bottom: 4),
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF061426),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.picture_as_pdf, color: Colors.redAccent, size: 14),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(doc.title, style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold), maxLines: 1),
-                                      Text('${doc.subject} • ${doc.type}', style: const TextStyle(color: Colors.white38, fontSize: 7)),
-                                    ],
-                                  ),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.download_rounded, color: Color(0xFF38BDF8), size: 14),
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(),
-                                  onPressed: () {
-                                    _showSnack('Downloaded ${doc.title} successfully! 📄');
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    );
-                  },
-                ),
-              ],
-            ),
+                    }).toList(),
+                  );
+                },
+              ),
+            ],
           ),
         ],
       ),
@@ -3075,9 +2933,9 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Progress & Performance 🚀', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900)),
+          const Text('Progress & Performance 🚀', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900)),
           const SizedBox(height: 2),
-          const Text('Track growth, analyze your performance and stay ahead', style: TextStyle(color: Colors.white54, fontSize: 9.5)),
+          const Text('Track growth, analyze your performance and stay ahead', style: TextStyle(color: Colors.white54, fontSize: 12.5)),
           const SizedBox(height: 10),
 
           // Badges row
@@ -3094,182 +2952,171 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
           ),
           const SizedBox(height: 12),
 
-          // 72% Big Gauge Card
+          // Dynamic Gauge Row
           GestureDetector(
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AnalyticsScreen())),
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF0F264C), Color(0xFF081A36)],
-                ),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFF1E4378)),
-              ),
-              child: Column(
-                children: [
-                  Row(
+            onTap: () => AppNavigator.push(context, const AnalyticsScreen()),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 86,
+                  height: 86,
+                  child: Stack(
+                    alignment: Alignment.center,
                     children: [
-                      SizedBox(
-                        width: 80,
-                        height: 80,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            CircularProgressIndicator(
-                              value: 0.72,
-                              strokeWidth: 8,
-                              backgroundColor: const Color(0xFF152D54),
-                              color: const Color(0xFF0070F3),
-                            ),
-                            const Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text('72%', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900)),
-                                Text('Completed', style: TextStyle(color: Colors.white54, fontSize: 7)),
-                              ],
-                            ),
-                          ],
-                        ),
+                      CircularProgressIndicator(
+                        value: testsAttempted > 0 ? ((user?.accuracy ?? 0.0) / 100.0).clamp(0.05, 1.0) : 0.0,
+                        strokeWidth: 6,
+                        backgroundColor: const Color(0xFF152D54),
+                        color: const Color(0xFF0070F3),
                       ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Great going, $studentName!', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900)),
-                            const Text('Keep pushing your limits!', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 9.5)),
-                            const SizedBox(height: 6),
-                            Row(
-                              children: [
-                                const Icon(Icons.assignment_turned_in, color: Colors.white54, size: 10),
-                                const SizedBox(width: 3),
-                                Text('Tests Attempted: $testsAttempted', style: const TextStyle(color: Colors.white70, fontSize: 8.5)),
-                              ],
-                            ),
-                            Row(
-                              children: [
-                                const Icon(Icons.check_circle_outline, color: Colors.white54, size: 10),
-                                const SizedBox(width: 3),
-                                Text('Overall Accuracy: $accuracyStr', style: const TextStyle(color: Colors.white70, fontSize: 8.5)),
-                              ],
-                            ),
-                            Row(
-                              children: [
-                                const Icon(Icons.av_timer, color: Colors.white54, size: 10),
-                                const SizedBox(width: 3),
-                                Text('Study Time: ${(user?.totalStudyTimeMinutes ?? 0) ~/ 60}h ${(user?.totalStudyTimeMinutes ?? 0) % 60}m', style: const TextStyle(color: Colors.white70, fontSize: 8.5)),
-                              ],
-                            ),
-                          ],
-                        ),
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            testsAttempted > 0 ? '${(user?.accuracy ?? 0.0).toInt()}%' : '0%',
+                            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900),
+                          ),
+                          const SizedBox(height: 1),
+                          Text(
+                            testsAttempted > 0 ? 'Accuracy' : 'Not Started',
+                            style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Subject progress list
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: const Color(0xFF081C38),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFF1B3B69)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Subject Wise Progress', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 6),
-                _buildSubjectProgressRow('Physics', 0.82, '82%', '82%', const Color(0xFF8B5CF6), Icons.science),
-                const SizedBox(height: 4),
-                _buildSubjectProgressRow('Chemistry', 0.76, '76%', '76%', const Color(0xFF3B82F6), Icons.biotech),
-                const SizedBox(height: 4),
-                _buildSubjectProgressRow('Mathematics', 0.68, '68%', '68%', const Color(0xFF10B981), Icons.functions),
-                const SizedBox(height: 4),
-                _buildSubjectProgressRow('Biology', 0.74, '74%', '74%', const Color(0xFFEC4899), Icons.eco),
-                const SizedBox(height: 4),
-                _buildSubjectProgressRow('Mock Tests', 0.80, '80%', '80%', const Color(0xFFF59E0B), Icons.quiz),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Great going, $studentName!', style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w900)),
+                      const Text('Keep pushing your limits!', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 12.5)),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const Icon(Icons.assignment_turned_in, color: Colors.white54, size: 13),
+                          const SizedBox(width: 4),
+                          Text('Tests Attempted: $testsAttempted', style: const TextStyle(color: Colors.white70, fontSize: 12.5)),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          const Icon(Icons.check_circle_outline, color: Colors.white54, size: 13),
+                          const SizedBox(width: 4),
+                          Text('Overall Accuracy: $accuracyStr', style: const TextStyle(color: Colors.white70, fontSize: 12.5)),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          const Icon(Icons.av_timer, color: Colors.white54, size: 13),
+                          const SizedBox(width: 4),
+                          Text('Study Time: ${(user?.totalStudyTimeMinutes ?? 0) ~/ 60}h ${(user?.totalStudyTimeMinutes ?? 0) % 60}m', style: const TextStyle(color: Colors.white70, fontSize: 12.5)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
-          const SizedBox(height: 10),
+          const Divider(color: Color(0xFF142B4D), height: 28, thickness: 1),
+
+          // Subject progress list
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Subject Wise Progress', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              if (testsAttempted == 0)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Center(
+                    child: Text(
+                      'No tests attempted yet. Attempt your first mock or chapter test to track subject-wise progress!',
+                      style: TextStyle(color: Colors.white38, fontSize: 13),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                )
+              else ...[
+                _buildSubjectProgressRow('Physics', ((user?.accuracy ?? 70.0) / 100.0).clamp(0.0, 1.0), '${(user?.accuracy ?? 70.0).toInt()}%', '${(user?.accuracy ?? 70.0).toInt()}%', const Color(0xFF8B5CF6), Icons.science),
+                const SizedBox(height: 6),
+                _buildSubjectProgressRow('Chemistry', ((user?.accuracy ?? 70.0) / 100.0).clamp(0.0, 1.0), '${(user?.accuracy ?? 70.0).toInt()}%', '${(user?.accuracy ?? 70.0).toInt()}%', const Color(0xFF3B82F6), Icons.biotech),
+                const SizedBox(height: 6),
+                _buildSubjectProgressRow('Mathematics', ((user?.accuracy ?? 70.0) / 100.0).clamp(0.0, 1.0), '${(user?.accuracy ?? 70.0).toInt()}%', '${(user?.accuracy ?? 70.0).toInt()}%', const Color(0xFF10B981), Icons.functions),
+              ],
+            ],
+          ),
+          const Divider(color: Color(0xFF142B4D), height: 28, thickness: 1),
 
           // Recent Activity Log
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: const Color(0xFF081C38),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFF1B3B69)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Recent Activity', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-                    InkWell(
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AnalyticsScreen())),
-                      child: const Text('View All >', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 9.5, fontWeight: FontWeight.bold)),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Recent Activity', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+                  InkWell(
+                    onTap: () => AppNavigator.push(context, const AnalyticsScreen()),
+                    child: const Text('View All >', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 12.5, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
 
-                StreamBuilder<List<TestResult>>(
-                  stream: TestService().getRecentTestResults(user?.uid ?? '', limit: 4),
-                  builder: (context, snapshot) {
-                    final List<TestResult> results = snapshot.data ?? [];
-                    if (results.isEmpty) {
-                      return const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 8.0),
-                        child: Center(
-                          child: Text(
-                            'No recent activity yet. Take a test to see your progress here!',
-                            style: TextStyle(color: Colors.white38, fontSize: 9.5),
+              StreamBuilder<List<TestResult>>(
+                stream: TestService().getRecentTestResults(user?.uid ?? '', limit: 4),
+                builder: (context, snapshot) {
+                  final List<TestResult> results = snapshot.data ?? [];
+                  if (results.isEmpty) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8.0),
+                      child: Center(
+                        child: Text(
+                          'No recent activity yet. Take a test to see your progress here!',
+                          style: TextStyle(color: Colors.white38, fontSize: 12.5),
+                        ),
+                      ),
+                    );
+                  }
+                  return Column(
+                    children: results.map((TestResult res) {
+                      final accuracy = (res.totalQuestions > 0)
+                          ? '${((res.correctAnswers / res.totalQuestions) * 100).toInt()}%'
+                          : '100%';
+                      return GestureDetector(
+                        onTap: () => AppNavigator.push(context, const AnalyticsScreen()),
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.check_circle_outline, color: Colors.green, size: 16),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(res.testTitle, style: const TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.bold)),
+                                    Text('Scored ${res.score}/${res.totalMarks} ($accuracy accuracy)', style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                                  ],
+                                ),
+                              ),
+                              const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white24, size: 9),
+                            ],
                           ),
                         ),
                       );
-                    }
-                    return Column(
-                      children: results.map((TestResult res) {
-                        final accuracy = (res.totalQuestions > 0)
-                            ? '${((res.correctAnswers / res.totalQuestions) * 100).toInt()}%'
-                            : '100%';
-                        return GestureDetector(
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AnalyticsScreen())),
-                          child: Padding(
-                            padding: const EdgeInsets.only(bottom: 6),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.check_circle_outline, color: Colors.green, size: 14),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(res.testTitle, style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
-                                      Text('Scored ${res.score}/${res.totalMarks} ($accuracy accuracy)', style: const TextStyle(color: Colors.white54, fontSize: 7.5)),
-                                    ],
-                                  ),
-                                ),
-                                const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white24, size: 8),
-                              ],
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    );
-                  },
-                ),
-              ],
-            ),
+                    }).toList(),
+                  );
+                },
+              ),
+            ],
           ),
         ],
       ),
@@ -3278,7 +3125,7 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
 
   Widget _buildBadgeMini(String title, String val, String sub, IconData icon, Color color) {
     return GestureDetector(
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AnalyticsScreen())),
+      onTap: () => AppNavigator.push(context, const AnalyticsScreen()),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 5),
         decoration: BoxDecoration(
@@ -3288,10 +3135,10 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
         ),
         child: Column(
           children: [
-            Icon(icon, color: color, size: 12),
+            Icon(icon, color: color, size: 14),
             const SizedBox(height: 2),
-            Text(val, style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900), maxLines: 1),
-            Text(title, style: const TextStyle(color: Colors.white54, fontSize: 6.5)),
+            Text(val, style: const TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.w900), maxLines: 1),
+            Text(title, style: const TextStyle(color: Colors.white54, fontSize: 11)),
           ],
         ),
       ),

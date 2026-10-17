@@ -1,3 +1,4 @@
+import 'package:examinantt_app/utils/app_navigator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
@@ -157,7 +158,7 @@ class QuizResultScreen extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () {
-                      Navigator.push(
+                      AppNavigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => SolutionsScreen(

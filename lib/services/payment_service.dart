@@ -1,8 +1,10 @@
+import 'package:examinantt_app/utils/app_navigator.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'firestore_service.dart';
 import '../utils/app_theme.dart';
+import '../screens/checkout_screen.dart';
 
 import 'payment_platform_stub.dart'
     if (dart.library.io) 'payment_platform_io.dart'
@@ -39,8 +41,40 @@ class PaymentService {
     );
   }
 
+  static String cleanErrorMessage(dynamic errorOrResponse) {
+    if (errorOrResponse is PaymentFailureResponse) {
+      final code = errorOrResponse.code;
+      final raw = (errorOrResponse.message ?? '').trim();
+      final lower = raw.toLowerCase();
+
+      if (code == Razorpay.PAYMENT_CANCELLED ||
+          code == 0 ||
+          code == 2 ||
+          lower == 'undefined' ||
+          lower.contains('undefined') ||
+          lower.contains('cancel') ||
+          lower.contains('dismiss') ||
+          lower.contains('close') ||
+          lower.contains('back pressed')) {
+        return 'Payment was cancelled. You can try again whenever you are ready.';
+      }
+
+      if (raw.isNotEmpty && raw != 'null' && raw != 'undefined') {
+        return raw;
+      }
+      return 'Payment could not be completed. Please try again.';
+    }
+
+    final str = (errorOrResponse ?? '').toString().trim();
+    final lower = str.toLowerCase();
+    if (lower == 'undefined' || lower.contains('undefined') || lower.contains('cancel')) {
+      return 'Payment was cancelled. You can try again whenever you are ready.';
+    }
+    return str.isNotEmpty ? str : 'Payment could not be completed.';
+  }
+
   /// 1-Step Direct Payment & Unlock Function
-  /// Launches Razorpay directly, records purchase in Firestore upon payment, and unlocks access immediately!
+  /// Opens the dedicated Razorpay Checkout Page, records purchase upon payment, and unlocks access!
   Future<void> payAndUnlock({
     required BuildContext context,
     required String title,
@@ -50,9 +84,6 @@ class PaymentService {
     String? subtitle,
     VoidCallback? onSuccess,
   }) async {
-    final user = FirebaseAuth.instance.currentUser;
-    final phone = user?.phoneNumber ?? '8881188678';
-    final email = user?.email ?? 'student@examinantt.com';
     final effectiveItemId = (itemId != null && itemId.isNotEmpty)
         ? itemId
         : '${itemType.toLowerCase()}_${DateTime.now().millisecondsSinceEpoch}';
@@ -73,45 +104,22 @@ class PaymentService {
       return;
     }
 
-    // 2. Open Razorpay directly!
-    openCheckout(
-      amountInRupees: price,
-      name: title,
-      description: subtitle ?? 'Enrollment in $title on Examinantt',
-      contact: phone,
-      email: email,
-      onSuccess: (res) async {
-        try {
-          await FirestoreService().addPurchase(
-            id: effectiveItemId,
-            itemId: effectiveItemId,
+    // 2. Open full Razorpay Checkout Page!
+    if (context.mounted) {
+      AppNavigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CheckoutScreen(
             title: title,
-            type: itemType,
             price: price,
-          );
-          await FirestoreService().addNotification(
-            title: '$title Unlocked! 🎉',
-            subtitle: 'Payment of ₹${price.toStringAsFixed(0)} verified. Full access granted.',
-          );
-        } catch (e) {
-          debugPrint('[PaymentService] Error saving purchase: $e');
-        }
-
-        if (context.mounted) {
-          AppTheme.showSuccessSnackBar(context, '🎉 Payment Successful! $title Unlocked!');
-        }
-        onSuccess?.call();
-      },
-      onFailure: (res) {
-        if (context.mounted) {
-          final msg = (res.message ?? '').trim();
-          if (!msg.toLowerCase().contains('cancel')) {
-            AppTheme.showErrorSnackBar(context, msg.isNotEmpty ? msg : 'Payment could not be completed.');
-          }
-        }
-      },
-      onExternalWallet: (_) {},
-    );
+            itemId: effectiveItemId,
+            subtitle: subtitle,
+            itemType: itemType,
+            onPaymentSuccess: onSuccess,
+          ),
+        ),
+      );
+    }
   }
 
   void openCheckout({

@@ -148,14 +148,56 @@ class FirestoreService {
 
   // --- Notifications ---
 
-  
+  static final Set<String> _dismissedNotificationIds = <String>{};
+  static bool _hasLoadedDismissed = false;
 
-  Stream<List<NotificationModel>> getNotificationsStream() {
-    return _db.collection('notifications').snapshots().map((snapshot) {
-      if (snapshot.docs.isEmpty) {
-        return <NotificationModel>[];
+  static final List<NotificationModel> _defaultSeedNotifications = [
+    NotificationModel(
+      id: 'seed_welcome_1',
+      title: 'Welcome to Examinantt! 🎉',
+      subtitle: 'Your smart learning portal is active. Explore live interactive classes, national test series, and curated study notes.',
+      date: DateTime.now().subtract(const Duration(minutes: 25)),
+    ),
+    NotificationModel(
+      id: 'seed_tests_2',
+      title: 'All India Mock Test Series Live 📝',
+      subtitle: 'National Level Mock Tests are now available in your Test Center with real-time AIR analysis and detailed question solutions.',
+      date: DateTime.now().subtract(const Duration(hours: 2)),
+    ),
+    NotificationModel(
+      id: 'seed_resources_3',
+      title: 'High-Yield Revision Notes Added 📚',
+      subtitle: 'Formula sheets, mind maps, and chapter-wise question collections are ready for download in your Resource Center.',
+      date: DateTime.now().subtract(const Duration(hours: 6)),
+    ),
+  ];
+
+  static Future<void> _loadDismissedIds() async {
+    if (_hasLoadedDismissed) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final list = prefs.getStringList('dismissed_notification_ids') ?? [];
+      _dismissedNotificationIds.addAll(list);
+      _hasLoadedDismissed = true;
+    } catch (_) {}
+  }
+
+  Stream<List<NotificationModel>> getNotificationsStream() async* {
+    await _loadDismissedIds();
+
+    yield* _db.collection('notifications').snapshots().map((snapshot) {
+      final Map<String, NotificationModel> notifMap = {};
+
+      // 1. Add default seed notifications if not dismissed
+      for (final seed in _defaultSeedNotifications) {
+        if (!_dismissedNotificationIds.contains(seed.id)) {
+          notifMap[seed.id] = seed;
+        }
       }
-      final list = snapshot.docs.map((doc) {
+
+      // 2. Add Firestore notifications (overriding or supplementing seeds)
+      for (final doc in snapshot.docs) {
+        if (_dismissedNotificationIds.contains(doc.id)) continue;
         final data = doc.data();
         DateTime date = DateTime.now();
         if (data['createdAt'] is Timestamp) {
@@ -163,18 +205,20 @@ class FirestoreService {
         } else if (data['date'] is String) {
           date = DateTime.tryParse(data['date']) ?? DateTime.now();
         }
-        return NotificationModel(
+        notifMap[doc.id] = NotificationModel(
           id: doc.id,
           title: data['title'] ?? '',
           subtitle: data['subtitle'] ?? data['body'] ?? '',
           date: date,
         );
-      }).toList();
+      }
+
+      final list = notifMap.values.toList();
       list.sort((a, b) => b.date.compareTo(a.date));
-      return list.isEmpty ? <NotificationModel>[] : list;
+      return list;
     }).handleError((error) {
       debugPrint("Notifications stream error: $error");
-      return <NotificationModel>[];
+      return _defaultSeedNotifications.where((s) => !_dismissedNotificationIds.contains(s.id)).toList();
     });
   }
 
@@ -200,10 +244,18 @@ class FirestoreService {
   }
 
   Future<void> deleteNotification(String notificationId) async {
+    _dismissedNotificationIds.add(notificationId);
     try {
-      await _db.collection('notifications').doc(notificationId).delete();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList('dismissed_notification_ids', _dismissedNotificationIds.toList());
+    } catch (_) {}
+
+    try {
+      if (!notificationId.startsWith('seed_')) {
+        await _db.collection('notifications').doc(notificationId).delete();
+      }
     } catch (e) {
-      debugPrint("Error deleting notification: $e");
+      debugPrint("Error deleting notification from Firestore: $e");
     }
   }
 

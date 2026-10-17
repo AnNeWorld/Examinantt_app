@@ -1,3 +1,4 @@
+import 'package:examinantt_app/utils/app_navigator.dart';
 // ignore_for_file: unused_element, unused_field
 import 'package:flutter/material.dart';
 import '../utils/app_theme.dart';
@@ -110,7 +111,7 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> {
   void _openPdfResource(ResourceItem item) {
     FirestoreService().recordResourceView(item, 0.85);
     widget.onResourceOpened?.call(item.title);
-    Navigator.push(
+    AppNavigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => PdfViewerScreen(pdfData: item),
@@ -360,19 +361,24 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Sub-header (Preparing for JEE Main 2027 v + Change Exam)
-                            _buildTopSubHeader(),
-
                             // Horizontal Tabs Bar (Overview, My Resources, Included with Batch, Explore, Categories, Other Exams, Recommended)
                             _buildHorizontalTabs(),
 
                             // Active Content
                             Expanded(
-                              child: _buildActiveTabContent(
-                                liveResources: liveResources,
-                                purchasedIds: purchasedIds,
-                                bookmarkedIds: bookmarkedIds,
-                                recentResources: recentResources,
+                              child: RefreshIndicator(
+                                color: const Color(0xFFFFA000),
+                                backgroundColor: const Color(0xFF0F172A),
+                                onRefresh: () async {
+                                  await Future.delayed(const Duration(milliseconds: 650));
+                                  if (mounted) setState(() {});
+                                },
+                                child: _buildActiveTabContent(
+                                  liveResources: liveResources,
+                                  purchasedIds: purchasedIds,
+                                  bookmarkedIds: bookmarkedIds,
+                                  recentResources: recentResources,
+                                ),
                               ),
                             ),
                           ],
@@ -386,58 +392,6 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> {
           },
         );
       },
-    );
-  }
-
-  Widget _buildTopSubHeader() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: InkWell(
-              onTap: _showChangeExamDialog,
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
-                child: Row(
-                  children: [
-                    const Text(
-                      'Preparing for ',
-                      style: TextStyle(color: Colors.white60, fontSize: 13),
-                    ),
-                    Flexible(
-                      child: Text(
-                        _selectedExam,
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFFFFA000), size: 18),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          OutlinedButton.icon(
-            onPressed: _showChangeExamDialog,
-            icon: const Icon(Icons.swap_horiz_rounded, color: Colors.white70, size: 14),
-            label: const Text(
-              'Change Exam',
-              style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-            ),
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Colors.white24),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -540,82 +494,11 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> {
     ];
 
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Hero Graphic Banner matching Page 1
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0C2142), Color(0xFF071426)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0xFFFFA000).withValues(alpha: 0.3)),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.collections_bookmark_rounded, color: Color(0xFFFFA000), size: 16),
-                          const SizedBox(width: 6),
-                          Text(
-                            '${liveResources.isNotEmpty ? liveResources.length : 13} Live Collections in Real-Time',
-                            style: TextStyle(color: Colors.orange.shade200, fontSize: 11.5, fontWeight: FontWeight.w600),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Your Digital Study Library',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Instant access to chapter notes, high-yield formula sheets, lecture slides and past 15-year questions.',
-                        style: TextStyle(color: Colors.white70, fontSize: 11, height: 1.35),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                // Glowing Folder Graphic
-                Container(
-                  width: 76,
-                  height: 76,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF1E3A8A), Color(0xFF0F172A)],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFFFA000).withValues(alpha: 0.5), width: 1.5),
-                    boxShadow: [
-                      BoxShadow(color: const Color(0xFFFFA000).withValues(alpha: 0.2), blurRadius: 16),
-                    ],
-                  ),
-                  child: const Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.cloud_upload_rounded, color: Color(0xFFFFA000), size: 30),
-                      SizedBox(height: 4),
-                      Text('RESOURCES', style: TextStyle(color: Colors.white70, fontSize: 8, fontWeight: FontWeight.w900)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 14),
-
           // Student Community & Faculty Chat Interactive Card
           InkWell(
             onTap: () => _switchTab(1),
@@ -796,56 +679,7 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> {
             }),
             const SizedBox(height: 18),
           ],
-
-          // Bottom Callout Banner matching Page 1
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFF0F172A),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white10),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFA000).withValues(alpha: 0.15),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.layers_rounded, color: Color(0xFFFFA000), size: 24),
-                ),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Everything you need to learn, revise & master your exam.',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12.5),
-                      ),
-                      SizedBox(height: 2),
-                      Text(
-                        'Notes, PYQs, Study Material, Mind Maps, PPTs and more.',
-                        style: TextStyle(color: Colors.white60, fontSize: 10.5),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 6),
-                OutlinedButton(
-                  onPressed: _showHowResourcesWorkDialog,
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFFFFA000)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  ),
-                  child: const Text('How It Works >', style: TextStyle(color: Color(0xFFFFA000), fontSize: 10.5, fontWeight: FontWeight.bold)),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
         ],
       ),
     );
@@ -991,45 +825,52 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> {
         // Horizontal/Vertical Resource List with real-time stream items
         Expanded(
           child: displayItems.isEmpty
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          _myResourcesFilter == 'Bookmarks' ? Icons.bookmark_border_rounded : Icons.folder_open_rounded,
-                          color: Colors.white24,
-                          size: 48,
+              ? SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                  child: SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.55,
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _myResourcesFilter == 'Bookmarks' ? Icons.bookmark_border_rounded : Icons.folder_open_rounded,
+                              color: Colors.white24,
+                              size: 48,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              _myResourcesFilter == 'Bookmarks' ? 'No Bookmarks Yet' : 'No items in $_myResourcesFilter',
+                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              _myResourcesFilter == 'Bookmarks'
+                                  ? 'Tap the bookmark icon on any resource or note to save it here in real-time!'
+                                  : 'Explore our rich library of notes, PYQs and formula sheets.',
+                              style: const TextStyle(color: Colors.white54, fontSize: 11),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: () => _switchTab(4),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFFFA000),
+                                foregroundColor: Colors.black,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              child: const Text('Explore Resources', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 12),
-                        Text(
-                          _myResourcesFilter == 'Bookmarks' ? 'No Bookmarks Yet' : 'No items in $_myResourcesFilter',
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          _myResourcesFilter == 'Bookmarks'
-                              ? 'Tap the bookmark icon on any resource or note to save it here in real-time!'
-                              : 'Explore our rich library of notes, PYQs and formula sheets.',
-                          style: const TextStyle(color: Colors.white54, fontSize: 11),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () => _switchTab(4),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFFA000),
-                            foregroundColor: Colors.black,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                          child: const Text('Explore Resources', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 )
               : ListView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: displayItems.length,
                   itemBuilder: (ctx, idx) {
@@ -1208,6 +1049,7 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> {
         purchasedIds.contains(r.id)).toList();
 
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1438,26 +1280,33 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> {
         // Explore Cards List
         Expanded(
           child: filtered.isEmpty
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.search_off_rounded, color: Colors.white24, size: 48),
-                        const SizedBox(height: 12),
-                        Text('No resources found in "$_exploreCategoryFilter"', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                        const SizedBox(height: 8),
-                        ElevatedButton(
-                          onPressed: () => setState(() => _exploreCategoryFilter = 'All'),
-                          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFFA000)),
-                          child: const Text('Show All Resources', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+              ? SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                  child: SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.55,
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.search_off_rounded, color: Colors.white24, size: 48),
+                            const SizedBox(height: 12),
+                            Text('No resources found in "$_exploreCategoryFilter"', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                            const SizedBox(height: 8),
+                            ElevatedButton(
+                              onPressed: () => setState(() => _exploreCategoryFilter = 'All'),
+                              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFFA000)),
+                              child: const Text('Show All Resources', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 )
               : ListView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: filtered.length,
                   itemBuilder: (ctx, idx) {
@@ -1793,15 +1642,22 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> {
               }).toList();
 
               if (filteredNotes.isEmpty) {
-                return const Center(
-                  child: Text(
-                    'No chapter notes found matching your search',
-                    style: TextStyle(color: Colors.white54, fontSize: 13),
+                return SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                  child: SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.5,
+                    child: const Center(
+                      child: Text(
+                        'No chapter notes found matching your search',
+                        style: TextStyle(color: Colors.white54, fontSize: 13),
+                      ),
+                    ),
                   ),
                 );
               }
 
               return ListView.builder(
+                physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: filteredNotes.length,
                 itemBuilder: (ctx, idx) {
@@ -2143,6 +1999,7 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> {
         ),
         Expanded(
           child: ListView.builder(
+            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
             padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: otherExams.length,
             itemBuilder: (ctx, idx) {
@@ -2270,6 +2127,7 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> {
         : <ResourceItem>[];
 
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

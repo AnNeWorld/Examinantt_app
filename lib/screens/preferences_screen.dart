@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
 import '../utils/app_theme.dart';
+import '../widgets/notification_bell_action.dart';
 
 class PreferencesScreen extends StatefulWidget {
   const PreferencesScreen({super.key});
@@ -141,6 +142,9 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
           icon: Icon(Icons.arrow_back_ios_new_rounded, color: textColor, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          NotificationBellAction(color: textColor),
+        ],
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator(color: Color(0xFFFFA000)))
@@ -152,7 +156,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                   Text(
                     'NOTIFICATIONS',
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 13,
                       fontWeight: FontWeight.bold,
                       color: isDark ? Colors.blueAccent[100]! : Colors.blueAccent,
                       letterSpacing: 1.2,
@@ -223,7 +227,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                   Text(
                     'APPEARANCE',
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 13,
                       fontWeight: FontWeight.bold,
                       color: isDark ? Colors.blueAccent[100]! : Colors.blueAccent,
                       letterSpacing: 1.2,
@@ -259,7 +263,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                   Text(
                     'LEARNING PREFERENCES',
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 13,
                       fontWeight: FontWeight.bold,
                       color: isDark ? Colors.blueAccent[100]! : Colors.blueAccent,
                       letterSpacing: 1.2,
@@ -283,7 +287,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                             _showOptionsBottomSheet(
                               title: 'Choose Study Language',
                               fieldKey: 'appLanguage',
-                              options: ['English', 'Hindi', 'Hinglish'],
+                              options: ['English'],
                               currentValue: appLanguage,
                               onSelected: (val) => setState(() => appLanguage = val),
                             );
@@ -376,8 +380,8 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
       value: value,
       onChanged: onChanged,
       activeThumbColor: const Color(0xFFFFA000),
-      title: Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: textColor)),
-      subtitle: Text(subtitle, style: TextStyle(fontSize: 11, color: subColor)),
+      title: Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: textColor)),
+      subtitle: Text(subtitle, style: TextStyle(fontSize: 12.5, color: subColor)),
       secondary: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(

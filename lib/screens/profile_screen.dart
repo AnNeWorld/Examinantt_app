@@ -1,23 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
+import '../utils/app_navigator.dart';
 import '../providers/user_provider.dart';
 import '../providers/theme_provider.dart';
-import '../services/firestore_service.dart';
+import '../services/analytics_service.dart';
+import '../models/test_model.dart';
 
 // New Sub-screens
 import 'my_preparation_screen.dart';
 import 'my_learning_purchases_screen.dart';
 import 'account_settings_screen.dart';
 import 'preferences_screen.dart';
-import 'privacy_security_screen.dart';
 import 'help_support_screen.dart';
 import 'about_examinantt_screen.dart';
-import 'certificate_verification_screen.dart';
-import '../auth_screen/sign_up_login.dart';
+import 'notifications_screen.dart';
+import '../widgets/notification_bell_action.dart';
 import '../widgets/game_animations.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../utils/app_theme.dart';
+import '../constants/app_fonts.dart';
 import '../widgets/profile_avatar_widget.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -34,9 +36,16 @@ class ProfileScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0A122C) : Colors.white,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Column(
+        child: RefreshIndicator(
+          color: const Color(0xFFFFA000),
+          backgroundColor: isDark ? const Color(0xFF0E1A3D) : Colors.white,
+          onRefresh: () async {
+            await Future.delayed(const Duration(milliseconds: 650));
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Custom Header Row
@@ -103,12 +112,18 @@ class ProfileScreen extends StatelessWidget {
                           ),
                         ),
                       ),
+                      const SizedBox(width: 4),
+                      NotificationBellAction(
+                        color: textColor,
+                        size: 18,
+                        padding: const EdgeInsets.all(4),
+                      ),
                       const SizedBox(width: 8),
                       Stack(
                         children: [
                           GestureDetector(
                             onTap: () {
-                              Navigator.push(
+                              AppNavigator.push(
                                 context,
                                 MaterialPageRoute(builder: (context) => const AccountSettingsScreen()),
                               );
@@ -240,7 +255,7 @@ class ProfileScreen extends StatelessWidget {
                                       ),
                                       Text(
                                         'Student',
-                                        style: TextStyle(fontSize: 12, color: subColor),
+                                        style: AppTextStyles.bodySmall.copyWith(color: subColor),
                                       ),
                                       if (email.isNotEmpty) ...[
                                         const SizedBox(height: 6),
@@ -291,15 +306,15 @@ class ProfileScreen extends StatelessWidget {
                                 // Edit Profile Outline button
                                 OutlinedButton.icon(
                                   onPressed: () {
-                                    Navigator.push(
+                                    AppNavigator.push(
                                       context,
                                       MaterialPageRoute(builder: (context) => const AccountSettingsScreen()),
                                     );
                                   },
                                   icon: const Icon(Icons.edit_outlined, size: 14, color: Color(0xFFFFA000)),
-                                  label: const Text(
+                                  label: Text(
                                     'Edit Profile',
-                                    style: TextStyle(fontSize: 12, color: Color(0xFFFFA000), fontWeight: FontWeight.bold),
+                                    style: AppTextStyles.bodySmall.copyWith(color: const Color(0xFFFFA000), fontWeight: FontWeight.bold),
                                   ),
                                   style: OutlinedButton.styleFrom(
                                     side: const BorderSide(color: Color(0xFFFFA000)),
@@ -308,22 +323,6 @@ class ProfileScreen extends StatelessWidget {
                                     minimumSize: Size.zero,
                                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                   ),
-                                ),
-                              ],
-                            ),
-                            const Divider(height: 24, thickness: 1),
-                            // Trusted by banner
-                            Row(
-                              children: [
-                                const Icon(Icons.people_alt_outlined, color: Color(0xFFFFA000), size: 16),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'Trusted by ',
-                                  style: TextStyle(fontSize: 11, color: subColor),
-                                ),
-                                const Text(
-                                  '50K+ Students',
-                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFFFA000)),
                                 ),
                               ],
                             ),
@@ -340,17 +339,33 @@ class ProfileScreen extends StatelessWidget {
               Consumer<UserProvider>(
                 builder: (context, userProvider, child) {
                   final user = userProvider.user;
-                  return StreamBuilder<List<Map<String, dynamic>>>(
-                    stream: FirestoreService().getUserTestResultsStream(),
+                  return StreamBuilder<List<TestResult>>(
+                    stream: AnalyticsService().getUserTestResultsStream(user?.uid),
                     builder: (context, snapshot) {
                       final results = snapshot.data ?? [];
-                      final summary = FirestoreService().calculateStatsFromResults(results, user);
-                      final attemptedStr = summary.testsAttempted.toString();
-                      final accuracyStr = '${summary.accuracy.toStringAsFixed(0)}%';
+                      final overall = AnalyticsService().getOverallAnalytics(results);
 
-                      final int minutes = user?.totalStudyTimeMinutes ?? 120;
-                      final studyTimeStr = '${minutes ~/ 60}h ${minutes % 60}m';
-                      final streakStr = '${user?.currentStreak ?? 5} Days';
+                      final int testsCount = results.isNotEmpty
+                          ? overall.totalTests
+                          : (user?.testsAttempted ?? 0);
+                      final String attemptedStr = testsCount.toString();
+
+                      final double accuracyVal = results.isNotEmpty
+                          ? overall.averageAccuracy
+                          : (user?.accuracy != null && user!.accuracy > 0 ? user.accuracy : 0.0);
+                      final String accuracyStr = '${accuracyVal.toStringAsFixed(0)}%';
+
+                      final int studyTimeMinutes = results.isNotEmpty && overall.totalDurationSeconds > 0
+                          ? (overall.totalDurationSeconds ~/ 60)
+                          : (user?.totalStudyTimeMinutes ?? 0);
+                      final String studyTimeStr = studyTimeMinutes >= 60
+                          ? '${studyTimeMinutes ~/ 60}h ${studyTimeMinutes % 60}m'
+                          : '${studyTimeMinutes}m';
+
+                      final int streakVal = overall.currentStreakDays > 0
+                          ? overall.currentStreakDays
+                          : (user?.currentStreak ?? (testsCount > 0 ? 1 : 0));
+                      final String streakStr = '$streakVal ${streakVal == 1 ? "Day" : "Days"}';
 
                       return Container(
                         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
@@ -419,6 +434,14 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   _buildNavigationMenuTile(
                     context,
+                    title: 'Notifications & Updates',
+                    desc: 'View recent announcements, alerts and reminders',
+                    icon: Icons.notifications_active_outlined,
+                    color: const Color(0xFFF59E0B),
+                    destination: const NotificationsScreen(),
+                  ),
+                  _buildNavigationMenuTile(
+                    context,
                     title: 'Preferences',
                     desc: 'Configure notifications, language and theme',
                     icon: Icons.tune_rounded,
@@ -427,27 +450,11 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   _buildNavigationMenuTile(
                     context,
-                    title: 'Privacy & Security',
-                    desc: 'Device access and details visibility settings',
-                    icon: Icons.security_outlined,
-                    color: const Color(0xFFEC4899),
-                    destination: PrivacySecurityScreen(),
-                  ),
-                  _buildNavigationMenuTile(
-                    context,
                     title: 'Help & Support',
                     desc: 'FAQs, contact chat, and tickets',
                     icon: Icons.support_agent_rounded,
                     color: const Color(0xFF00C6FF),
                     destination: HelpSupportScreen(),
-                  ),
-                  _buildNavigationMenuTile(
-                    context,
-                    title: 'Verify Certificate',
-                    desc: 'Official certificate authenticity verification',
-                    icon: Icons.verified_rounded,
-                    color: const Color(0xFF10B981),
-                    destination: const CertificateVerificationScreen(),
                   ),
                   _buildNavigationMenuTile(
                     context,
@@ -499,14 +506,14 @@ class ProfileScreen extends StatelessWidget {
                                     'Still need help? Talk to our expert counsellor',
                                     style: TextStyle(
                                       color: textColor,
-                                      fontSize: 12.5,
+                                      fontSize: 14,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
                                     'Get free 1-on-1 guidance for course & exam preparation',
-                                    style: TextStyle(color: subColor, fontSize: 10.5),
+                                    style: TextStyle(color: subColor, fontSize: 12.5),
                                   ),
                                 ],
                               ),
@@ -547,78 +554,6 @@ class ProfileScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  // Log Out Tile
-                  Container(
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E293B).withValues(alpha: 0.6) : Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Colors.redAccent.withValues(alpha: 0.3),
-                      ),
-                    ),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                      leading: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.redAccent.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(Icons.logout_rounded, color: Colors.redAccent, size: 22),
-                      ),
-                      title: const Text(
-                        'Log Out',
-                        style: TextStyle(
-                          color: Colors.redAccent,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      subtitle: const Text(
-                        'Sign out of your Examinantt account',
-                        style: TextStyle(color: Colors.redAccent, fontSize: 11),
-                      ),
-                      trailing: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.redAccent, size: 16),
-                      onTap: () => _showLogoutDialog(context),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  // Delete Account Tile
-                  Container(
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E293B).withValues(alpha: 0.6) : Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Colors.red.shade700.withValues(alpha: 0.4),
-                      ),
-                    ),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                      leading: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.red.shade700.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(Icons.delete_forever_rounded, color: Colors.red.shade400, size: 22),
-                      ),
-                      title: Text(
-                        'Delete Account',
-                        style: TextStyle(
-                          color: Colors.red.shade400,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      subtitle: Text(
-                        'Permanently delete your account & data',
-                        style: TextStyle(color: Colors.red.shade400, fontSize: 11),
-                      ),
-                      trailing: Icon(Icons.arrow_forward_ios_rounded, color: Colors.red.shade400, size: 16),
-                      onTap: () => _showDeleteAccountDialog(context),
-                    ),
-                  ),
                 ],
               ).animate().fadeIn(delay: 200.ms, duration: 400.ms),
               const SizedBox(height: 32),
@@ -626,168 +561,10 @@ class ProfileScreen extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-
-  void _showLogoutDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF0F172A),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: Colors.redAccent.withValues(alpha: 0.3), width: 1.5),
-        ),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.redAccent.withValues(alpha: 0.2),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.logout_rounded, color: Colors.redAccent, size: 24),
-            ),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Text(
-                'Confirm Log Out',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-        content: const Text(
-          'Are you sure you want to log out of your Examinantt account? You will need to sign in again to access your courses and test series.',
-          style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
-        ),
-        actionsPadding: const EdgeInsets.all(16),
-        actions: [
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    side: const BorderSide(color: Colors.white30),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Cancel', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    backgroundColor: Colors.redAccent,
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onPressed: () async {
-                    Navigator.pop(ctx);
-                    if (context.mounted) {
-                      await Provider.of<UserProvider>(context, listen: false).logout();
-                      if (context.mounted) {
-                        Navigator.of(context).pushAndRemoveUntil(
-                          MaterialPageRoute(builder: (_) => const LoginScreen()),
-                          (route) => false,
-                        );
-                      }
-                    }
-                  },
-                  child: const Text('Yes, Log Out', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                ),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }
 
-  void _showDeleteAccountDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF0F172A),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: Colors.red.shade700, width: 1.5),
-        ),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.red.shade700.withValues(alpha: 0.2),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.warning_amber_rounded, color: Colors.red.shade400, size: 24),
-            ),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Text(
-                'Confirm Account Deletion',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 17),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-        content: const Text(
-          'Are you sure you want to permanently delete your account? This action CANNOT be undone. All your test attempts, statistics, purchases, and profile data will be permanently removed.',
-          style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
-        ),
-        actionsPadding: const EdgeInsets.all(16),
-        actions: [
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    side: const BorderSide(color: Colors.white30),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Cancel', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    backgroundColor: Colors.red.shade700,
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onPressed: () async {
-                    Navigator.pop(ctx);
-                    if (context.mounted) {
-                      await Provider.of<UserProvider>(context, listen: false).logout();
-                      if (context.mounted) {
-                        Navigator.of(context).pushAndRemoveUntil(
-                          MaterialPageRoute(builder: (_) => const LoginScreen()),
-                          (route) => false,
-                        );
-                      }
-                    }
-                  },
-                  child: const Text('Yes, Delete', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildStatCol(
     BuildContext context,
@@ -807,13 +584,13 @@ class ProfileScreen extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             label,
-            style: TextStyle(fontSize: 9, color: subColor),
+            style: TextStyle(fontSize: 12, color: subColor),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 4),
           Text(
             value,
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: textColor),
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: textColor),
             textAlign: TextAlign.center,
           ),
         ],
@@ -861,15 +638,15 @@ class ProfileScreen extends StatelessWidget {
         ),
         title: Text(
           title,
-          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: textColor),
+          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: textColor),
         ),
         subtitle: Text(
           desc,
-          style: TextStyle(fontSize: 10, color: subColor),
+          style: AppTextStyles.bodySmall.copyWith(color: subColor),
         ),
         trailing: Icon(Icons.chevron_right_rounded, color: subColor, size: 18),
         onTap: () {
-          Navigator.push(
+          AppNavigator.push(
             context,
             MaterialPageRoute(builder: (context) => destination),
           );
@@ -946,7 +723,7 @@ class ProfileScreen extends StatelessWidget {
             const SizedBox(width: 5),
             Text(
               title,
-              style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold),
+              style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.bold),
             ),
           ],
         ),

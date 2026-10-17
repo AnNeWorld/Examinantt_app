@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import '../utils/app_theme.dart';
 import '../constants/app_colors.dart';
 
@@ -11,161 +10,166 @@ class TermsConditionsScreen extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final scaffoldBg = isDark ? AppColors.backgroundDark : AppTheme.backgroundLight;
     final textColor = isDark ? Colors.white : AppTheme.darkSlate;
+    final bodyTextColor = isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569);
+    final metaColor = isDark ? AppColors.textDarkSecondary : Colors.grey.shade600;
+    final dividerColor = isDark ? Colors.white12 : Colors.grey.shade200;
 
     return Scaffold(
       backgroundColor: scaffoldBg,
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 200.0,
-            floating: false,
-            pinned: true,
-            backgroundColor: isDark ? AppColors.backgroundDark : AppTheme.darkSlate,
-            iconTheme: const IconThemeData(color: Colors.white),
-            flexibleSpace: FlexibleSpaceBar(
-              title: const Text(
-                'Terms & Conditions',
-                style: TextStyle(fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 0.5),
+      appBar: AppBar(
+        title: const Text(
+          'Terms & Conditions',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        elevation: 0,
+        backgroundColor: isDark ? AppColors.surfaceDark : AppTheme.primaryColor,
+        foregroundColor: Colors.white,
+      ),
+      body: RefreshIndicator(
+        color: const Color(0xFFFFA000),
+        backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
+        onRefresh: () async {
+          await Future.delayed(const Duration(milliseconds: 650));
+        },
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
+          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Terms and Conditions for Examinantt',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+                color: textColor,
               ),
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF1D976C), Color(0xFF93F9B9)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-                child: Stack(
-                  children: [
-                    Positioned(
-                      top: -20,
-                      right: -20,
-                      child: Icon(
-                        Icons.gavel_rounded,
-                        size: 150,
-                        color: Colors.white.withValues(alpha: 0.2),
-                      ),
-                    ).animate().scale(duration: 600.ms, curve: Curves.easeOutBack),
-                  ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Last updated: July 2026',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: metaColor,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Divider(color: dividerColor),
+            const SizedBox(height: 18),
+            Text(
+              'Please read these terms and conditions carefully before using our mobile application and online learning services.',
+              style: TextStyle(
+                fontSize: 14,
+                color: bodyTextColor,
+                height: 1.6,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+            const SizedBox(height: 24),
+            _buildSection(
+              title: '1. Acceptance of Terms',
+              content:
+                  'By accessing and using this app, you accept and agree to be bound by the terms and provisions of this agreement. In addition, when using this app\'s particular services, you shall be subject to any posted guidelines or rules applicable to such services.',
+              textColor: textColor,
+              bodyTextColor: bodyTextColor,
+            ),
+            _buildSection(
+              title: '2. User Account',
+              content:
+                  'If you create an account on the app, you are responsible for maintaining the security of your account and credentials. You are fully responsible for all activities that occur under the account and any other actions taken in connection with it. Sharing account credentials across multiple individuals is strictly prohibited.',
+              textColor: textColor,
+              bodyTextColor: bodyTextColor,
+            ),
+            _buildSection(
+              title: '3. Payment and Subscriptions',
+              content:
+                  'Certain courses, test series, and learning resources on the app are available through one-time payments or recurring subscriptions. All payments processed via authorized gateways are final and non-refundable unless explicitly stated otherwise in our Refund Policy. Subscriptions automatically renew unless cancelled prior to the renewal date.',
+              textColor: textColor,
+              bodyTextColor: bodyTextColor,
+            ),
+            _buildSection(
+              title: '4. Intellectual Property',
+              content:
+                  'All study material, mock test series, live lectures, video recordings, PPT notes, question banks, brand marks, and software code are the exclusive intellectual property of Examinantt. Users may not copy, reproduce, distribute, or reverse engineer any part of the service without prior written permission.',
+              textColor: textColor,
+              bodyTextColor: bodyTextColor,
+            ),
+            _buildSection(
+              title: '5. User Conduct and Restrictions',
+              content:
+                  'You agree not to use the platform for any unlawful purpose or to solicit others to perform or participate in any unlawful acts. Harassment, abuse, insulting language, spamming, and attempting to compromise server security or data integrity are grounds for immediate termination of your account.',
+              textColor: textColor,
+              bodyTextColor: bodyTextColor,
+            ),
+            _buildSection(
+              title: '6. Modifications to Terms',
+              content:
+                  'We reserve the right, at our sole discretion, to modify or replace these Terms at any time. We will notify users of any material changes by updating the "Last updated" date of these Terms or via in-app notification.',
+              textColor: textColor,
+              bodyTextColor: bodyTextColor,
+            ),
+            _buildSection(
+              title: '7. Governing Law and Jurisdiction',
+              content:
+                  'These Terms and Conditions shall be governed by and construed in accordance with the laws of India. Any disputes arising out of or related to the use of Examinantt shall be subject to the exclusive jurisdiction of the competent courts in Lucknow, Uttar Pradesh.',
+              textColor: textColor,
+              bodyTextColor: bodyTextColor,
+            ),
+            _buildSection(
+              title: '8. Contact Information',
+              content:
+                  'If you have any questions or feedback regarding these Terms & Conditions, please reach out to our team at support@examinantt.com or through the Help & Support section in the app.',
+              textColor: textColor,
+              bodyTextColor: bodyTextColor,
+            ),
+            const SizedBox(height: 32),
+            Center(
+              child: Text(
+                '© 2026 Examinantt. All rights reserved.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: metaColor,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Terms and Conditions for Examinantt',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
-                      color: textColor,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Last updated: July 2026',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? AppColors.textDarkSecondary : Colors.grey.shade500,
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  _buildSection(
-                    context,
-                    '1. Acceptance of Terms',
-                    'By accessing and using this app, you accept and agree to be bound by the terms and provision of this agreement. In addition, when using this app\'s particular services, you shall be subject to any posted guidelines or rules applicable to such services.',
-                  ),
-                  _buildSection(
-                    context,
-                    '2. User Account',
-                    'If you create an account on the app, you are responsible for maintaining the security of your account and you are fully responsible for all activities that occur under the account and any other actions taken in connection with it.',
-                  ),
-                  _buildSection(
-                    context,
-                    '3. Payment and Subscriptions',
-                    'Certain services on the app may be available only through payment. All payments are final and non-refundable unless otherwise specified in writing. Subscriptions will automatically renew unless canceled.',
-                  ),
-                  _buildSection(
-                    context,
-                    '4. Intellectual Property',
-                    'The content, organization, graphics, design, compilation, magnetic translation, digital conversion, and other matters related to the app are protected under applicable copyrights, trademarks, and other proprietary rights.',
-                  ),
-                  _buildSection(
-                    context,
-                    '5. Modifications to Terms',
-                    'We reserve the right, at our sole discretion, to modify or replace these Terms at any time. What constitutes a material change will be determined at our sole discretion.',
-                  ),
-                  const SizedBox(height: 40),
-                ].animate().fade().slideY(begin: 0.1, end: 0, curve: Curves.easeOutCubic),
-              ),
-            ),
-          ),
-        ],
+            const SizedBox(height: 24),
+          ],
+        ),
       ),
-    );
-  }
+    ),
+  );
+}
 
-  Widget _buildSection(BuildContext context, String title, String content) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBg = isDark ? AppColors.surfaceDark : Colors.white;
-    final textColor = isDark ? Colors.white : AppTheme.darkSlate;
-    final bodyTextColor = isDark ? AppColors.textDarkSecondary : Colors.grey.shade600;
-    final borderColor = isDark ? AppColors.greyDark : Colors.grey.withValues(alpha: 0.1);
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 24.0),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-        border: Border.all(color: borderColor),
-      ),
+  Widget _buildSection({
+    required String title,
+    required String content,
+    required Color textColor,
+    required Color bodyTextColor,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 22.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1D976C).withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.description_rounded, color: Color(0xFF1D976C), size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: textColor,
-                  ),
-                ),
-              ),
-            ],
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: textColor,
+              height: 1.35,
+            ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           Text(
             content,
             style: TextStyle(
-              fontSize: 15,
+              fontSize: 14,
               color: bodyTextColor,
               height: 1.6,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w400,
             ),
           ),
         ],

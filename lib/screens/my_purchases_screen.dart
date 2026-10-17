@@ -1,3 +1,4 @@
+import 'package:examinantt_app/utils/app_navigator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../utils/app_theme.dart';
@@ -33,40 +34,60 @@ class MyPurchasesScreen extends StatelessWidget {
           final purchases = snapshot.data ?? [];
 
           if (purchases.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.shopping_bag_outlined, size: 64, color: isDark ? AppColors.greyDark : Colors.grey[400]),
-                    const SizedBox(height: 16),
-                    Text(
-                      'No purchases yet',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white70 : Colors.grey[600],
+            return RefreshIndicator(
+              color: const Color(0xFFFFA000),
+              backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
+              onRefresh: () async {
+                await Future.delayed(const Duration(milliseconds: 650));
+              },
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                child: SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.7,
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.shopping_bag_outlined, size: 64, color: isDark ? AppColors.greyDark : Colors.grey[400]),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No purchases yet',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white70 : Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Unlock premium courses and test packages to see them here.',
+                            style: TextStyle(
+                              color: isDark ? AppColors.textDarkSecondary : Colors.grey[500],
+                              fontSize: 14,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Unlock premium courses and test packages to see them here.',
-                      style: TextStyle(
-                        color: isDark ? AppColors.textDarkSecondary : Colors.grey[500],
-                        fontSize: 14,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+                  ),
                 ),
               ),
             );
           }
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(20),
-            itemCount: purchases.length,
+          return RefreshIndicator(
+            color: const Color(0xFFFFA000),
+            backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
+            onRefresh: () async {
+              await Future.delayed(const Duration(milliseconds: 650));
+            },
+            child: ListView.builder(
+              physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+              padding: const EdgeInsets.all(20),
+              itemCount: purchases.length,
             itemBuilder: (context, index) {
               final purchase = purchases[index];
               final title = (purchase['title'] ?? 'Course Package').toString();
@@ -84,14 +105,14 @@ class MyPurchasesScreen extends StatelessWidget {
               return GestureDetector(
                 onTap: () {
                   if (isLiveClass) {
-                    Navigator.push(
+                    AppNavigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const LiveClassesScreen(initialTab: 0),
                       ),
                     );
                   } else {
-                    Navigator.push(
+                    AppNavigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => TestSeriesDetailScreen(
@@ -171,7 +192,7 @@ class MyPurchasesScreen extends StatelessWidget {
                                   'Purchased: $purchaseDate',
                                   style: TextStyle(
                                     color: isDark ? AppColors.textDarkSecondary.withValues(alpha: 0.8) : Colors.grey[600],
-                                    fontSize: 11,
+                                    fontSize: 12.5,
                                   ),
                                 ),
                               ),
@@ -185,7 +206,7 @@ class MyPurchasesScreen extends StatelessWidget {
                             price,
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              fontSize: 14,
+                              fontSize: 15.5,
                               color: isDark ? AppColors.accent : AppTheme.primaryColor,
                             ),
                           ),

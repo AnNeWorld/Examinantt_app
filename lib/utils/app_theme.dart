@@ -30,6 +30,12 @@ class AppTheme {
         foregroundColor: AppColors.white,
         centerTitle: false,
         elevation: 0,
+        titleTextStyle: TextStyle(
+          fontFamily: fontFamily,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: AppColors.white,
+        ),
         systemOverlayStyle: SystemUiOverlayStyle.light,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -52,6 +58,12 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16), 
         ),
+      ),
+      dividerColor: Colors.grey.shade200,
+      dividerTheme: DividerThemeData(
+        color: Colors.grey.shade200,
+        thickness: 1,
+        space: 1,
       ),
       textTheme: AppTextStyles.lightTextTheme,
       inputDecorationTheme: InputDecorationTheme(
@@ -91,6 +103,12 @@ class AppTheme {
         foregroundColor: AppColors.textDark,
         centerTitle: false,
         elevation: 0,
+        titleTextStyle: TextStyle(
+          fontFamily: fontFamily,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: AppColors.textDark,
+        ),
         systemOverlayStyle: SystemUiOverlayStyle.light,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -113,6 +131,12 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
+      ),
+      dividerColor: const Color(0xFF1E293B),
+      dividerTheme: const DividerThemeData(
+        color: Color(0xFF1E293B),
+        thickness: 1,
+        space: 1,
       ),
       textTheme: AppTextStyles.darkTextTheme,
       inputDecorationTheme: InputDecorationTheme(

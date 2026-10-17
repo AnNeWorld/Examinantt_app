@@ -191,7 +191,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                     ),
                     child: const Text(
                       'Open YouTube',
-                      style: TextStyle(color: Color(0xFFFF7A00), fontSize: 10, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: Color(0xFFFF7A00), fontSize: 12.5, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
@@ -226,7 +226,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w900,
-                                  fontSize: 10,
+                                  fontSize: 12,
                                 ),
                               ),
                             ],
@@ -243,7 +243,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                           style: const TextStyle(
                             color: Color(0xFF38BDF8),
                             fontWeight: FontWeight.bold,
-                            fontSize: 10,
+                            fontSize: 12,
                           ),
                         ),
                       ),
@@ -253,7 +253,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                   Text(
                     widget.title,
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 20,
                       fontWeight: FontWeight.w900,
                       color: textColor,
                     ),
@@ -283,7 +283,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                               Text(
                                 widget.instructor,
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: 15,
                                   fontWeight: FontWeight.bold,
                                   color: textColor,
                                 ),
@@ -293,7 +293,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                                 'Senior Subject Specialist • Examinantt Team',
                                 style: TextStyle(
                                   color: secondaryTextColor,
-                                  fontSize: 11,
+                                  fontSize: 12.5,
                                 ),
                               ),
                             ],
@@ -306,7 +306,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                   Text(
                     'About This Session',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: textColor,
                     ),
@@ -315,7 +315,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                   Text(
                     'Real-time classroom session conducted by ${widget.instructor}. Keep your notebook ready and follow through concept explanations, previous year exam patterns, and problem solving steps.',
                     style: TextStyle(
-                      fontSize: 12.5,
+                      fontSize: 14,
                       color: secondaryTextColor,
                       height: 1.45,
                     ),
@@ -366,12 +366,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           SizedBox(height: 8),
           Text(
             'Video Stream Currently Unavailable',
-            style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+            style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
           ),
           SizedBox(height: 4),
           Text(
             'No stream link has been configured for this class.',
-            style: TextStyle(color: Colors.white54, fontSize: 10.5),
+            style: TextStyle(color: Colors.white54, fontSize: 13),
           ),
         ],
       ),

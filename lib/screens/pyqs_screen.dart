@@ -1,9 +1,11 @@
+import 'package:examinantt_app/utils/app_navigator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../models/content_models.dart';
 import '../utils/app_theme.dart';
 import 'pdf_viewer_screen.dart';
 import 'quiz_screen.dart';
+import '../widgets/notification_bell_action.dart';
 
 class PyqsScreen extends StatefulWidget {
   const PyqsScreen({super.key});
@@ -15,6 +17,13 @@ class PyqsScreen extends StatefulWidget {
 class _PyqsScreenState extends State<PyqsScreen> {
   String _selectedExamFilter = 'All';
   String _searchQuery = '';
+  late final Stream<List<Map<String, dynamic>>> _pyqsStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _pyqsStream = _getPyqsStream();
+  }
 
   Stream<List<Map<String, dynamic>>> _getPyqsStream() {
     return FirebaseFirestore.instance.collection('pyqs').snapshots().asyncMap((pyqSnap) async {
@@ -96,6 +105,9 @@ class _PyqsScreenState extends State<PyqsScreen> {
         backgroundColor: isDark ? const Color(0xFF071428) : Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
+        actions: [
+          NotificationBellAction(color: textColor),
+        ],
       ),
       body: Column(
         children: [
@@ -180,9 +192,9 @@ class _PyqsScreenState extends State<PyqsScreen> {
           // PYQs List
           Expanded(
             child: StreamBuilder<List<Map<String, dynamic>>>(
-              stream: _getPyqsStream(),
+              stream: _pyqsStream,
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
+                if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (snapshot.hasError) {
@@ -209,24 +221,35 @@ class _PyqsScreenState extends State<PyqsScreen> {
                   return matchesExam && matchesQuery;
                 }).toList();
 
-                if (filteredPapers.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.search_off_rounded, size: 48, color: isDark ? Colors.white24 : Colors.grey.shade400),
-                        const SizedBox(height: 10),
-                        Text('No PYQ papers matching your filter', style: TextStyle(color: textColor, fontSize: 13)),
-                      ],
-                    ),
-                  );
-                }
-
-                return ListView.separated(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                    itemCount: filteredPapers.length,
-                    separatorBuilder: (_, index) => const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
+                return RefreshIndicator(
+                  color: const Color(0xFF0070F3),
+                  backgroundColor: isDark ? const Color(0xFF071224) : Colors.white,
+                  onRefresh: () async {
+                    await Future.delayed(const Duration(milliseconds: 650));
+                    if (mounted) setState(() {});
+                  },
+                  child: filteredPapers.isEmpty
+                      ? SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                          child: Container(
+                            height: 350,
+                            alignment: Alignment.center,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.search_off_rounded, size: 48, color: isDark ? Colors.white24 : Colors.grey.shade400),
+                                const SizedBox(height: 10),
+                                Text('No PYQ papers matching your filter', style: TextStyle(color: textColor, fontSize: 13)),
+                              ],
+                            ),
+                          ),
+                        )
+                      : ListView.separated(
+                          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          itemCount: filteredPapers.length,
+                          separatorBuilder: (_, index) => const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
                       final paper = filteredPapers[index];
                       final Color examColor = paper['color'] as Color;
 
@@ -264,7 +287,7 @@ class _PyqsScreenState extends State<PyqsScreen> {
                                         paper['exam'] as String,
                                         style: TextStyle(
                                           color: examColor,
-                                          fontSize: 10,
+                                          fontSize: 11.5,
                                           fontWeight: FontWeight.w900,
                                         ),
                                       ),
@@ -280,7 +303,7 @@ class _PyqsScreenState extends State<PyqsScreen> {
                                         paper['year'] as String,
                                         style: const TextStyle(
                                           color: Color(0xFF10B981),
-                                          fontSize: 10,
+                                          fontSize: 11.5,
                                           fontWeight: FontWeight.w800,
                                         ),
                                       ),
@@ -289,7 +312,7 @@ class _PyqsScreenState extends State<PyqsScreen> {
                                 ),
                                 Text(
                                   paper['attempts'] as String,
-                                  style: TextStyle(color: isDark ? Colors.white54 : Colors.grey.shade600, fontSize: 10),
+                                  style: TextStyle(color: isDark ? Colors.white54 : Colors.grey.shade600, fontSize: 12),
                                 ),
                               ],
                             ),
@@ -300,7 +323,7 @@ class _PyqsScreenState extends State<PyqsScreen> {
                               paper['title'] as String,
                               style: TextStyle(
                                 color: textColor,
-                                fontSize: 13.5,
+                                fontSize: 15.5,
                                 fontWeight: FontWeight.w900,
                                 letterSpacing: -0.2,
                               ),
@@ -308,7 +331,7 @@ class _PyqsScreenState extends State<PyqsScreen> {
                             const SizedBox(height: 3),
                             Text(
                               '${paper['shift']} • ${paper['subjects']}',
-                              style: TextStyle(color: isDark ? Colors.white60 : Colors.grey.shade600, fontSize: 10.5),
+                              style: TextStyle(color: isDark ? Colors.white60 : Colors.grey.shade600, fontSize: 13),
                             ),
                             const SizedBox(height: 10),
 
@@ -350,7 +373,7 @@ class _PyqsScreenState extends State<PyqsScreen> {
                                         description: 'Official ${paper['exam']} question paper.',
                                         url: paper['pdfUrl'] as String,
                                       );
-                                      Navigator.push(
+                                      AppNavigator.push(
                                         context,
                                         MaterialPageRoute(
                                           builder: (_) => PdfViewerScreen(pdfData: item),
@@ -358,7 +381,7 @@ class _PyqsScreenState extends State<PyqsScreen> {
                                       );
                                     },
                                     icon: const Icon(Icons.picture_as_pdf_rounded, size: 14),
-                                    label: const Text('View PDF', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                                    label: const Text('View PDF', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700)),
                                     style: OutlinedButton.styleFrom(
                                       foregroundColor: const Color(0xFF38BDF8),
                                       side: const BorderSide(color: Color(0xFF1E4378)),
@@ -373,7 +396,7 @@ class _PyqsScreenState extends State<PyqsScreen> {
                                 Expanded(
                                   child: ElevatedButton.icon(
                                     onPressed: () {
-                                      Navigator.push(
+                                      AppNavigator.push(
                                         context,
                                         MaterialPageRoute(
                                           builder: (_) => QuizScreen(
@@ -384,7 +407,7 @@ class _PyqsScreenState extends State<PyqsScreen> {
                                       );
                                     },
                                     icon: const Icon(Icons.play_arrow_rounded, size: 16),
-                                    label: const Text('Attempt CBT', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+                                    label: const Text('Attempt CBT', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800)),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: const Color(0xFF0070F3),
                                       foregroundColor: Colors.white,
@@ -399,7 +422,8 @@ class _PyqsScreenState extends State<PyqsScreen> {
                         ),
                       );
                     },
-                  );
+                  ),
+                );
               },
             ),
           ),
@@ -419,12 +443,12 @@ class _PyqsScreenState extends State<PyqsScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 10.5, color: isDark ? Colors.white60 : Colors.grey.shade600),
-          const SizedBox(width: 3),
+          Icon(icon, size: 12, color: isDark ? Colors.white60 : Colors.grey.shade600),
+          const SizedBox(width: 4),
           Text(
             text,
             style: TextStyle(
-              fontSize: 9.5,
+              fontSize: 11.5,
               fontWeight: FontWeight.w600,
               color: isDark ? Colors.white70 : Colors.grey.shade700,
             ),

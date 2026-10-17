@@ -1,14 +1,16 @@
+import 'package:examinantt_app/utils/app_navigator.dart';
 // ignore_for_file: unused_element, unused_field
 import 'package:flutter/material.dart';
 import '../utils/app_theme.dart';
 import '../services/payment_service.dart';
 import '../services/firestore_service.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
-import '../widgets/resource_page_sections.dart';
+import '../constants/app_colors.dart';
 
 import '../models/content_models.dart';
 import '../services/content_service.dart';
 import 'pdf_viewer_screen.dart';
+import '../widgets/notification_bell_action.dart';
 
 class ResourcesScreen extends StatefulWidget {
   const ResourcesScreen({super.key});
@@ -32,9 +34,12 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
     super.dispose();
   }
 
+  late final Stream<List<ResourceItem>> _resourcesStream;
+
   @override
   void initState() {
     super.initState();
+    _resourcesStream = ContentService().getResources();
     _paymentService.initialize(
       onSuccess: _handlePaymentSuccess,
       onFailure: _handlePaymentError,
@@ -70,7 +75,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
     if (!mounted) return;
     AppTheme.showErrorSnackBar(
       context,
-      'Payment Failed: ${response.message ?? "User cancelled or transaction failed"}',
+      PaymentService.cleanErrorMessage(response),
     );
   }
 
@@ -103,37 +108,9 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
               // Top App Bar matching Home, Batches, Tests & PDF Header
               _buildTopAppBar(),
 
-              // Complete 7 Pages from Resource page.pdf (Dark Mode) or Native Light Center (Light Mode)
+              // Unified Resource Center for both dark and light modes (same functions)
               Expanded(
-                child: isDark
-                    ? ResourcePageSections(
-                        onTabChanged: (index) {
-                          if (mounted) {
-                            setState(() {
-                              _activeTabIndex = index;
-                            });
-                          }
-                        },
-                        onExamChanged: (exam) {
-                          AppTheme.showSuccessSnackBar(context, 'Exam switched to $exam');
-                        },
-                        onResourceOpened: (title) {
-                          AppTheme.showSuccessSnackBar(context, 'Opening $title...');
-                        },
-                        onUnlockRequested: (title, price) {
-                          PaymentService().payAndUnlock(
-                            context: context,
-                            title: title,
-                            price: price,
-                            itemType: 'Resource',
-                            subtitle: 'Instant lifetime access to $title study material',
-                            onSuccess: () {
-                              if (mounted) setState(() {});
-                            },
-                          );
-                        },
-                      )
-                    : _buildLightResourceCenter(),
+                child: _buildResourceCenter(isDark),
               ),
             ],
           ),
@@ -142,145 +119,163 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
     );
   }
 
-  Widget _buildLightResourceCenter() {
+  Widget _buildResourceCenter(bool isDark) {
     final categories = ['All', 'Formulas', 'Notes', 'PYQs', 'Mock PDFs', 'Question Bank'];
+    final cardBg = isDark ? AppColors.surfaceDark : Colors.white;
+    final cardBorder = isDark ? const Color(0xFF1E293B) : Colors.grey.shade200;
+    final titleColor = isDark ? Colors.white : AppTheme.darkSlate;
+    final subtitleColor = isDark ? Colors.white70 : const Color(0xFF64748B);
 
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Search Bar
-          Container(
-            height: 44,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade200),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+    return RefreshIndicator(
+      color: AppTheme.primaryColor,
+      backgroundColor: cardBg,
+      onRefresh: () async {
+        await Future.delayed(const Duration(milliseconds: 650));
+        if (mounted) setState(() {});
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Search Bar
+            Container(
+              height: 44,
+              decoration: BoxDecoration(
+                color: cardBg,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: cardBorder),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: TextField(
+                controller: _searchController,
+                onChanged: (v) => setState(() => _searchQuery = v.trim().toLowerCase()),
+                style: TextStyle(fontSize: 14, color: titleColor),
+                decoration: InputDecoration(
+                  hintText: 'Search formula sheets, notes, PDFs...',
+                  hintStyle: TextStyle(color: isDark ? Colors.white38 : Colors.grey.shade400, fontSize: 14),
+                  prefixIcon: Icon(Icons.search, color: isDark ? Colors.white54 : Colors.grey.shade400, size: 20),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 ),
-              ],
-            ),
-            child: TextField(
-              controller: _searchController,
-              onChanged: (v) => setState(() => _searchQuery = v.trim().toLowerCase()),
-              style: const TextStyle(fontSize: 13, color: AppTheme.darkSlate),
-              decoration: InputDecoration(
-                hintText: 'Search formula sheets, notes, PDFs...',
-                hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),
-                prefixIcon: Icon(Icons.search, color: Colors.grey.shade400, size: 20),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(vertical: 12),
               ),
             ),
-          ),
-          const SizedBox(height: 12),
+            const SizedBox(height: 12),
 
-          // Horizontal Filter Chips
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: categories.map((cat) {
-                final isSelected = _selectedCategoryFilter == cat;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: ChoiceChip(
-                    label: Text(cat),
-                    selected: isSelected,
-                    onSelected: (val) {
-                      setState(() => _selectedCategoryFilter = cat);
-                    },
-                    selectedColor: const Color(0xFF10B981),
-                    backgroundColor: Colors.white,
-                    labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : Colors.grey.shade700,
-                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                      fontSize: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      side: BorderSide(
-                        color: isSelected ? const Color(0xFF10B981) : Colors.grey.shade300,
+            // Horizontal Filter Chips
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: categories.map((cat) {
+                  final isSelected = _selectedCategoryFilter == cat;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ChoiceChip(
+                      label: Text(cat),
+                      selected: isSelected,
+                      onSelected: (val) {
+                        setState(() => _selectedCategoryFilter = cat);
+                      },
+                      selectedColor: const Color(0xFF10B981),
+                      backgroundColor: cardBg,
+                      labelStyle: TextStyle(
+                        color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.grey.shade700),
+                        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                        fontSize: 14,
                       ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        side: BorderSide(
+                          color: isSelected ? const Color(0xFF10B981) : (isDark ? const Color(0xFF1E293B) : Colors.grey.shade300),
+                        ),
+                      ),
+                      showCheckmark: false,
                     ),
-                    showCheckmark: false,
-                  ),
-                );
-              }).toList(),
+                  );
+                }).toList(),
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-          // Stream of Study Material & PDFs
-          StreamBuilder<List<ResourceItem>>(
-            stream: ContentService().getResources(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40),
-                  child: Center(child: CircularProgressIndicator()),
+            // Stream of Study Material & PDFs
+            StreamBuilder<List<ResourceItem>>(
+              stream: _resourcesStream,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 40),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+
+                var items = snapshot.data ?? [];
+                if (_searchQuery.isNotEmpty) {
+                  items = items.where((r) =>
+                    r.title.toLowerCase().contains(_searchQuery) ||
+                    r.subtitle.toLowerCase().contains(_searchQuery) ||
+                    r.subject.toLowerCase().contains(_searchQuery)
+                  ).toList();
+                }
+                if (_selectedCategoryFilter != 'All') {
+                  items = items.where((r) =>
+                    r.category.toLowerCase().contains(_selectedCategoryFilter.toLowerCase()) ||
+                    r.type.toLowerCase().contains(_selectedCategoryFilter.toLowerCase()) ||
+                    r.title.toLowerCase().contains(_selectedCategoryFilter.toLowerCase())
+                  ).toList();
+                }
+
+                if (items.isEmpty) {
+                  return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(32),
+                    decoration: BoxDecoration(
+                      color: cardBg,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: cardBorder),
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(Icons.library_books_outlined, size: 54, color: isDark ? Colors.white24 : Colors.grey.shade300),
+                        const SizedBox(height: 12),
+                        Text(
+                          'No Study Resources Found',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: titleColor),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Try choosing another filter or search keyword.',
+                          style: TextStyle(color: subtitleColor, fontSize: 12.5),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return Column(
+                  children: items.map((res) => _buildResourceCard(res, isDark)).toList(),
                 );
-              }
-
-              var items = snapshot.data ?? [];
-              if (_searchQuery.isNotEmpty) {
-                items = items.where((r) =>
-                  r.title.toLowerCase().contains(_searchQuery) ||
-                  r.subtitle.toLowerCase().contains(_searchQuery) ||
-                  r.subject.toLowerCase().contains(_searchQuery)
-                ).toList();
-              }
-              if (_selectedCategoryFilter != 'All') {
-                items = items.where((r) =>
-                  r.category.toLowerCase().contains(_selectedCategoryFilter.toLowerCase()) ||
-                  r.type.toLowerCase().contains(_selectedCategoryFilter.toLowerCase()) ||
-                  r.title.toLowerCase().contains(_selectedCategoryFilter.toLowerCase())
-                ).toList();
-              }
-
-              if (items.isEmpty) {
-                return Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(32),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey.shade200),
-                  ),
-                  child: Column(
-                    children: [
-                      Icon(Icons.library_books_outlined, size: 54, color: Colors.grey.shade300),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'No Study Resources Found',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.darkSlate),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Try choosing another filter or search keyword.',
-                        style: TextStyle(color: Colors.grey.shade600, fontSize: 12.5),
-                      ),
-                    ],
-                  ),
-                );
-              }
-
-              return Column(
-                children: items.map((res) => _buildLightResourceCard(res)).toList(),
-              );
-            },
-          ),
-        ],
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildLightResourceCard(ResourceItem res) {
+  Widget _buildResourceCard(ResourceItem res, bool isDark) {
+    final cardBg = isDark ? AppColors.surfaceDark : Colors.white;
+    final cardBorder = isDark ? const Color(0xFF1E293B) : Colors.grey.shade200;
+    final titleColor = isDark ? Colors.white : AppTheme.darkSlate;
+    final badgeBg = isDark ? const Color(0xFF0F1E36) : const Color(0xFFF1F5F9);
+    final badgeTextColor = isDark ? const Color(0xFF38BDF8) : const Color(0xFF64748B);
+
     final isPdf = res.url.toLowerCase().endsWith('.pdf') || res.type.toLowerCase().contains('pdf') || res.type.toLowerCase().contains('notes');
     final iconColor = isPdf ? const Color(0xFFEF4444) : const Color(0xFF10B981);
     final icon = isPdf ? Icons.picture_as_pdf_rounded : Icons.menu_book_rounded;
@@ -290,12 +285,12 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardBg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: cardBorder),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.03),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -307,9 +302,9 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.1),
+              color: iconColor.withValues(alpha: isDark ? 0.18 : 0.1),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: iconColor.withValues(alpha: 0.2)),
+              border: Border.all(color: iconColor.withValues(alpha: isDark ? 0.35 : 0.2)),
             ),
             child: Icon(icon, color: iconColor, size: 26),
           ),
@@ -323,19 +318,19 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
+                        color: badgeBg,
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
                         res.subject.toUpperCase(),
-                        style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: badgeTextColor),
                       ),
                     ),
                     const SizedBox(width: 6),
                     Text(
                       priceStr,
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 14,
                         fontWeight: FontWeight.w900,
                         color: res.price == 0 ? const Color(0xFF10B981) : const Color(0xFFFF7A00),
                       ),
@@ -345,17 +340,17 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
                 const SizedBox(height: 5),
                 Text(
                   res.title,
-                  style: const TextStyle(
-                    fontSize: 14.5,
+                  style: TextStyle(
+                    fontSize: 15,
                     fontWeight: FontWeight.bold,
-                    color: AppTheme.darkSlate,
+                    color: titleColor,
                     height: 1.25,
                   ),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   res.subtitle,
-                  style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600),
+                  style: TextStyle(fontSize: 14, color: isDark ? Colors.white70 : Colors.grey.shade600),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -363,21 +358,21 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
                 Row(
                   children: [
                     if (res.fileSize.isNotEmpty) ...[
-                      const Icon(Icons.description_outlined, size: 12, color: Color(0xFF94A3B8)),
+                      Icon(Icons.description_outlined, size: 12, color: isDark ? Colors.white38 : const Color(0xFF94A3B8)),
                       const SizedBox(width: 3),
-                      Text(res.fileSize, style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B))),
+                      Text(res.fileSize, style: TextStyle(fontSize: 12, color: isDark ? Colors.white60 : const Color(0xFF64748B))),
                       const SizedBox(width: 12),
                     ],
                     if (res.downloads.isNotEmpty) ...[
-                      const Icon(Icons.file_download_outlined, size: 12, color: Color(0xFF94A3B8)),
+                      Icon(Icons.file_download_outlined, size: 12, color: isDark ? Colors.white38 : const Color(0xFF94A3B8)),
                       const SizedBox(width: 3),
-                      Text(res.downloads, style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B))),
+                      Text(res.downloads, style: TextStyle(fontSize: 12, color: isDark ? Colors.white60 : const Color(0xFF64748B))),
                     ],
                     const Spacer(),
                     ElevatedButton(
                       onPressed: () {
                         if (res.price == 0 || res.isFree) {
-                          Navigator.push(
+                          AppNavigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (_) => PdfViewerScreen(pdfData: res),
@@ -405,7 +400,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
                       ),
                       child: Text(
                         res.price == 0 ? 'Open PDF' : 'Unlock PDF',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5),
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                       ),
                     ),
                   ],
@@ -462,34 +457,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
               ],
             ),
           ),
-          // Notification with badge 3 matching PDF
-          Stack(
-            children: [
-              IconButton(
-                icon: Icon(Icons.notifications_none_rounded, color: textColor),
-                onPressed: () {
-                  AppTheme.showSuccessSnackBar(context, 'You have 3 new study resources available!');
-                },
-              ),
-              Positioned(
-                right: 8,
-                top: 8,
-                child: Container(
-                  padding: const EdgeInsets.all(3),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFFA000),
-                    shape: BoxShape.circle,
-                  ),
-                  constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
-                  child: const Text(
-                    '3',
-                    style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-            ],
-          ),
+          NotificationBellAction(color: textColor),
           IconButton(
             icon: Icon(Icons.search_rounded, color: textColor),
             onPressed: () {

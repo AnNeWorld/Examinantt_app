@@ -10,15 +10,21 @@ class AboutUsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final scaffoldBg = isDark ? AppColors.backgroundDark : AppTheme.backgroundLight;
-    final cardBg = isDark ? AppColors.surfaceDark : Colors.white;
     final textColor = isDark ? Colors.white : AppTheme.darkSlate;
     final bodyTextColor = isDark ? AppColors.textDarkSecondary : Colors.grey.shade700;
     final dividerColor = isDark ? AppColors.greyDark : Colors.grey.shade300;
 
     return Scaffold(
       backgroundColor: scaffoldBg,
-      body: CustomScrollView(
-        slivers: [
+      body: RefreshIndicator(
+        color: const Color(0xFFFFA000),
+        backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
+        onRefresh: () async {
+          await Future.delayed(const Duration(milliseconds: 650));
+        },
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+          slivers: [
           SliverAppBar(
             expandedHeight: 250.0,
             floating: false,
@@ -118,75 +124,56 @@ class AboutUsScreen extends StatelessWidget {
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 40),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: cardBg,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.04),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
+                  const SizedBox(height: 36),
+                  Divider(color: dividerColor),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.location_on_rounded,
+                        color: isDark ? AppColors.accent : AppTheme.primaryColor,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Headquarters',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: textColor,
                         ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? AppColors.accent.withValues(alpha: 0.15)
-                                : AppTheme.primaryColor.withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.location_on_rounded,
-                            color: isDark ? AppColors.accent : AppTheme.primaryColor,
-                            size: 32,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Headquarters',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            color: textColor,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Near BBAU, Lucknow, U.P., India - 226025',
-                          style: TextStyle(
-                            color: bodyTextColor,
-                            fontSize: 14,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 24),
-                        Divider(color: dividerColor),
-                        const SizedBox(height: 16),
-                        Text(
-                          '© 2026 Examinantt. All rights reserved.',
-                          style: TextStyle(
-                            color: Colors.grey.shade500,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Near BBAU, Lucknow, U.P., India - 226025',
+                    style: TextStyle(
+                      color: bodyTextColor,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    '© 2026 Examinantt. All rights reserved.',
+                    style: TextStyle(
+                      color: Colors.grey.shade500,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
                 ],
               ).animate().fade().slideY(begin: 0.1, end: 0),
             ),
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }

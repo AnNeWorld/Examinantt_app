@@ -87,7 +87,7 @@ class AppTextStyles {
   // ---------------------------------------------------------------------------
   static const TextStyle headlineLarge = TextStyle(
     fontFamily: _family,
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: AppFontWeights.bold,
     color: AppColors.text,
     letterSpacing: -0.3,
@@ -117,7 +117,7 @@ class AppTextStyles {
   // ---------------------------------------------------------------------------
   static const TextStyle titleLarge = TextStyle(
     fontFamily: _family,
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: AppFontWeights.semiBold,
     color: AppColors.text,
     letterSpacing: 0.0,
@@ -126,7 +126,7 @@ class AppTextStyles {
 
   static const TextStyle titleMedium = TextStyle(
     fontFamily: _family,
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: AppFontWeights.semiBold,
     color: AppColors.text,
     letterSpacing: 0.0,
@@ -147,7 +147,7 @@ class AppTextStyles {
   // ---------------------------------------------------------------------------
   static const TextStyle bodyLarge = TextStyle(
     fontFamily: _family,
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: AppFontWeights.regular,
     color: AppColors.text,
     letterSpacing: 0.15,
@@ -177,7 +177,7 @@ class AppTextStyles {
   // ---------------------------------------------------------------------------
   static const TextStyle buttonLarge = TextStyle(
     fontFamily: _family,
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: AppFontWeights.semiBold,
     color: AppColors.white,
     letterSpacing: 0.3,
@@ -207,7 +207,7 @@ class AppTextStyles {
   // ---------------------------------------------------------------------------
   static const TextStyle caption = TextStyle(
     fontFamily: _family,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: AppFontWeights.regular,
     color: AppColors.textLight,
     letterSpacing: 0.2,
@@ -216,7 +216,7 @@ class AppTextStyles {
 
   static const TextStyle captionBold = TextStyle(
     fontFamily: _family,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: AppFontWeights.semiBold,
     color: AppColors.textLight,
     letterSpacing: 0.2,
@@ -225,10 +225,10 @@ class AppTextStyles {
 
   static const TextStyle overline = TextStyle(
     fontFamily: _family,
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: AppFontWeights.semiBold,
     color: AppColors.textLight,
-    letterSpacing: 1.2,
+    letterSpacing: 0.8,
     height: 1.4,
   );
 

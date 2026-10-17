@@ -1,3 +1,4 @@
+import 'package:examinantt_app/utils/app_navigator.dart';
 // ignore_for_file: unused_element, unused_field
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -10,6 +11,11 @@ import '../services/firestore_service.dart';
 import '../models/test_model.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
+import '../services/analytics_service.dart';
+import '../models/analytics_model.dart';
+import '../screens/analytics_screen.dart';
+import '../screens/my_preparation_screen.dart';
+import '../screens/test_history_screen.dart';
 
 /// Complete Test Center UI Widget matching all 7 pages of `test page.pdf`.
 class TestPageSections extends StatefulWidget {
@@ -41,7 +47,7 @@ class _TestPageSectionsState extends State<TestPageSections> {
 
   // Sort & Filters
   String _mySeriesSort = 'Recent';
-  String _allSeriesSort = 'Popularity';
+  final String _allSeriesSort = 'Popularity';
   String _allSeriesFilter = 'All';
   String _performanceTimeframe = 'Last 30 Days';
 
@@ -88,7 +94,7 @@ class _TestPageSectionsState extends State<TestPageSections> {
       'All India Ranking',
     ],
   }) {
-    Navigator.push(
+    AppNavigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => TestSeriesDetailScreen(
@@ -392,7 +398,7 @@ class _TestPageSectionsState extends State<TestPageSections> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
-              Navigator.push(
+              AppNavigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => QuizScreen(
@@ -466,7 +472,7 @@ class _TestPageSectionsState extends State<TestPageSections> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
-              AppTheme.showSuccessSnackBar(context, 'Opening detailed solutions & explanations...');
+              AppNavigator.push(context, const TestHistoryScreen());
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent),
             child: const Text('View Solutions', style: TextStyle(color: Colors.white)),
@@ -495,7 +501,7 @@ class _TestPageSectionsState extends State<TestPageSections> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
-              Navigator.push(
+              AppNavigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => QuizScreen(
@@ -567,15 +573,20 @@ class _TestPageSectionsState extends State<TestPageSections> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Top Sub-header (Preparing for JEE Main 2027 v + Change Exam button)
-        _buildTopSubHeader(),
-
         // Horizontal Tab Bar (Overview, My Test, All Test, Included with Batch, Other Exams, My Performance)
         _buildHorizontalTabs(),
 
         // Active Tab Content
         Expanded(
-          child: _buildActiveTabContent(),
+          child: RefreshIndicator(
+            color: const Color(0xFFFFA000),
+            backgroundColor: const Color(0xFF0F172A),
+            onRefresh: () async {
+              await Future.delayed(const Duration(milliseconds: 650));
+              if (mounted) setState(() {});
+            },
+            child: _buildActiveTabContent(),
+          ),
         ),
       ],
     );
@@ -718,6 +729,7 @@ class _TestPageSectionsState extends State<TestPageSections> {
 
   Widget _buildPage1Overview() {
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -743,6 +755,11 @@ class _TestPageSectionsState extends State<TestPageSections> {
                   final pIds = purchases.map((p) => (p['id'] ?? p['seriesId'] ?? '').toString()).toSet();
                   final myCount = catList.where((c) => c.price == 0 || pIds.contains(c.id)).length;
                   final myTestSeriesCount = (myCount > 0 ? myCount : purchases.length).toString();
+                  final user = Provider.of<UserProvider>(context, listen: false).user;
+                  final userTestsAttempted = (user?.testsAttempted ?? 0).toString();
+                  final userAvgAccuracy = user?.accuracy != null && user!.accuracy > 0
+                      ? '${user.accuracy.toStringAsFixed(1)}%'
+                      : '0%';
 
                   return Row(
                     children: [
@@ -770,7 +787,7 @@ class _TestPageSectionsState extends State<TestPageSections> {
                         child: _buildMetricKpiCard(
                           icon: Icons.track_changes_rounded,
                           color: const Color(0xFFFB923C),
-                          value: '112',
+                          value: userTestsAttempted,
                           label: 'Tests Attempted',
                           onTap: () => _switchTab(5),
                         ),
@@ -780,7 +797,7 @@ class _TestPageSectionsState extends State<TestPageSections> {
                         child: _buildMetricKpiCard(
                           icon: Icons.trending_up_rounded,
                           color: const Color(0xFFA78BFA),
-                          value: '78.4%',
+                          value: userAvgAccuracy,
                           label: 'Avg. Accuracy',
                           onTap: () => _switchTab(5),
                         ),
@@ -1320,7 +1337,7 @@ class _TestPageSectionsState extends State<TestPageSections> {
                       const SizedBox(width: 8),
                       ElevatedButton(
                         onPressed: () {
-                          Navigator.push(
+                          AppNavigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) => QuizScreen(
@@ -1599,6 +1616,7 @@ class _TestPageSectionsState extends State<TestPageSections> {
                   }
 
                   return ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemCount: mySeries.length,
                     itemBuilder: (ctx, idx) {
@@ -1667,32 +1685,39 @@ class _TestPageSectionsState extends State<TestPageSections> {
 
         final tests = snapshot.data ?? [];
         if (tests.isEmpty) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.assignment_outlined, size: 48, color: Colors.white38),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'No individual tests uploaded yet by admin.\nTests added by admin will appear here immediately.',
-                    style: TextStyle(color: Colors.white70, fontSize: 13),
-                    textAlign: TextAlign.center,
+          return SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+            child: SizedBox(
+              height: MediaQuery.of(context).size.height * 0.5,
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.assignment_outlined, size: 48, color: Colors.white38),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'No individual tests uploaded yet by admin.\nTests added by admin will appear here immediately.',
+                        style: TextStyle(color: Colors.white70, fontSize: 13),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 14),
+                      ElevatedButton(
+                        onPressed: () => setState(() => _allSeriesFilter = 'All'),
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFFA000)),
+                        child: const Text('View All Test Series', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 14),
-                  ElevatedButton(
-                    onPressed: () => setState(() => _allSeriesFilter = 'All'),
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFFA000)),
-                    child: const Text('View All Test Series', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  ),
-                ],
+                ),
               ),
             ),
           );
         }
 
         return ListView.builder(
+          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           itemCount: tests.length,
           itemBuilder: (ctx, idx) {
@@ -1743,7 +1768,7 @@ class _TestPageSectionsState extends State<TestPageSections> {
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () {
-                        Navigator.push(
+                        AppNavigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => QuizScreen(
@@ -1964,6 +1989,7 @@ class _TestPageSectionsState extends State<TestPageSections> {
 
   Widget _buildPage3IncludedWithBatch() {
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2132,60 +2158,6 @@ class _TestPageSectionsState extends State<TestPageSections> {
               ],
             ),
           ),
-          const SizedBox(height: 20),
-
-          // Bottom Callout Card: "Why is it included?"
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFF0F172A),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.white10),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF38BDF8).withValues(alpha: 0.15),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.lightbulb_outline_rounded, color: Color(0xFF38BDF8), size: 22),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Why is it included?',
-                        style: TextStyle(color: Color(0xFF38BDF8), fontWeight: FontWeight.bold, fontSize: 13),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'You purchased JEE Main 2027 Selection Batch, which includes this premium test series to give you complete preparation and maximum practice.',
-                        style: TextStyle(color: Colors.white70, fontSize: 11.5, height: 1.35),
-                      ),
-                      const SizedBox(height: 8),
-                      GestureDetector(
-                        onTap: () {
-                          AppTheme.showSuccessSnackBar(context, 'Selection Batch includes 150+ Mocks, Full Video Solutions & Rank Booster!');
-                        },
-                        child: const Row(
-                          children: [
-                            Text('View Batch Details', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 11.5, fontWeight: FontWeight.bold)),
-                            SizedBox(width: 4),
-                            Icon(Icons.chevron_right_rounded, color: Color(0xFF38BDF8), size: 16),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
@@ -2211,47 +2183,7 @@ class _TestPageSectionsState extends State<TestPageSections> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Explore All Tests & Test Series', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
-                    SizedBox(height: 2),
-                    Text('Choose the best test series to boost your preparation.', style: TextStyle(color: Colors.white60, fontSize: 11)),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0F172A),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.white12),
-                ),
-                child: DropdownButton<String>(
-                  value: _allSeriesSort,
-                  dropdownColor: const Color(0xFF0F172A),
-                  underline: const SizedBox(),
-                  isDense: true,
-                  icon: const Icon(Icons.arrow_drop_down, color: Colors.white70, size: 16),
-                  style: const TextStyle(color: Colors.white70, fontSize: 11),
-                  items: ['Popularity', 'Price: Low to High', 'Rating'].map((val) {
-                    return DropdownMenuItem<String>(value: val, child: Text('Sort by: $val'));
-                  }).toList(),
-                  onChanged: (v) {
-                    if (v != null) setState(() => _allSeriesSort = v);
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
+        const SizedBox(height: 10),
 
         // Filter chips horizontal scroll
         SizedBox(
@@ -2326,36 +2258,43 @@ class _TestPageSectionsState extends State<TestPageSections> {
               }
 
               if (filtered.isEmpty) {
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.assignment_late_outlined, size: 48, color: Colors.white38),
-                        const SizedBox(height: 12),
-                        Text(
-                          allSeries.isEmpty 
-                              ? 'No test series uploaded yet by admin.'
-                              : 'No test series match "$_allSeriesFilter".',
-                          style: const TextStyle(color: Colors.white70, fontSize: 13),
-                          textAlign: TextAlign.center,
+                return SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                  child: SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.5,
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.assignment_late_outlined, size: 48, color: Colors.white38),
+                            const SizedBox(height: 12),
+                            Text(
+                              allSeries.isEmpty 
+                                  ? 'No test series uploaded yet by admin.'
+                                  : 'No test series match "$_allSeriesFilter".',
+                              style: const TextStyle(color: Colors.white70, fontSize: 13),
+                              textAlign: TextAlign.center,
+                            ),
+                            if (_allSeriesFilter != 'All' && allSeries.isNotEmpty) ...[
+                              const SizedBox(height: 12),
+                              ElevatedButton(
+                                onPressed: () => setState(() => _allSeriesFilter = 'All'),
+                                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFFA000)),
+                                child: const Text('Show All Test Series', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                              ),
+                            ],
+                          ],
                         ),
-                        if (_allSeriesFilter != 'All' && allSeries.isNotEmpty) ...[
-                          const SizedBox(height: 12),
-                          ElevatedButton(
-                            onPressed: () => setState(() => _allSeriesFilter = 'All'),
-                            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFFA000)),
-                            child: const Text('Show All Test Series', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                          ),
-                        ],
-                      ],
+                      ),
                     ),
                   ),
                 );
               }
 
               return ListView.builder(
+                physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: filtered.length + 1, // +1 for the combo banner
                 itemBuilder: (ctx, index) {
@@ -3229,6 +3168,7 @@ class _TestPageSectionsState extends State<TestPageSections> {
         ),
         Expanded(
           child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
             padding: const EdgeInsets.symmetric(horizontal: 16),
             children: [
               ...exams.map((item) {
@@ -3339,312 +3279,402 @@ class _TestPageSectionsState extends State<TestPageSections> {
   // ===========================================================================
 
   Widget _buildPage7MyPerformance() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    final user = Provider.of<UserProvider>(context).user;
+
+    return StreamBuilder<List<TestResult>>(
+      stream: AnalyticsService().getUserTestResultsStream(user?.uid),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(40),
+              child: CircularProgressIndicator(color: Color(0xFFFFA000)),
+            ),
+          );
+        }
+
+        final allResults = snapshot.data ?? [];
+
+        DateRangeFilter dateFilter;
+        switch (_performanceTimeframe) {
+          case 'Last 7 Days':
+            dateFilter = DateRangeFilter.last7Days;
+            break;
+          case 'Last 30 Days':
+            dateFilter = DateRangeFilter.last30Days;
+            break;
+          case 'Last 90 Days':
+          case 'All Time':
+          default:
+            dateFilter = DateRangeFilter.allTime;
+            break;
+        }
+
+        final analytics = AnalyticsService().getOverallAnalytics(allResults, dateFilter: dateFilter);
+        final hasData = allResults.isNotEmpty && analytics.totalTests > 0;
+
+        return SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Your Test Performance', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 17)),
-                    SizedBox(height: 2),
-                    Text('Track your progress and improve every day.', style: TextStyle(color: Colors.white60, fontSize: 11.5)),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0F172A),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.white12),
-                ),
-                child: DropdownButton<String>(
-                  value: _performanceTimeframe,
-                  dropdownColor: const Color(0xFF0F172A),
-                  underline: const SizedBox(),
-                  isDense: true,
-                  icon: const Icon(Icons.arrow_drop_down, color: Colors.white70, size: 16),
-                  style: const TextStyle(color: Colors.white70, fontSize: 11),
-                  items: ['Last 7 Days', 'Last 30 Days', 'Last 90 Days', 'All Time'].map((val) {
-                    return DropdownMenuItem<String>(value: val, child: Text(val));
-                  }).toList(),
-                  onChanged: (v) {
-                    if (v != null) setState(() => _performanceTimeframe = v);
-                  },
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-
-          // 5 KPI Cards Horizontal Scroll
-          SizedBox(
-            height: 96,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: [
-                _buildPerformanceKpiCard(
-                  icon: Icons.assignment_outlined,
-                  color: const Color(0xFFA78BFA),
-                  value: '112',
-                  label: 'Tests Attempted',
-                  change: '↑ 18% vs last 30 days',
-                ),
-                _buildPerformanceKpiCard(
-                  icon: Icons.check_circle_outline_rounded,
-                  color: const Color(0xFF34D399),
-                  value: '3,840',
-                  label: 'Questions Solved',
-                  change: '↑ 22% vs last 30 days',
-                ),
-                _buildPerformanceKpiCard(
-                  icon: Icons.track_changes_rounded,
-                  color: const Color(0xFFFFA000),
-                  value: '78.4%',
-                  label: 'Average Accuracy',
-                  change: '↑ 6.8% vs last 30 days',
-                ),
-                _buildPerformanceKpiCard(
-                  icon: Icons.bar_chart_rounded,
-                  color: const Color(0xFF38BDF8),
-                  value: '72.1%',
-                  label: 'Average Score',
-                  change: '↑ 5.3% vs last 30 days',
-                ),
-                _buildPerformanceKpiCard(
-                  icon: Icons.emoji_events_outlined,
-                  color: const Color(0xFF2DD4BF),
-                  value: '94/300',
-                  label: 'Best Score',
-                  change: 'In JEE Main Mock 06',
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // 1. Performance Trend Line Chart Card
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFF0F172A),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white10),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Row(
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Performance Trend', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14.5)),
-                        SizedBox(width: 6),
-                        Icon(Icons.info_outline_rounded, color: Colors.white38, size: 14),
+                        Text('Your Test Performance', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 17)),
+                        SizedBox(height: 2),
+                        Text('Track your progress and improve every day.', style: TextStyle(color: Colors.white60, fontSize: 11.5)),
                       ],
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Text('Last 10 Tests v', style: TextStyle(color: Colors.white70, fontSize: 10)),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                // Custom Canvas Line Chart with Dates
-                const SizedBox(
-                  height: 150,
-                  width: double.infinity,
-                  child: CustomPaint(
-                    painter: _TestPerformanceTrendChartPainter(),
                   ),
-                ),
-                const SizedBox(height: 12),
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _ChartLegendDot(label: 'Score (%)', color: Color(0xFFFFA000)),
-                    SizedBox(width: 24),
-                    _ChartLegendDot(label: 'Accuracy (%)', color: Color(0xFF38BDF8)),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // 2. Subject Wise Accuracy Donut Chart Card
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFF0F172A),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white10),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Subject Wise Accuracy', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14.5)),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    SizedBox(
-                      width: 100,
-                      height: 100,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          CustomPaint(
-                            size: const Size(100, 100),
-                            painter: _DonutAccuracyChartPainter(),
-                          ),
-                          const Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text('Overall', style: TextStyle(color: Colors.white54, fontSize: 8.5)),
-                              Text('78.4%', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                            ],
-                          ),
-                        ],
-                      ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0F172A),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.white12),
                     ),
-                    const SizedBox(width: 20),
-                    Expanded(
-                      child: Column(
-                        children: [
-                          _buildSubjectAccuracyRow('Physics', '80.2%', const Color(0xFF38BDF8)),
-                          const SizedBox(height: 8),
-                          _buildSubjectAccuracyRow('Chemistry', '76.1%', const Color(0xFFFFA000)),
-                          const SizedBox(height: 8),
-                          _buildSubjectAccuracyRow('Mathematics', '78.8%', const Color(0xFF34D399)),
-                          const SizedBox(height: 12),
-                          OutlinedButton(
-                            onPressed: () {
-                              AppTheme.showSuccessSnackBar(context, 'Detailed Chapter-wise breakdown loaded!');
-                            },
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Colors.white24),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            ),
-                            child: const Text('View Detailed Analysis >', style: TextStyle(color: Colors.white70, fontSize: 11)),
-                          ),
-                        ],
-                      ),
+                    child: DropdownButton<String>(
+                      value: _performanceTimeframe,
+                      dropdownColor: const Color(0xFF0F172A),
+                      underline: const SizedBox(),
+                      isDense: true,
+                      icon: const Icon(Icons.arrow_drop_down, color: Colors.white70, size: 16),
+                      style: const TextStyle(color: Colors.white70, fontSize: 11),
+                      items: ['Last 7 Days', 'Last 30 Days', 'Last 90 Days', 'All Time'].map((val) {
+                        return DropdownMenuItem<String>(value: val, child: Text(val));
+                      }).toList(),
+                      onChanged: (v) {
+                        if (v != null) setState(() => _performanceTimeframe = v);
+                      },
                     ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // 3. Strong vs Weak Topics Card
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFF0F172A),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white10),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(
-                  children: [
-                    Text('Strong vs Weak Topics', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14.5)),
-                    SizedBox(width: 6),
-                    Icon(Icons.info_outline_rounded, color: Colors.white38, size: 14),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                const Text('Strong Topics', style: TextStyle(color: Color(0xFF34D399), fontWeight: FontWeight.bold, fontSize: 12)),
-                const SizedBox(height: 8),
-                _buildTopicBar('↑ Kinematics', 0.84, const Color(0xFF34D399)),
-                _buildTopicBar('↑ Chemical Bonding', 0.82, const Color(0xFF34D399)),
-                _buildTopicBar('↑ Quadratic Equations', 0.81, const Color(0xFF34D399)),
-                const SizedBox(height: 14),
-                const Text('Weak Topics', style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.bold, fontSize: 12)),
-                const SizedBox(height: 8),
-                _buildTopicBar('↓ Current Electricity', 0.58, const Color(0xFFEF4444)),
-                _buildTopicBar('↓ Thermodynamics', 0.60, const Color(0xFFEF4444)),
-                _buildTopicBar('↓ Coordinate Geometry', 0.62, const Color(0xFFEF4444)),
-                const SizedBox(height: 14),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: () {
-                      _openSeriesDetail(title: 'JEE Main 2027 Gold Test Series', badge: 'GOLD');
-                      AppTheme.showSuccessSnackBar(context, 'Filtering tests focused on your weak topics!');
-                    },
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFFFFA000)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                    ),
-                    child: const Text('Improve Weak Areas >', style: TextStyle(color: Color(0xFFFFA000), fontSize: 12, fontWeight: FontWeight.bold)),
                   ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
+                ],
+              ),
+              const SizedBox(height: 14),
 
-          // 4. Insight for You Card
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFF0F172A),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFFFA000).withValues(alpha: 0.3)),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(Icons.lightbulb_outline_rounded, color: Color(0xFFFFA000), size: 24),
-                const SizedBox(width: 12),
-                Expanded(
+              if (!hasData)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F172A),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white10),
+                  ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text('Insight for You', style: TextStyle(color: Color(0xFFFFA000), fontWeight: FontWeight.bold, fontSize: 12.5)),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'You are improving consistently! Focus more on weak topics to boost your score further. Attempt 3–4 tests every week to stay on track.',
-                        style: TextStyle(color: Colors.white70, fontSize: 11.5, height: 1.35),
-                      ),
-                      const SizedBox(height: 10),
-                      OutlinedButton(
-                        onPressed: () {
-                          AppTheme.showSuccessSnackBar(context, 'Personalized 4-week practice schedule generated!');
-                        },
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Color(0xFFFFA000)),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFA000).withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
                         ),
-                        child: const Text('View Personalized Plan >', style: TextStyle(color: Color(0xFFFFA000), fontSize: 11, fontWeight: FontWeight.bold)),
+                        child: const Icon(Icons.insights_rounded, color: Color(0xFFFFA000), size: 40),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'No Test Performance Data Yet',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Attempt mock tests and chapter quizzes to unlock your real accuracy charts, subject breakdowns, and weak topic insights.',
+                        style: TextStyle(color: Colors.white60, fontSize: 12, height: 1.4),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 20),
+                      ElevatedButton(
+                        onPressed: () {
+                          setState(() => _activeTabIndex = 2);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFFA000),
+                          foregroundColor: Colors.black,
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: const Text('Browse All Tests', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                )
+              else ...[
+                // Real 5 KPI Cards
+                SizedBox(
+                  height: 96,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      _buildPerformanceKpiCard(
+                        icon: Icons.assignment_outlined,
+                        color: const Color(0xFFA78BFA),
+                        value: '${analytics.totalTests}',
+                        label: 'Tests Attempted',
+                        change: 'Real test count',
+                      ),
+                      _buildPerformanceKpiCard(
+                        icon: Icons.check_circle_outline_rounded,
+                        color: const Color(0xFF34D399),
+                        value: '${analytics.attemptedQuestions}',
+                        label: 'Questions Solved',
+                        change: '${analytics.correctAnswers} correct',
+                      ),
+                      _buildPerformanceKpiCard(
+                        icon: Icons.track_changes_rounded,
+                        color: const Color(0xFFFFA000),
+                        value: '${analytics.averageAccuracy.toStringAsFixed(1)}%',
+                        label: 'Average Accuracy',
+                        change: 'Peak: ${analytics.peakAccuracy.toStringAsFixed(1)}%',
+                      ),
+                      _buildPerformanceKpiCard(
+                        icon: Icons.bar_chart_rounded,
+                        color: const Color(0xFF38BDF8),
+                        value: '${analytics.averageScore.toStringAsFixed(1)}%',
+                        label: 'Average Score',
+                        change: 'Across all tests',
+                      ),
+                      _buildPerformanceKpiCard(
+                        icon: Icons.emoji_events_outlined,
+                        color: const Color(0xFF2DD4BF),
+                        value: '${analytics.highestScore.toStringAsFixed(0)} pts',
+                        label: 'Best Score',
+                        change: 'Top performance',
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(height: 20),
+
+                // Real Trend Line Chart Card
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F172A),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white10),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Row(
+                            children: [
+                              Text('Performance Trend', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14.5)),
+                              SizedBox(width: 6),
+                              Icon(Icons.info_outline_rounded, color: Colors.white38, size: 14),
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text('Last ${math.min(allResults.length, 10)} Tests', style: const TextStyle(color: Colors.white70, fontSize: 10)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        height: 150,
+                        width: double.infinity,
+                        child: CustomPaint(
+                          painter: _TestPerformanceTrendChartPainter(
+                            accuracyPoints: allResults.take(7).map((r) => r.accuracy).toList(),
+                            scorePoints: allResults.take(7).map((r) => r.totalMarks > 0 ? (r.score / r.totalMarks * 100).toDouble() : 0.0).toList(),
+                            dates: allResults.take(7).map((r) => '${r.attemptedAt.day}/${r.attemptedAt.month}').toList(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _ChartLegendDot(label: 'Score (%)', color: Color(0xFFFFA000)),
+                          SizedBox(width: 24),
+                          _ChartLegendDot(label: 'Accuracy (%)', color: Color(0xFF38BDF8)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Real Subject Wise Accuracy Donut Chart Card
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F172A),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white10),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Subject Wise Accuracy', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14.5)),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          SizedBox(
+                            width: 100,
+                            height: 100,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                CustomPaint(
+                                  size: const Size(100, 100),
+                                  painter: _DonutAccuracyChartPainter(
+                                    physicsAcc: analytics.subjectAnalytics.isNotEmpty ? analytics.subjectAnalytics[0].accuracy : analytics.averageAccuracy,
+                                    chemAcc: analytics.subjectAnalytics.length > 1 ? analytics.subjectAnalytics[1].accuracy : 0.0,
+                                    mathAcc: analytics.subjectAnalytics.length > 2 ? analytics.subjectAnalytics[2].accuracy : 0.0,
+                                  ),
+                                ),
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Text('Overall', style: TextStyle(color: Colors.white54, fontSize: 8.5)),
+                                    Text('${analytics.averageAccuracy.toStringAsFixed(1)}%', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 20),
+                          Expanded(
+                            child: Column(
+                              children: [
+                                if (analytics.subjectAnalytics.isNotEmpty)
+                                  ...analytics.subjectAnalytics.take(3).map((sub) => Padding(
+                                    padding: const EdgeInsets.only(bottom: 8.0),
+                                    child: _buildSubjectAccuracyRow(sub.subjectName, '${sub.accuracy.toStringAsFixed(1)}%', const Color(0xFF38BDF8)),
+                                  ))
+                                else
+                                  _buildSubjectAccuracyRow('Overall', '${analytics.averageAccuracy.toStringAsFixed(1)}%', const Color(0xFF38BDF8)),
+                                const SizedBox(height: 8),
+                                OutlinedButton(
+                                  onPressed: () {
+                                    AppNavigator.push(context, MaterialPageRoute(builder: (_) => const AnalyticsScreen()));
+                                  },
+                                  style: OutlinedButton.styleFrom(
+                                    side: const BorderSide(color: Colors.white24),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  ),
+                                  child: const Text('View Detailed Analysis >', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Preparation Insights Card
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F172A),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white10),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Text('Preparation Insights', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14.5)),
+                          SizedBox(width: 6),
+                          Icon(Icons.info_outline_rounded, color: Colors.white38, size: 14),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        'Total questions attempted: ${analytics.attemptedQuestions} with ${analytics.correctAnswers} correct answers (${analytics.averageAccuracy.toStringAsFixed(1)}% accuracy).',
+                        style: const TextStyle(color: Colors.white70, fontSize: 12, height: 1.4),
+                      ),
+                      const SizedBox(height: 14),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          onPressed: () {
+                            AppNavigator.push(context, MaterialPageRoute(builder: (_) => const MyPreparationScreen()));
+                          },
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFFFFA000)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                          ),
+                          child: const Text('Go to My Preparation >', style: TextStyle(color: Color(0xFFFFA000), fontSize: 12, fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Insight for You Card
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F172A),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFFFA000).withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.lightbulb_outline_rounded, color: Color(0xFFFFA000), size: 24),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Insight for You', style: TextStyle(color: Color(0xFFFFA000), fontWeight: FontWeight.bold, fontSize: 12.5)),
+                            const SizedBox(height: 4),
+                            Text(
+                              analytics.averageAccuracy >= 75
+                                  ? 'Outstanding consistency! Keep practicing full-length tests to maintain speed and precision under timed conditions.'
+                                  : 'Target your weaker subjects with chapter-wise tests to bring your average accuracy above 75%.',
+                              style: const TextStyle(color: Colors.white70, fontSize: 11.5, height: 1.35),
+                            ),
+                            const SizedBox(height: 10),
+                            OutlinedButton(
+                              onPressed: () {
+                                AppNavigator.push(context, MaterialPageRoute(builder: (_) => const AnalyticsScreen()));
+                              },
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: Color(0xFFFFA000)),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              ),
+                              child: const Text('View Detailed Analytics >', style: TextStyle(color: Color(0xFFFFA000), fontSize: 11, fontWeight: FontWeight.bold)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
               ],
-            ),
+            ],
           ),
-          const SizedBox(height: 24),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -3757,11 +3787,19 @@ class _ChartLegendDot extends StatelessWidget {
 }
 
 // -----------------------------------------------------------------------------
-// PERFORMANCE TREND LINE CHART PAINTER (test_p7.png)
+// PERFORMANCE TREND LINE CHART PAINTER (Dynamic)
 // -----------------------------------------------------------------------------
 
 class _TestPerformanceTrendChartPainter extends CustomPainter {
-  const _TestPerformanceTrendChartPainter();
+  final List<double> accuracyPoints;
+  final List<double> scorePoints;
+  final List<String> dates;
+
+  const _TestPerformanceTrendChartPainter({
+    required this.accuracyPoints,
+    required this.scorePoints,
+    required this.dates,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -3771,7 +3809,6 @@ class _TestPerformanceTrendChartPainter extends CustomPainter {
 
     final textStyle = TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 9);
 
-    // Y Axis levels: 100%, 75%, 50%, 25%, 0%
     const levels = ['100%', '75%', '50%', '25%', '0%'];
     const paddingLeft = 32.0;
     const paddingBottom = 20.0;
@@ -3788,8 +3825,10 @@ class _TestPerformanceTrendChartPainter extends CustomPainter {
       tp.paint(canvas, Offset(0, y - tp.height / 2));
     }
 
-    // X Axis dates: 22 Apr, 27 Apr, 2 May, 7 May, 12 May, 17 May, 22 May
-    final dates = ['22 Apr', '27 Apr', '2 May', '7 May', '12 May', '17 May', '22 May'];
+    if (dates.length < 2) {
+      return;
+    }
+
     final xStep = chartWidth / (dates.length - 1);
 
     for (int i = 0; i < dates.length; i++) {
@@ -3800,23 +3839,19 @@ class _TestPerformanceTrendChartPainter extends CustomPainter {
       tp.paint(canvas, Offset(x - tp.width / 2, size.height - tp.height));
     }
 
-    // Normalized coordinates (0 to 100)
-    // Accuracy (Blue)
-    final accuracyPoints = [75.0, 80.0, 78.0, 74.0, 76.0, 80.0, 84.0];
-    // Score (Orange)
-    final scorePoints = [58.0, 68.0, 62.0, 67.0, 60.0, 66.0, 69.0];
-
     Offset getPoint(int index, double value) {
       final x = paddingLeft + index * xStep;
       final y = chartHeight * (1.0 - (value / 100.0).clamp(0.0, 1.0));
       return Offset(x, y);
     }
 
-    // Draw Blue curve (Accuracy)
-    _drawCurvedLine(canvas, accuracyPoints, getPoint, const Color(0xFF38BDF8));
+    if (accuracyPoints.isNotEmpty) {
+      _drawCurvedLine(canvas, accuracyPoints, getPoint, const Color(0xFF38BDF8));
+    }
 
-    // Draw Orange curve (Score)
-    _drawCurvedLine(canvas, scorePoints, getPoint, const Color(0xFFFFA000));
+    if (scorePoints.isNotEmpty) {
+      _drawCurvedLine(canvas, scorePoints, getPoint, const Color(0xFFFFA000));
+    }
   }
 
   void _drawCurvedLine(
@@ -3825,6 +3860,8 @@ class _TestPerformanceTrendChartPainter extends CustomPainter {
     Offset Function(int, double) getPoint,
     Color color,
   ) {
+    if (points.length < 2) return;
+
     final linePaint = Paint()
       ..color = color
       ..strokeWidth = 2.5
@@ -3844,7 +3881,6 @@ class _TestPerformanceTrendChartPainter extends CustomPainter {
 
     canvas.drawPath(path, linePaint);
 
-    // Draw dots at points
     final dotPaint = Paint()..color = color;
     for (int i = 0; i < points.length; i++) {
       canvas.drawCircle(getPoint(i, points[i]), 3.5, dotPaint);
@@ -3852,14 +3888,24 @@ class _TestPerformanceTrendChartPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
 
 // -----------------------------------------------------------------------------
-// DONUT CHART PAINTER (test_p7.png)
+// DONUT CHART PAINTER (Dynamic)
 // -----------------------------------------------------------------------------
 
 class _DonutAccuracyChartPainter extends CustomPainter {
+  final double physicsAcc;
+  final double chemAcc;
+  final double mathAcc;
+
+  const _DonutAccuracyChartPainter({
+    this.physicsAcc = 0.0,
+    this.chemAcc = 0.0,
+    this.mathAcc = 0.0,
+  });
+
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
@@ -3872,6 +3918,9 @@ class _DonutAccuracyChartPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
     canvas.drawCircle(center, radius - strokeWidth / 2, bgPaint);
 
+    final total = physicsAcc + chemAcc + mathAcc;
+    if (total <= 0) return;
+
     final arcPaint = Paint()
       ..strokeWidth = strokeWidth
       ..style = PaintingStyle.stroke
@@ -3879,25 +3928,26 @@ class _DonutAccuracyChartPainter extends CustomPainter {
 
     final rect = Rect.fromCircle(center: center, radius: radius - strokeWidth / 2);
 
-    // 3 Segments: Physics (80.2%, Blue), Math (78.8%, Green), Chemistry (76.1%, Orange)
-    const total = 80.2 + 78.8 + 76.1;
-    const physSweep = (80.2 / total) * 2 * math.pi;
-    const mathSweep = (78.8 / total) * 2 * math.pi;
-    const chemSweep = (76.1 / total) * 2 * math.pi;
+    final physSweep = (physicsAcc / total) * 2 * math.pi;
+    final mathSweep = (mathAcc / total) * 2 * math.pi;
+    final chemSweep = (chemAcc / total) * 2 * math.pi;
 
-    // Physics
-    arcPaint.color = const Color(0xFF38BDF8);
-    canvas.drawArc(rect, -math.pi / 2, physSweep, false, arcPaint);
+    if (physicsAcc > 0) {
+      arcPaint.color = const Color(0xFF38BDF8);
+      canvas.drawArc(rect, -math.pi / 2, physSweep, false, arcPaint);
+    }
 
-    // Math
-    arcPaint.color = const Color(0xFF34D399);
-    canvas.drawArc(rect, -math.pi / 2 + physSweep, mathSweep, false, arcPaint);
+    if (mathAcc > 0) {
+      arcPaint.color = const Color(0xFF34D399);
+      canvas.drawArc(rect, -math.pi / 2 + physSweep, mathSweep, false, arcPaint);
+    }
 
-    // Chemistry
-    arcPaint.color = const Color(0xFFFFA000);
-    canvas.drawArc(rect, -math.pi / 2 + physSweep + mathSweep, chemSweep, false, arcPaint);
+    if (chemAcc > 0) {
+      arcPaint.color = const Color(0xFFFFA000);
+      canvas.drawArc(rect, -math.pi / 2 + physSweep + mathSweep, chemSweep, false, arcPaint);
+    }
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

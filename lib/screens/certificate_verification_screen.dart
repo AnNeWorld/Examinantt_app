@@ -148,7 +148,7 @@ class _CertificateVerificationScreenState extends State<CertificateVerificationS
                   SizedBox(width: 6),
                   Text(
                     'OFFICIAL EXAMINANTT PORTAL',
-                    style: TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.8),
+                    style: TextStyle(color: Color(0xFF10B981), fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 0.8),
                   ),
                 ],
               ),
@@ -157,7 +157,7 @@ class _CertificateVerificationScreenState extends State<CertificateVerificationS
 
             Text(
               'Verify Certificate Authenticity',
-              style: TextStyle(color: textColor, fontSize: 20, fontWeight: FontWeight.w900),
+              style: TextStyle(color: textColor, fontSize: 22, fontWeight: FontWeight.w900),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 6),
@@ -289,7 +289,7 @@ class _CertificateVerificationScreenState extends State<CertificateVerificationS
                   isValid ? 'VERIFIED OFFICIAL CERTIFICATE' : 'REVOKED / INVALID CERTIFICATE',
                   style: TextStyle(
                     color: isValid ? const Color(0xFF10B981) : Colors.redAccent,
-                    fontSize: 10.5,
+                    fontSize: 12,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -316,7 +316,7 @@ class _CertificateVerificationScreenState extends State<CertificateVerificationS
 
           Text(
             'This certifies that',
-            style: TextStyle(color: isDark ? Colors.white60 : Colors.grey.shade600, fontSize: 11),
+            style: TextStyle(color: isDark ? Colors.white60 : Colors.grey.shade600, fontSize: 13),
           ),
           const SizedBox(height: 4),
           Text(
@@ -327,12 +327,12 @@ class _CertificateVerificationScreenState extends State<CertificateVerificationS
           const SizedBox(height: 8),
           Text(
             'has successfully completed the curriculum for',
-            style: TextStyle(color: isDark ? Colors.white60 : Colors.grey.shade600, fontSize: 11),
+            style: TextStyle(color: isDark ? Colors.white60 : Colors.grey.shade600, fontSize: 13),
           ),
           const SizedBox(height: 4),
           Text(
             courseTitle,
-            style: TextStyle(color: textColor, fontSize: 15, fontWeight: FontWeight.bold),
+            style: TextStyle(color: textColor, fontSize: 16, fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
@@ -355,9 +355,9 @@ class _CertificateVerificationScreenState extends State<CertificateVerificationS
   Widget _buildCertMetaCol(String label, String value, bool isDark, Color valColor) {
     return Column(
       children: [
-        Text(label, style: TextStyle(color: isDark ? Colors.white38 : Colors.grey.shade500, fontSize: 9.5)),
+        Text(label, style: TextStyle(color: isDark ? Colors.white38 : Colors.grey.shade500, fontSize: 12)),
         const SizedBox(height: 3),
-        Text(value, style: TextStyle(color: valColor, fontSize: 11.5, fontWeight: FontWeight.bold)),
+        Text(value, style: TextStyle(color: valColor, fontSize: 13.5, fontWeight: FontWeight.bold)),
       ],
     );
   }
@@ -382,7 +382,7 @@ class _CertificateVerificationScreenState extends State<CertificateVerificationS
           const SizedBox(height: 6),
           Text(
             error,
-            style: const TextStyle(color: Colors.white70, fontSize: 11.5),
+            style: const TextStyle(color: Colors.white70, fontSize: 13.5),
             textAlign: TextAlign.center,
           ),
         ],
@@ -406,13 +406,13 @@ class _CertificateVerificationScreenState extends State<CertificateVerificationS
             children: [
               const Icon(Icons.info_outline_rounded, color: Color(0xFF38BDF8), size: 18),
               const SizedBox(width: 8),
-              Text('How to find your Certificate ID?', style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 13)),
+              Text('How to find your Certificate ID?', style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 15)),
             ],
           ),
           const SizedBox(height: 10),
           Text(
             '• Check the bottom-left corner of your digital certificate.\n• Certificate format looks like: EXM-CERT-123456\n• Issued certificates are also accessible in your profile under "My Learning".',
-            style: TextStyle(color: isDark ? Colors.white60 : Colors.grey.shade600, fontSize: 11, height: 1.5),
+            style: TextStyle(color: isDark ? Colors.white60 : Colors.grey.shade600, fontSize: 13, height: 1.5),
           ),
         ],
       ),

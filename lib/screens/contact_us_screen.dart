@@ -16,8 +16,15 @@ class ContactUsScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: scaffoldBg,
-      body: CustomScrollView(
-        slivers: [
+      body: RefreshIndicator(
+        color: const Color(0xFFFFA000),
+        backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
+        onRefresh: () async {
+          await Future.delayed(const Duration(milliseconds: 650));
+        },
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+          slivers: [
           SliverAppBar(
             expandedHeight: 200.0,
             floating: false,
@@ -173,8 +180,9 @@ class ContactUsScreen extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildContactCard(
     BuildContext context, {

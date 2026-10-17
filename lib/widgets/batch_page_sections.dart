@@ -1,3 +1,4 @@
+import 'package:examinantt_app/utils/app_navigator.dart';
 // ignore_for_file: unused_field, unused_import, unused_element
 import 'package:flutter/material.dart';
 import 'dart:async';
@@ -202,43 +203,51 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
       _selectedExam = userProvider.selectedExam;
     }
 
-    return SingleChildScrollView(
-      controller: widget.scrollController,
-      physics: const BouncingScrollPhysics(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 8),
+    return RefreshIndicator(
+      color: const Color(0xFF0070F3),
+      backgroundColor: const Color(0xFF071326),
+      onRefresh: () async {
+        await Future.delayed(const Duration(milliseconds: 650));
+        if (mounted) setState(() {});
+      },
+      child: SingleChildScrollView(
+        controller: widget.scrollController,
+        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 8),
 
-          // 01. Choose Your Exam Header & Popular Exams
-          _buildSection01ChooseExam(),
-          const SizedBox(height: 16),
+            // 01. Choose Your Exam Header & Popular Exams
+            _buildSection01ChooseExam(),
+            const SizedBox(height: 16),
 
-          // 02. MY PURCHASED BATCHES
-          _buildSection02PurchasedBatches(),
-          const SizedBox(height: 16),
+            // 02. MY PURCHASED BATCHES
+            _buildSection02PurchasedBatches(),
+            const SizedBox(height: 16),
 
-          // 03. RECOMMENDED FOR JEE MAIN 2027
-          _buildSection03Recommended(),
-          const SizedBox(height: 16),
+            // 03. RECOMMENDED FOR JEE MAIN 2027
+            _buildSection03Recommended(),
+            const SizedBox(height: 16),
 
-          // 04. ALL BATCHES FOR JEE MAIN 2027
-          _buildSection04AllBatches(),
-          const SizedBox(height: 16),
+            // 04. ALL BATCHES FOR JEE MAIN 2027
+            _buildSection04AllBatches(),
+            const SizedBox(height: 16),
 
 
-          // 06. OTHER EXAMS
-          _buildSection06OtherExams(),
-          const SizedBox(height: 16),
+            // 06. OTHER EXAMS
+            _buildSection06OtherExams(),
+            const SizedBox(height: 16),
 
-          // 07. SPECIAL OFFERS
-          Container(key: _section07Key, child: _buildSection07SpecialOffers()),
-          const SizedBox(height: 16),
+            // 07. SPECIAL OFFERS
+            Container(key: _section07Key, child: _buildSection07SpecialOffers()),
+            const SizedBox(height: 16),
 
-          // 08. NEED HELP CHOOSING?
-          Container(key: _section08Key, child: _buildSection08NeedHelp()),
-          const SizedBox(height: 36),
-        ],
+            // 08. NEED HELP CHOOSING?
+            Container(key: _section08Key, child: _buildSection08NeedHelp()),
+            const SizedBox(height: 36),
+          ],
+        ),
       ),
     );
   }
@@ -407,41 +416,33 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const Divider(color: Color(0xFF142B4D), height: 24, thickness: 1),
 
-          // Active target box with 187 days
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: const Color(0xFF0B2144),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFF1F4478)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.school, color: Color(0xFF38BDF8), size: 18),
-                    const SizedBox(width: 8),
-                    Text(
-                      _selectedExam,
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14),
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    const Icon(Icons.verified_rounded, color: Color(0xFF10B981), size: 14),
-                    const SizedBox(width: 4),
-                    Text(
-                      '$_selectedExam Goal',
-                      style: const TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.bold, fontSize: 10),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+          // Active target row (Direct on card, no nested container)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.school, color: Color(0xFF38BDF8), size: 18),
+                  const SizedBox(width: 8),
+                  Text(
+                    _selectedExam,
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  const Icon(Icons.verified_rounded, color: Color(0xFF10B981), size: 14),
+                  const SizedBox(width: 4),
+                  Text(
+                    '$_selectedExam Goal',
+                    style: const TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.bold, fontSize: 10),
+                  ),
+                ],
+              ),
+            ],
           ),
           const SizedBox(height: 10),
 
@@ -578,9 +579,8 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFF0A1E3C),
+        color: Colors.white.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFF1B3B68)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -604,9 +604,8 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
       decoration: BoxDecoration(
-        color: const Color(0xFF0F2648),
+        color: Colors.white.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: const Color(0xFF1F4378)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -720,14 +719,8 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
                   .toList();
 
               if (enrolledBatches.isEmpty) {
-                return Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF081834),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFF1B3A68)),
-                  ),
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
                   child: Column(
                     children: [
                       const Icon(Icons.school_outlined, size: 36, color: Color(0xFF38BDF8)),
@@ -761,112 +754,115 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: enrolledBatches.map((batch) {
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(colors: [Color(0xFF0D254C), Color(0xFF081834)]),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFF20487E)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+                children: enrolledBatches.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final batch = entry.value;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (index > 0)
+                        const Divider(color: Color(0xFF142B4D), height: 24, thickness: 1),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: const Color(0xFF0070F3).withValues(alpha: 0.2),
-                                border: Border.all(color: const Color(0xFF0070F3)),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  batch.examCategory.length > 3 ? batch.examCategory.substring(0, 3).toUpperCase() : 'BATCH',
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 10),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  width: 44,
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: const Color(0xFF0070F3).withValues(alpha: 0.2),
+                                    border: Border.all(color: const Color(0xFF0070F3)),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      batch.examCategory.length > 3 ? batch.examCategory.substring(0, 3).toUpperCase() : 'BATCH',
+                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 10),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                                        decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(4)),
-                                        child: const Text('ENROLLED', style: TextStyle(color: Colors.white, fontSize: 7, fontWeight: FontWeight.w900)),
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                            decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(4)),
+                                            child: const Text('ENROLLED', style: TextStyle(color: Colors.white, fontSize: 7, fontWeight: FontWeight.w900)),
+                                          ),
+                                          const SizedBox(width: 5),
+                                          Text(batch.examCategory, style: const TextStyle(color: Colors.white54, fontSize: 8.5)),
+                                        ],
                                       ),
-                                      const SizedBox(width: 5),
-                                      Text(batch.examCategory, style: const TextStyle(color: Colors.white54, fontSize: 8.5)),
+                                      const SizedBox(height: 2),
+                                      Text(batch.title, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900)),
+                                      if (batch.shortDescription.isNotEmpty)
+                                        Text(batch.shortDescription, style: const TextStyle(color: Colors.white54, fontSize: 8), maxLines: 1),
                                     ],
                                   ),
-                                  const SizedBox(height: 2),
-                                  Text(batch.title, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900)),
-                                  if (batch.shortDescription.isNotEmpty)
-                                    Text(batch.shortDescription, style: const TextStyle(color: Colors.white54, fontSize: 8), maxLines: 1),
-                                ],
-                              ),
-                            ),
-                            OutlinedButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => BatchDetailsScreen(batch: batch),
+                                ),
+                                OutlinedButton(
+                                  onPressed: () {
+                                    AppNavigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => BatchDetailsScreen(batch: batch),
+                                      ),
+                                    );
+                                  },
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: const Color(0xFF38BDF8),
+                                    side: const BorderSide(color: Color(0xFF38BDF8)),
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    minimumSize: Size.zero,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                                   ),
-                                );
-                              },
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: const Color(0xFF38BDF8),
-                                side: const BorderSide(color: Color(0xFF38BDF8)),
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                minimumSize: Size.zero,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                              ),
-                              child: const Text('Details >', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
+                                  child: const Text('Details >', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 4,
+                              runSpacing: 4,
+                              children: [
+                                _buildPillTag('📁 ${batch.resourceIds.length} Resources', () {
+                                  AppNavigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => BatchDetailsScreen(batch: batch),
+                                    ),
+                                  );
+                                }),
+                                _buildPillTag('📝 ${batch.testSeriesIds.length} Test Series', () {
+                                  AppNavigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => BatchDetailsScreen(batch: batch),
+                                    ),
+                                  );
+                                }),
+                                _buildPillTag('🎥 Live Classes', () {
+                                  AppNavigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => LiveClassesScreen(batchTitle: batch.title),
+                                    ),
+                                  );
+                                }),
+                              ],
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 4,
-                          runSpacing: 4,
-                          children: [
-                            _buildPillTag('📁 ${batch.resourceIds.length} Resources', () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => BatchDetailsScreen(batch: batch),
-                                ),
-                              );
-                            }),
-                            _buildPillTag('📝 ${batch.testSeriesIds.length} Test Series', () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => BatchDetailsScreen(batch: batch),
-                                ),
-                              );
-                            }),
-                            _buildPillTag('🎥 Live Classes', () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => LiveClassesScreen(batchTitle: batch.title),
-                                ),
-                              );
-                            }),
-                          ],
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   );
                 }).toList(),
               );
@@ -900,15 +896,9 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
 
           final batches = snapshot.data ?? [];
           if (batches.isEmpty) {
-            return Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF081C38),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFF1B3A68)),
-              ),
-              child: const Center(
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 20),
+              child: Center(
                 child: Text(
                   'No batches currently created in Firestore.',
                   style: TextStyle(color: Colors.white70, fontSize: 12),
@@ -934,21 +924,16 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
 
               InkWell(
                 onTap: () {
-                  Navigator.push(
+                  AppNavigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => BatchDetailsScreen(batch: recommendedBatch),
                     ),
                   );
                 },
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(colors: [Color(0xFF0E2750), Color(0xFF071833)]),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFF224E8C), width: 1.5),
-                  ),
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1004,7 +989,7 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
                           ),
                           ElevatedButton(
                             onPressed: () {
-                              Navigator.push(
+                              AppNavigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => BatchDetailsScreen(batch: recommendedBatch),
@@ -1028,7 +1013,7 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
               ),
 
               if (otherBatches.isNotEmpty) ...[
-                const SizedBox(height: 14),
+                const Divider(color: Color(0xFF142B4D), height: 28, thickness: 1),
                 const Text('More Top Batches For You', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 SizedBox(
@@ -1041,7 +1026,7 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
                       final b = otherBatches[index];
                       return GestureDetector(
                         onTap: () {
-                          Navigator.push(
+                          AppNavigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) => BatchDetailsScreen(batch: b),
@@ -1053,9 +1038,8 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
                           margin: const EdgeInsets.only(right: 8),
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF091C38),
+                            color: Colors.white.withValues(alpha: 0.04),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFF1B3A68)),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1170,13 +1154,8 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
               const SizedBox(height: 10),
 
               // Help me choose recommendation card
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0A1E3C),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFF1E4072)),
-                ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
                 child: Row(
                   children: [
                     const Icon(Icons.explore_outlined, color: Color(0xFF38BDF8), size: 16),
@@ -1208,15 +1187,9 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
               const SizedBox(height: 12),
 
               if (displayCourses.isEmpty)
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  margin: const EdgeInsets.only(bottom: 12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0C2040),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFF1F4378)),
-                  ),
-                  child: const Center(
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Center(
                     child: Text(
                       'No batches currently available in Firestore.',
                       style: TextStyle(color: Colors.white70, fontSize: 13),
@@ -1230,7 +1203,9 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
                     final purchases = purchaseSnap.data ?? [];
 
                     return Column(
-                      children: displayCourses.map((course) {
+                      children: displayCourses.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final course = entry.value;
                       final isEnrolled = _isCourseEnrolled(course, purchases);
                       final batchTitle = course.title;
                       final batchPrice = course.price.toInt();
@@ -1240,38 +1215,26 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
                           ? (((course.originalPrice - course.price) / course.originalPrice) * 100).round()
                           : 0;
 
-                      return InkWell(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => BatchDetailsScreen(batch: course),
-                            ),
-                          );
-                        },
-                        borderRadius: BorderRadius.circular(16),
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF0C2040), Color(0xFF071428)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: const Color(0xFF1F4378), width: 1.2),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF0070F3).withValues(alpha: 0.08),
-                                blurRadius: 16,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (index > 0)
+                            const Divider(color: Color(0xFF142B4D), height: 28, thickness: 1),
+                          InkWell(
+                            onTap: () {
+                              AppNavigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => BatchDetailsScreen(batch: course),
+                                ),
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
                               // Top Row: Tag badge + Discount pill + Menu (Edit / Delete / Details)
                               Row(
                                 children: [
@@ -1354,7 +1317,7 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
                                     ],
                                     onSelected: (val) {
                                       if (val == 'details') {
-                                        Navigator.push(
+                                        AppNavigator.push(
                                           context,
                                           MaterialPageRoute(
                                             builder: (context) => BatchDetailsScreen(batch: course),
@@ -1486,7 +1449,7 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
                                     children: [
                                       OutlinedButton(
                                         onPressed: () {
-                                          Navigator.push(
+                                          AppNavigator.push(
                                             context,
                                             MaterialPageRoute(
                                               builder: (context) => BatchDetailsScreen(batch: course),
@@ -1507,7 +1470,7 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
                                       if (isEnrolled)
                                         ElevatedButton.icon(
                                           onPressed: () {
-                                            Navigator.push(
+                                            AppNavigator.push(
                                               context,
                                               MaterialPageRoute(
                                                 builder: (context) => BatchDetailsScreen(batch: course),
@@ -1562,8 +1525,10 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
                             ],
                           ),
                         ),
-                      );
-                    }).toList(),
+                      ),
+                    ],
+                  );
+                }).toList(),
                   );
                 },
               ),
@@ -1653,9 +1618,8 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
                   return Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF081C38),
+                      color: Colors.white.withValues(alpha: 0.04),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFF1A3966)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1690,25 +1654,17 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
                   );
                 },
               ),
-              const SizedBox(height: 10),
+              const Divider(color: Color(0xFF142B4D), height: 24, thickness: 1),
 
               // Your Goal, Our Guidance bar
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0A1E3C),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFF1B3B69)),
-                ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _MiniTag('Expert Faculty', Icons.school),
-                    _MiniTag('Smart Prep', Icons.psychology),
-                    _MiniTag('Proven Results', Icons.star),
-                    _MiniTag('24x7 Doubts', Icons.support_agent),
-                  ],
-                ),
+              const Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _MiniTag('Expert Faculty', Icons.school),
+                  _MiniTag('Smart Prep', Icons.psychology),
+                  _MiniTag('Proven Results', Icons.star),
+                  _MiniTag('24x7 Doubts', Icons.support_agent),
+                ],
               ),
             ],
           );
@@ -1745,37 +1701,29 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const Divider(color: Color(0xFF142B4D), height: 20, thickness: 1),
 
           // Countdown Timer Bar
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Color(0xFF261805), Color(0xFF140D02)]),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('UP TO 50% OFF', style: TextStyle(color: Colors.amber, fontSize: 10, fontWeight: FontWeight.w900)),
-                    Text('Offer ends soon!', style: TextStyle(color: Colors.white54, fontSize: 7.5)),
-                  ],
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: const [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('UP TO 50% OFF', style: TextStyle(color: Colors.amber, fontSize: 10, fontWeight: FontWeight.w900)),
+                  Text('Offer ends soon!', style: TextStyle(color: Colors.white54, fontSize: 7.5)),
+                ],
+              ),
+              SizedBox(width: 6),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: _CountdownTimerWidget(),
                 ),
-                SizedBox(width: 6),
-                Flexible(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: _CountdownTimerWidget(),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
+          const Divider(color: Color(0xFF142B4D), height: 20, thickness: 1),
 
           // Dynamic Deals Grid from Firestore
           StreamBuilder<List<CourseModel>>(
@@ -1786,14 +1734,9 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
               final offerCourses = (discounted.isNotEmpty ? discounted : courses).take(4).toList();
 
               if (offerCourses.isEmpty) {
-                return Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF081C38),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Center(
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Center(
                     child: Text('Check back soon for exclusive batch offers!', style: TextStyle(color: Colors.white70, fontSize: 11)),
                   ),
                 );
@@ -1829,7 +1772,7 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
                       return InkWell(
                         onTap: () {
                           if (isEnrolled) {
-                            Navigator.push(
+                            AppNavigator.push(
                               context,
                               MaterialPageRoute(builder: (context) => BatchDetailsScreen(batch: c)),
                             );
@@ -1841,9 +1784,8 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF081C38),
+                            color: Colors.white.withValues(alpha: 0.04),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFF1A3866)),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1881,7 +1823,7 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
                                 child: ElevatedButton(
                                   onPressed: () {
                                     if (isEnrolled) {
-                                      Navigator.push(
+                                      AppNavigator.push(
                                         context,
                                         MaterialPageRoute(builder: (context) => BatchDetailsScreen(batch: c)),
                                       );
@@ -1948,147 +1890,133 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
           const Text('Answer 3 quick questions and get an instant AI recommendation.', style: TextStyle(color: Colors.white54, fontSize: 9.5)),
           const SizedBox(height: 12),
 
-          // 3-Step Wizard Container
+          // Step 1: Exam
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(color: Color(0xFF0070F3), shape: BoxShape.circle),
+                child: const Text('1', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900)),
+              ),
+              const SizedBox(width: 8),
+              const Text('Which exam are you preparing for?', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 6),
           Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Color(0xFF0F254B), Color(0xFF071833)]),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFF224E8C)),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(8)),
+            child: DropdownButton<String>(
+              value: _wizardExam,
+              isExpanded: true,
+              dropdownColor: const Color(0xFF071326),
+              underline: const SizedBox(),
+              items: ['JEE Main 2027', 'NEET UG 2027', 'CUET UG 2027', 'GATE 2027', 'SSC CGL 2027', 'Defence']
+                  .map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(color: Colors.white, fontSize: 11))))
+                  .toList(),
+              onChanged: (val) {
+                if (val != null) setState(() => _wizardExam = val);
+              },
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Step 1: Exam
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(color: Color(0xFF0070F3), shape: BoxShape.circle),
-                      child: const Text('1', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900)),
-                    ),
-                    const SizedBox(width: 8),
-                    const Text('Which exam are you preparing for?', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: const Color(0xFF0A1E3C), borderRadius: BorderRadius.circular(8)),
-                  child: DropdownButton<String>(
-                    value: _wizardExam,
-                    isExpanded: true,
-                    dropdownColor: const Color(0xFF0A1E3C),
-                    underline: const SizedBox(),
-                    items: ['JEE Main 2027', 'NEET UG 2027', 'CUET UG 2027', 'GATE 2027', 'SSC CGL 2027', 'Defence']
-                        .map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(color: Colors.white, fontSize: 11))))
-                        .toList(),
-                    onChanged: (val) {
-                      if (val != null) setState(() => _wizardExam = val);
-                    },
-                  ),
-                ),
-                const SizedBox(height: 10),
+          ),
+          const SizedBox(height: 12),
 
-                // Step 2: Prep Level
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(color: Color(0xFF0070F3), shape: BoxShape.circle),
-                      child: const Text('2', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900)),
+          // Step 2: Prep Level
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(color: Color(0xFF0070F3), shape: BoxShape.circle),
+                child: const Text('2', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900)),
+              ),
+              const SizedBox(width: 8),
+              const Text('What is your current preparation level?', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: prepLevels.asMap().entries.map((e) {
+              final isSel = e.key == _wizardPrepLevel;
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _wizardPrepLevel = e.key),
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 2),
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    decoration: BoxDecoration(
+                      color: isSel ? const Color(0xFF0070F3) : Colors.white.withValues(alpha: 0.04),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: isSel ? const Color(0xFF38BDF8) : Colors.transparent),
                     ),
-                    const SizedBox(width: 8),
-                    const Text('What is your current preparation level?', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: prepLevels.asMap().entries.map((e) {
-                    final isSel = e.key == _wizardPrepLevel;
-                    return Expanded(
-                      child: GestureDetector(
-                        onTap: () => setState(() => _wizardPrepLevel = e.key),
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 2),
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          decoration: BoxDecoration(
-                            color: isSel ? const Color(0xFF0070F3) : const Color(0xFF0A1E3C),
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: isSel ? const Color(0xFF38BDF8) : const Color(0xFF1E3D6E)),
-                          ),
-                          child: Text(
-                            e.value,
-                            style: TextStyle(color: isSel ? Colors.white : Colors.white70, fontSize: 8, fontWeight: FontWeight.bold),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 10),
-
-                // Step 3: Time Available
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(color: Color(0xFF0070F3), shape: BoxShape.circle),
-                      child: const Text('3', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900)),
-                    ),
-                    const SizedBox(width: 8),
-                    const Text('How much time do you have for the exam?', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: timeSlots.asMap().entries.map((e) {
-                    final isSel = e.key == _wizardTimeAvailable;
-                    return Expanded(
-                      child: GestureDetector(
-                        onTap: () => setState(() => _wizardTimeAvailable = e.key),
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 2),
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          decoration: BoxDecoration(
-                            color: isSel ? const Color(0xFF0070F3) : const Color(0xFF0A1E3C),
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: isSel ? const Color(0xFF38BDF8) : const Color(0xFF1E3D6E)),
-                          ),
-                          child: Text(
-                            e.value,
-                            style: TextStyle(color: isSel ? Colors.white : Colors.white70, fontSize: 8, fontWeight: FontWeight.bold),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 12),
-
-                // Get Recommendation Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: _showRecommendationModal,
-                    icon: const Icon(Icons.auto_awesome, size: 14),
-                    label: const Text('Get My Recommendation →', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0070F3),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    child: Text(
+                      e.value,
+                      style: TextStyle(color: isSel ? Colors.white : Colors.white70, fontSize: 8, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
                     ),
                   ),
                 ),
-                const SizedBox(height: 4),
-                const Center(
-                  child: Text('✔ 100% Free • No Signup Needed • Instant Result', style: TextStyle(color: Color(0xFF10B981), fontSize: 8)),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 12),
+
+          // Step 3: Time Available
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(color: Color(0xFF0070F3), shape: BoxShape.circle),
+                child: const Text('3', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900)),
+              ),
+              const SizedBox(width: 8),
+              const Text('How much time do you have for the exam?', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: timeSlots.asMap().entries.map((e) {
+              final isSel = e.key == _wizardTimeAvailable;
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _wizardTimeAvailable = e.key),
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 2),
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    decoration: BoxDecoration(
+                      color: isSel ? const Color(0xFF0070F3) : Colors.white.withValues(alpha: 0.04),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: isSel ? const Color(0xFF38BDF8) : Colors.transparent),
+                    ),
+                    child: Text(
+                      e.value,
+                      style: TextStyle(color: isSel ? Colors.white : Colors.white70, fontSize: 8, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
                 ),
-              ],
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 14),
+
+          // Get Recommendation Button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _showRecommendationModal,
+              icon: const Icon(Icons.auto_awesome, size: 14),
+              label: const Text('Get My Recommendation →', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0070F3),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
             ),
+          ),
+          const SizedBox(height: 4),
+          const Center(
+            child: Text('✔ 100% Free • No Signup Needed • Instant Result', style: TextStyle(color: Color(0xFF10B981), fontSize: 8)),
           ),
         ],
       ),
@@ -2199,7 +2127,7 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
               onPressed: () {
                 Navigator.pop(context);
                 if (isEnrolled) {
-                  Navigator.push(
+                  AppNavigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => BatchDetailsScreen(batch: batchToOpen)),
                   );
@@ -2247,7 +2175,7 @@ class _MetricBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
-      decoration: BoxDecoration(color: const Color(0xFF0A1E3C), borderRadius: BorderRadius.circular(4)),
+      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(4)),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -2291,7 +2219,7 @@ class _MiniPillar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 5),
-      decoration: BoxDecoration(color: const Color(0xFF081C38), borderRadius: BorderRadius.circular(6)),
+      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(6)),
       child: Column(
         children: [
           Icon(icon, color: const Color(0xFF38BDF8), size: 12),

@@ -1,3 +1,4 @@
+import 'package:examinantt_app/utils/app_navigator.dart';
 import 'package:flutter/material.dart';
 import '../utils/app_theme.dart';
 import '../services/test_service.dart';
@@ -8,6 +9,7 @@ import 'omr_test_attempt_screen.dart';
 import '../services/payment_service.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import '../constants/app_colors.dart';
+import '../widgets/notification_bell_action.dart';
 
 class TestSeriesDetailScreen extends StatefulWidget {
   final String categoryId;
@@ -58,7 +60,6 @@ class _TestSeriesDetailScreenState extends State<TestSeriesDetailScreen> {
   ];
 
   List<TestResult> _userResults = [];
-  bool _loadingResults = true;
 
   @override
   void initState() {
@@ -97,7 +98,7 @@ class _TestSeriesDetailScreenState extends State<TestSeriesDetailScreen> {
         );
         AppTheme.showErrorSnackBar(
           context,
-          'Payment Failed: ${response.message ?? "User cancelled or transaction failed"}',
+          PaymentService.cleanErrorMessage(response),
         );
       },
       onExternalWallet: (ExternalWalletResponse response) {
@@ -118,20 +119,16 @@ class _TestSeriesDetailScreenState extends State<TestSeriesDetailScreen> {
   }
 
   void _fetchUserResults() async {
-    TestService().getRecentTestResults('local_user', limit: null).listen((results) {
-      if (mounted) {
-        setState(() {
-          _userResults = results;
-          _loadingResults = false;
-        });
-      }
-    }, onError: (err) {
-      if (mounted) {
-        setState(() {
-          _loadingResults = false;
-        });
-      }
-    });
+    try {
+      final uid = await FirestoreService.getResolvedUid();
+      TestService().getRecentTestResults(uid.isNotEmpty ? uid : 'guest', limit: null).listen((results) {
+        if (mounted) {
+          setState(() {
+            _userResults = results;
+          });
+        }
+      }, onError: (_) {});
+    } catch (_) {}
   }
 
   @override
@@ -167,12 +164,18 @@ class _TestSeriesDetailScreenState extends State<TestSeriesDetailScreen> {
           iconTheme: IconThemeData(color: textColor),
           backgroundColor: appBarBg,
           elevation: 0,
+          actions: [
+            NotificationBellAction(color: textColor),
+          ],
         ),
         body: SafeArea(
           child: Column(
             children: [
               Expanded(
                 child: CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(
+                    parent: BouncingScrollPhysics(),
+                  ),
                   slivers: [
                     // Promo banner
                     SliverToBoxAdapter(
@@ -184,11 +187,11 @@ class _TestSeriesDetailScreenState extends State<TestSeriesDetailScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
                             child: Text(
                               'Syllabus & Course Content',
-                              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                              style: TextStyle(color: textColor, fontSize: 16, fontWeight: FontWeight.bold),
                             ),
                           ),
                           _buildSubTabs(),
@@ -217,9 +220,11 @@ class _TestSeriesDetailScreenState extends State<TestSeriesDetailScreen> {
   Widget _buildBannerCard() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isFree = widget.price == '0' || widget.price == '0.0';
+    final textColor = isDark ? Colors.white : AppColors.text;
+
     return Container(
       margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -254,7 +259,7 @@ class _TestSeriesDetailScreenState extends State<TestSeriesDetailScreen> {
                     children: [
                       Icon(Icons.check, color: Colors.green, size: 12),
                       SizedBox(width: 4),
-                      Text('Unlocked', style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
+                      Text('Unlocked', style: TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),
@@ -263,9 +268,9 @@ class _TestSeriesDetailScreenState extends State<TestSeriesDetailScreen> {
           const SizedBox(height: 12),
           Text(
             widget.title,
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
+            style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 19),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -483,17 +488,21 @@ class _TestSeriesDetailScreenState extends State<TestSeriesDetailScreen> {
     return StreamBuilder<List<MockTest>>(
       stream: TestService().getTestsByCategoryStream(widget.categoryId),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting || _loadingResults) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
           return const SliverFillRemaining(
+            hasScrollBody: false,
             child: Center(child: CircularProgressIndicator(color: AppColors.accent)),
           );
         }
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const SliverFillRemaining(
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          final textColor = isDark ? Colors.white : AppTheme.darkSlate;
+          return SliverFillRemaining(
+            hasScrollBody: false,
             child: Center(
               child: Text(
                 'No tests available in this category yet.',
-                style: TextStyle(color: Colors.white70),
+                style: TextStyle(color: textColor.withValues(alpha: 0.7)),
               ),
             ),
           );
@@ -592,18 +601,21 @@ class _TestSeriesDetailScreenState extends State<TestSeriesDetailScreen> {
         }
 
         if (filteredTests.isEmpty) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          final textColor = isDark ? Colors.white : AppTheme.darkSlate;
           return SliverFillRemaining(
+            hasScrollBody: false,
             child: Center(
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.assignment_outlined, size: 48, color: Colors.white38),
+                    Icon(Icons.assignment_outlined, size: 48, color: textColor.withValues(alpha: 0.38)),
                     const SizedBox(height: 12),
                     Text(
                       'No tests match the "${_subTabs[_activeSubTabIndex]}" filter.',
-                      style: const TextStyle(color: Colors.white70, fontSize: 14),
+                      style: TextStyle(color: textColor.withValues(alpha: 0.7), fontSize: 14),
                       textAlign: TextAlign.center,
                     ),
                     if (processedTests.isNotEmpty && _activeSubTabIndex > 0) ...[
@@ -735,7 +747,7 @@ class _TestSeriesDetailScreenState extends State<TestSeriesDetailScreen> {
                               ),
                               child: Text(
                                 categoryBadgeLabel,
-                                style: const TextStyle(color: Colors.blue, fontSize: 9, fontWeight: FontWeight.bold),
+                                style: const TextStyle(color: Colors.blue, fontSize: 11.5, fontWeight: FontWeight.bold),
                               ),
                             ),
                             const SizedBox(width: 6),
@@ -747,7 +759,7 @@ class _TestSeriesDetailScreenState extends State<TestSeriesDetailScreen> {
                               ),
                               child: Text(
                                 diff,
-                                style: TextStyle(color: diffColor, fontSize: 9, fontWeight: FontWeight.bold),
+                                style: TextStyle(color: diffColor, fontSize: 11.5, fontWeight: FontWeight.bold),
                               ),
                             ),
                           ],
@@ -820,7 +832,7 @@ class _TestSeriesDetailScreenState extends State<TestSeriesDetailScreen> {
 
 
   void _startTest(MockTest test) {
-    Navigator.push(
+    AppNavigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => QuizScreen(testId: test.id, testName: test.title),
@@ -831,7 +843,7 @@ class _TestSeriesDetailScreenState extends State<TestSeriesDetailScreen> {
   }
 
   void _startOmrTest(MockTest test) {
-    Navigator.push(
+    AppNavigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => OmrTestAttemptScreen(test: test),
@@ -914,14 +926,18 @@ class ModuleAccordionWidget extends StatefulWidget {
 
 class _ModuleAccordionWidgetState extends State<ModuleAccordionWidget> {
   bool _isExpanded = false;
+  final GlobalKey _itemKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardBg = isDark ? const Color(0xFF0A1E3F) : Colors.white;
+    final textColor = isDark ? Colors.white : AppTheme.darkSlate;
+    final subColor = isDark ? Colors.white60 : Colors.grey.shade600;
     final borderColor = isDark ? Colors.white10 : Colors.grey.shade300;
 
     return Container(
+      key: _itemKey,
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: cardBg,
@@ -937,6 +953,20 @@ class _ModuleAccordionWidgetState extends State<ModuleAccordionWidget> {
             setState(() {
               _isExpanded = expanded;
             });
+            if (expanded) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted) return;
+                final currentCtx = _itemKey.currentContext;
+                if (currentCtx != null) {
+                  Scrollable.ensureVisible(
+                    currentCtx,
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                    alignment: 0.1,
+                  );
+                }
+              });
+            }
           },
           leading: Container(
             width: 28,
@@ -958,22 +988,22 @@ class _ModuleAccordionWidgetState extends State<ModuleAccordionWidget> {
           ),
           title: Text(
             widget.title.toUpperCase(),
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 14,
-              color: Colors.white,
+              color: textColor,
             ),
           ),
           subtitle: Text(
             '${widget.totalLessons} Practice Tests',
-            style: const TextStyle(
-              color: Colors.white60,
+            style: TextStyle(
+              color: subColor,
               fontSize: 12,
             ),
           ),
           trailing: Icon(
             _isExpanded ? Icons.expand_less : Icons.expand_more,
-            color: Colors.white70,
+            color: subColor,
           ),
           children: [
             Builder(
@@ -1006,16 +1036,16 @@ class _ModuleAccordionWidgetState extends State<ModuleAccordionWidget> {
                       ),
                       title: Text(
                         testTitle,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                          color: textColor,
                         ),
                       ),
                       subtitle: Text(
                         '$totalQ Questions • $durationVal Mins',
-                        style: const TextStyle(
-                          color: Colors.white60,
+                        style: TextStyle(
+                          color: subColor,
                           fontSize: 11,
                         ),
                       ),
@@ -1024,7 +1054,7 @@ class _ModuleAccordionWidgetState extends State<ModuleAccordionWidget> {
                           : IconButton(
                               icon: const Icon(Icons.play_arrow_rounded, size: 20, color: AppColors.accent),
                               onPressed: () {
-                                Navigator.push(
+                                AppNavigator.push(
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) => QuizScreen(

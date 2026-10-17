@@ -141,11 +141,11 @@ class _JobAlertsScreenState extends State<JobAlertsScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Last Date', style: TextStyle(color: secondaryTextColor, fontSize: 11)),
+                  Text('Last Date', style: TextStyle(color: secondaryTextColor, fontSize: 12.5)),
                   const SizedBox(height: 2),
                   Text(
                     alert.lastDate,
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: textColor),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.5, color: textColor),
                   ),
                 ],
               ),
@@ -168,7 +168,7 @@ class _JobAlertsScreenState extends State<JobAlertsScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   elevation: 0,
                 ),
-                child: const Text('Apply Now', style: TextStyle(color: Colors.white)),
+                child: const Text('Apply Now', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
               ),
             ],
           ),

@@ -1,7 +1,7 @@
+import 'package:examinantt_app/utils/app_navigator.dart';
 // ignore_for_file: unused_element, unused_field
 import 'package:flutter/material.dart';
-import 'notifications_screen.dart';
-import '../widgets/batch_page_sections.dart';
+import '../widgets/notification_bell_action.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../utils/app_theme.dart';
 import '../constants/app_colors.dart';
@@ -36,6 +36,7 @@ class _CoursesScreenState extends State<CoursesScreen>
 
   String? _pendingPurchaseCourseTitle;
   String? _pendingPurchaseCourseId;
+  final Duration _timeLeft = const Duration(days: 12, hours: 8, minutes: 45, seconds: 22);
 
   @override
   void initState() {
@@ -72,7 +73,7 @@ class _CoursesScreenState extends State<CoursesScreen>
         );
         AppTheme.showErrorSnackBar(
           context,
-          'Payment Failed: ${response.message ?? "User cancelled or transaction failed"}',
+          PaymentService.cleanErrorMessage(response),
         );
       },
       onExternalWallet: (ExternalWalletResponse response) {},
@@ -118,38 +119,28 @@ class _CoursesScreenState extends State<CoursesScreen>
         elevation: 0,
         scrolledUnderElevation: 0,
         actions: [
-          IconButton(
-            icon: Icon(Icons.notifications_outlined, color: _getTextColor, size: 20),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const NotificationsScreen()),
-              );
-            },
-          ),
+          NotificationBellAction(color: _getTextColor),
         ],
-        bottom: !isDark
-            ? TabBar(
-                controller: _tabController,
-                isScrollable: true,
-                tabAlignment: TabAlignment.start,
-                indicatorColor: AppColors.accent,
-                indicatorWeight: 3,
-                labelColor: AppTheme.primaryColor,
-                unselectedLabelColor: Colors.grey.shade600,
-                labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
-                tabs: const [
-                  Tab(text: 'ALL BATCHES'),
-                  Tab(text: 'FULL PREPARATION'),
-                  Tab(text: 'CRASH COURSES'),
-                  Tab(text: 'MY BATCHES'),
-                ],
-              )
-            : null,
+        bottom: TabBar(
+          controller: _tabController,
+          isScrollable: true,
+          tabAlignment: TabAlignment.start,
+          indicatorColor: AppColors.accent,
+          indicatorWeight: 3,
+          dividerColor: Colors.transparent,
+          dividerHeight: 0,
+          labelColor: AppColors.accent,
+          unselectedLabelColor: isDark ? Colors.white60 : Colors.grey.shade600,
+          labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+          tabs: const [
+            Tab(text: 'ALL BATCHES'),
+            Tab(text: 'FULL PREPARATION'),
+            Tab(text: 'CRASH COURSES'),
+            Tab(text: 'MY BATCHES'),
+          ],
+        ),
       ),
-      body: isDark
-          ? const BatchPageSections()
-          : StreamBuilder<List<TestCategory>>(
+      body: StreamBuilder<List<TestCategory>>(
               stream: _testService.getCategoriesStream(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -197,6 +188,18 @@ class _CoursesScreenState extends State<CoursesScreen>
     );
   }
 
+  Widget _buildPullRefresh({required Widget child}) {
+    return RefreshIndicator(
+      color: AppColors.accent,
+      backgroundColor: _isDark ? AppColors.surfaceDark : Colors.white,
+      onRefresh: () async {
+        await Future.delayed(const Duration(milliseconds: 650));
+        if (mounted) setState(() {});
+      },
+      child: child,
+    );
+  }
+
   Widget _buildPurchasesTab(List<TestCategory> categories) {
     return StreamBuilder<List<Map<String, dynamic>>>(
       stream: FirestoreService().getUserPurchasesStream(),
@@ -214,31 +217,41 @@ class _CoursesScreenState extends State<CoursesScreen>
         }).toList();
 
         if (docs.isEmpty) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.shopping_bag_outlined, size: 64, color: _getSecondaryTextColor.withValues(alpha: 0.5)),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No purchased courses yet.',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _getTextColor),
+          return _buildPullRefresh(
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+              child: SizedBox(
+                height: MediaQuery.of(context).size.height * 0.7,
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.shopping_bag_outlined, size: 64, color: _getSecondaryTextColor.withValues(alpha: 0.5)),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No purchased courses yet.',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _getTextColor),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Go to the ALL BATCHES tab to browse and unlock premium courses.',
+                          style: TextStyle(color: _getSecondaryTextColor, fontSize: 14),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Go to the ALL BATCHES tab to browse and unlock premium courses.',
-                    style: TextStyle(color: _getSecondaryTextColor, fontSize: 14),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+                ),
               ),
             ),
           );
         }
 
-        return ListView.builder(
+        return _buildPullRefresh(
+          child: ListView.builder(
+          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
           padding: const EdgeInsets.all(16),
           itemCount: docs.length,
           itemBuilder: (context, index) {
@@ -306,7 +319,7 @@ class _CoursesScreenState extends State<CoursesScreen>
                             padding: const EdgeInsets.only(top: 2.0),
                             child: Text(
                               'Purchased: $purchaseDate',
-                              style: TextStyle(color: _getSecondaryTextColor.withValues(alpha: 0.8), fontSize: 11),
+                              style: TextStyle(color: _getSecondaryTextColor.withValues(alpha: 0.8), fontSize: 12.5),
                             ),
                           ),
                       ],
@@ -321,7 +334,7 @@ class _CoursesScreenState extends State<CoursesScreen>
                         badgeColor = Colors.green;
                       }
 
-                      Navigator.push(
+                      AppNavigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => TestSeriesDetailScreen(
@@ -363,28 +376,39 @@ class _CoursesScreenState extends State<CoursesScreen>
               ),
             );
           },
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
+}
 
   Widget _buildCategoryBatchList(List<TestCategory> courses, String emptyMsg) {
     if (courses.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Text(
-            emptyMsg,
-            style: TextStyle(color: _getSecondaryTextColor, fontSize: 15),
-            textAlign: TextAlign.center,
+      return _buildPullRefresh(
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * 0.7,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Text(
+                  emptyMsg,
+                  style: TextStyle(color: _getSecondaryTextColor, fontSize: 15),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
           ),
         ),
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: courses.length,
+    return _buildPullRefresh(
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+        padding: const EdgeInsets.all(16),
+        itemCount: courses.length,
       itemBuilder: (context, index) {
         final course = courses[index];
         Color badgeColor = const Color(0xFFC0C0C0);
@@ -399,7 +423,7 @@ class _CoursesScreenState extends State<CoursesScreen>
           child: CourseCardWidget(
             course: course,
             onExplore: () {
-              Navigator.push(
+              AppNavigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => TestSeriesDetailScreen(
@@ -434,7 +458,7 @@ class _CoursesScreenState extends State<CoursesScreen>
                   debugPrint('Error saving free purchase: $e');
                 }
                 if (!context.mounted) return;
-                Navigator.push(
+                AppNavigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => TestSeriesDetailScreen(
@@ -468,8 +492,9 @@ class _CoursesScreenState extends State<CoursesScreen>
           ),
         );
       },
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildModernTab(String text, int index) {
     return AnimatedBuilder(
@@ -529,14 +554,24 @@ class _CoursesScreenState extends State<CoursesScreen>
 
   Widget _buildCoursesTab(List<TestCategory> courses) {
     if (courses.isEmpty) {
-      return const Center(child: Text('No batches available yet.'));
+      return _buildPullRefresh(
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * 0.7,
+            child: const Center(child: Text('No batches available yet.')),
+          ),
+        ),
+      );
     }
 
     final featuredCourse = courses.first;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      child: Column(
+    return _buildPullRefresh(
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSearchBar(),
@@ -582,7 +617,7 @@ class _CoursesScreenState extends State<CoursesScreen>
                     badgeColor = Colors.green;
                   }
 
-                  Navigator.push(
+                  AppNavigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => TestSeriesDetailScreen(
@@ -623,7 +658,7 @@ class _CoursesScreenState extends State<CoursesScreen>
                       badgeColor = Colors.green;
                     }
                     if (!mounted) return;
-                    Navigator.push(
+                    AppNavigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => TestSeriesDetailScreen(
@@ -665,8 +700,9 @@ class _CoursesScreenState extends State<CoursesScreen>
           const SizedBox(height: 30),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildSearchBar() {
     return Container(
@@ -719,24 +755,28 @@ class _CoursesScreenState extends State<CoursesScreen>
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: _isDark
-              ? [const Color(0xFF0B1E43), const Color(0xFF00122C)]
-              : [AppTheme.primaryColor, AppTheme.primaryDark],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: _isDark ? null : Colors.white,
+        gradient: _isDark
+            ? const LinearGradient(
+                colors: [Color(0xFF0B1E43), Color(0xFF00122C)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : null,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: _isDark ? AppColors.accent.withValues(alpha: 0.4) : Colors.white24,
+          color: _isDark
+              ? AppColors.accent.withValues(alpha: 0.4)
+              : Colors.grey.shade200,
           width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: (_isDark ? AppColors.accent : AppTheme.primaryColor)
-                .withValues(alpha: 0.25),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+            color: _isDark
+                ? AppColors.accent.withValues(alpha: 0.25)
+                : Colors.black.withValues(alpha: 0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -757,7 +797,7 @@ class _CoursesScreenState extends State<CoursesScreen>
                   badgeText,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 10,
+                    fontSize: 12,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 0.8,
                   ),
@@ -767,19 +807,23 @@ class _CoursesScreenState extends State<CoursesScreen>
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.4),
+                  color: _isDark
+                      ? Colors.black.withValues(alpha: 0.4)
+                      : const Color(0xFFE8F5E9),
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: Colors.white24),
+                  border: Border.all(
+                    color: _isDark ? Colors.white24 : const Color(0xFFA5D6A7),
+                  ),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.circle, color: Color(0xFF22C55E), size: 6),
-                    SizedBox(width: 4),
+                    const Icon(Icons.circle, color: Color(0xFF22C55E), size: 6),
+                    const SizedBox(width: 4),
                     Text(
                       'Registration Open',
                       style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
+                        color: _isDark ? Colors.white : const Color(0xFF1B5E20),
+                        fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -791,8 +835,8 @@ class _CoursesScreenState extends State<CoursesScreen>
           const SizedBox(height: 14),
           Text(
             title,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: _isDark ? Colors.white : AppTheme.darkSlate,
               fontSize: 24,
               fontWeight: FontWeight.w900,
               height: 1.15,
@@ -805,7 +849,9 @@ class _CoursesScreenState extends State<CoursesScreen>
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.85),
+              color: _isDark
+                  ? Colors.white.withValues(alpha: 0.85)
+                  : Colors.grey.shade700,
               fontSize: 13,
               height: 1.35,
             ),
@@ -815,9 +861,15 @@ class _CoursesScreenState extends State<CoursesScreen>
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.35),
+              color: _isDark
+                  ? Colors.black.withValues(alpha: 0.35)
+                  : const Color(0xFFF8FAFC),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+              border: Border.all(
+                color: _isDark
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : Colors.grey.shade200,
+              ),
             ),
             child: Row(
               children: [
@@ -842,11 +894,11 @@ class _CoursesScreenState extends State<CoursesScreen>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Text(
+                            Text(
                               'PRICE',
                               style: TextStyle(
-                                color: Colors.white60,
-                                fontSize: 9,
+                                color: _isDark ? Colors.white60 : Colors.grey.shade600,
+                                fontSize: 11.5,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 0.5,
                               ),
@@ -855,8 +907,8 @@ class _CoursesScreenState extends State<CoursesScreen>
                             ),
                             Text(
                               priceText,
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: _isDark ? Colors.white : AppTheme.darkSlate,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w900,
                               ),
@@ -872,7 +924,7 @@ class _CoursesScreenState extends State<CoursesScreen>
                 Container(
                   height: 30,
                   width: 1,
-                  color: Colors.white24,
+                  color: _isDark ? Colors.white24 : Colors.grey.shade300,
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -896,11 +948,11 @@ class _CoursesScreenState extends State<CoursesScreen>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Text(
+                            Text(
                               'CONTENT',
                               style: TextStyle(
-                                color: Colors.white60,
-                                fontSize: 9,
+                                color: _isDark ? Colors.white60 : Colors.grey.shade600,
+                                fontSize: 11.5,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 0.5,
                               ),
@@ -909,8 +961,8 @@ class _CoursesScreenState extends State<CoursesScreen>
                             ),
                             Text(
                               testsText,
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: _isDark ? Colors.white : AppTheme.darkSlate,
                                 fontSize: 13,
                                 fontWeight: FontWeight.w900,
                               ),
@@ -948,7 +1000,7 @@ class _CoursesScreenState extends State<CoursesScreen>
             'BATCH STARTS IN',
             style: TextStyle(
               color: _getSecondaryTextColor,
-              fontSize: 10,
+              fontSize: 12,
               fontWeight: FontWeight.w800,
               letterSpacing: 1.2,
             ),
@@ -956,13 +1008,33 @@ class _CoursesScreenState extends State<CoursesScreen>
           const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(child: _buildTimerBox('12', 'DAYS')),
+              Expanded(
+                child: _buildTimerBox(
+                  _timeLeft.inDays.toString().padLeft(2, '0'),
+                  'DAYS',
+                ),
+              ),
               const SizedBox(width: 6),
-              Expanded(child: _buildTimerBox('08', 'HRS')),
+              Expanded(
+                child: _buildTimerBox(
+                  (_timeLeft.inHours % 24).toString().padLeft(2, '0'),
+                  'HRS',
+                ),
+              ),
               const SizedBox(width: 6),
-              Expanded(child: _buildTimerBox('45', 'MIN')),
+              Expanded(
+                child: _buildTimerBox(
+                  (_timeLeft.inMinutes % 60).toString().padLeft(2, '0'),
+                  'MIN',
+                ),
+              ),
               const SizedBox(width: 6),
-              Expanded(child: _buildTimerBox('22', 'SEC')),
+              Expanded(
+                child: _buildTimerBox(
+                  (_timeLeft.inSeconds % 60).toString().padLeft(2, '0'),
+                  'SEC',
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -979,7 +1051,7 @@ class _CoursesScreenState extends State<CoursesScreen>
                         badgeColor = Colors.green;
                       }
 
-                      Navigator.push(
+                      AppNavigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => TestSeriesDetailScreen(
@@ -1037,7 +1109,7 @@ class _CoursesScreenState extends State<CoursesScreen>
                         badgeColor = Colors.green;
                       }
 
-                      Navigator.push(
+                      AppNavigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => TestSeriesDetailScreen(
@@ -1114,7 +1186,7 @@ class _CoursesScreenState extends State<CoursesScreen>
             child: Text(
               unit,
               style: TextStyle(
-                fontSize: 9,
+                fontSize: 11.5,
                 fontWeight: FontWeight.bold,
                 color: _getSecondaryTextColor,
                 letterSpacing: 0.5,

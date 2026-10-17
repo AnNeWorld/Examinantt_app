@@ -1,3 +1,4 @@
+import 'package:examinantt_app/utils/app_navigator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
@@ -162,7 +163,7 @@ class _AmazonLivePlayerScreenState extends State<AmazonLivePlayerScreen>
   }
 
   void _openCheckout(BuildContext context) {
-    Navigator.push(
+    AppNavigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => CheckoutScreen(
@@ -256,7 +257,7 @@ class _AmazonLivePlayerScreenState extends State<AmazonLivePlayerScreen>
                         children: [
                           Icon(Icons.circle, color: Colors.white, size: 6),
                           SizedBox(width: 4),
-                          Text('AMAZON IVS LIVE', style: TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.w900)),
+                          Text('AMAZON IVS LIVE', style: TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w900)),
                         ],
                       ),
                     ),
@@ -264,7 +265,7 @@ class _AmazonLivePlayerScreenState extends State<AmazonLivePlayerScreen>
                     Flexible(
                       child: Text(
                         widget.liveClass.title,
-                        style: TextStyle(color: _textColor, fontSize: 14, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: _textColor, fontSize: 16, fontWeight: FontWeight.bold),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -272,7 +273,7 @@ class _AmazonLivePlayerScreenState extends State<AmazonLivePlayerScreen>
                 ),
                 Text(
                   'By ${widget.liveClass.instructor} • ${widget.liveClass.subject}',
-                  style: TextStyle(color: _subTextColor, fontSize: 10),
+                  style: TextStyle(color: _subTextColor, fontSize: 12.5),
                 ),
               ],
             ),
@@ -482,12 +483,12 @@ class _AmazonLivePlayerScreenState extends State<AmazonLivePlayerScreen>
                       color: const Color(0xFFEF4444),
                       borderRadius: BorderRadius.circular(4),
                     ),
-                    child: const Text('LIVE', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
+                    child: const Text('LIVE', style: TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.bold)),
                   ),
                   const SizedBox(width: 8),
                   Text(
                     '${widget.liveClass.activeViewers.isNotEmpty ? widget.liveClass.activeViewers : "1.2k"} Watching',
-                    style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 10.5, fontWeight: FontWeight.bold),
+                    style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 12, fontWeight: FontWeight.bold),
                   ),
                   const Spacer(),
                   IconButton(
@@ -516,7 +517,7 @@ class _AmazonLivePlayerScreenState extends State<AmazonLivePlayerScreen>
               const SizedBox(width: 6),
               Text(
                 'Live Doubts Chat • Direct interaction with ${widget.liveClass.instructor}',
-                style: TextStyle(color: _subTextColor, fontSize: 10.5, fontWeight: FontWeight.w600),
+                style: TextStyle(color: _subTextColor, fontSize: 12.5, fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -538,12 +539,12 @@ class _AmazonLivePlayerScreenState extends State<AmazonLivePlayerScreen>
                       const SizedBox(height: 8),
                       Text(
                         'Live Chat is Open!',
-                        style: TextStyle(color: _textColor, fontWeight: FontWeight.bold, fontSize: 13),
+                        style: TextStyle(color: _textColor, fontWeight: FontWeight.bold, fontSize: 15),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Ask questions and doubts directly to the faculty.',
-                        style: TextStyle(color: _subTextColor, fontSize: 11),
+                        style: TextStyle(color: _subTextColor, fontSize: 13),
                       ),
                     ],
                   ),
@@ -583,7 +584,7 @@ class _AmazonLivePlayerScreenState extends State<AmazonLivePlayerScreen>
                               : (isMe ? const Color(0xFF38BDF8) : Colors.grey.shade400),
                           child: Text(
                             (msg['senderName'] ?? 'S').toString().substring(0, 1).toUpperCase(),
-                            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -598,7 +599,7 @@ class _AmazonLivePlayerScreenState extends State<AmazonLivePlayerScreen>
                                     style: TextStyle(
                                       color: isInstructor ? const Color(0xFFFF7A00) : _textColor,
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 11,
+                                      fontSize: 13.5,
                                     ),
                                   ),
                                   if (isInstructor) ...[
@@ -609,7 +610,7 @@ class _AmazonLivePlayerScreenState extends State<AmazonLivePlayerScreen>
                                         color: const Color(0xFFFF7A00),
                                         borderRadius: BorderRadius.circular(3),
                                       ),
-                                      child: const Text('FACULTY', style: TextStyle(color: Colors.white, fontSize: 7, fontWeight: FontWeight.bold)),
+                                      child: const Text('FACULTY', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
                                     ),
                                   ],
                                 ],
@@ -617,7 +618,7 @@ class _AmazonLivePlayerScreenState extends State<AmazonLivePlayerScreen>
                               const SizedBox(height: 2),
                               Text(
                                 msg['text'] ?? '',
-                                style: TextStyle(color: _textColor, fontSize: 12),
+                                style: TextStyle(color: _textColor, fontSize: 14),
                               ),
                             ],
                           ),
@@ -651,10 +652,10 @@ class _AmazonLivePlayerScreenState extends State<AmazonLivePlayerScreen>
                   child: TextField(
                     controller: _chatController,
                     onSubmitted: (_) => _sendChatMessage(currentUserName, currentUid),
-                    style: TextStyle(color: _textColor, fontSize: 12.5),
+                    style: TextStyle(color: _textColor, fontSize: 14),
                     decoration: InputDecoration(
                       hintText: isAuthorized ? 'Ask a doubt or message...' : 'Enroll to chat with faculty',
-                      hintStyle: TextStyle(color: _subTextColor, fontSize: 11),
+                      hintStyle: TextStyle(color: _subTextColor, fontSize: 13.5),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                     ),
@@ -703,16 +704,16 @@ class _AmazonLivePlayerScreenState extends State<AmazonLivePlayerScreen>
                   children: [
                     Text(
                       widget.liveClass.instructor,
-                      style: TextStyle(color: _textColor, fontSize: 14, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: _textColor, fontSize: 15.5, fontWeight: FontWeight.bold),
                     ),
                     Text(
                       widget.liveClass.qualification,
-                      style: TextStyle(color: _subTextColor, fontSize: 11),
+                      style: TextStyle(color: _subTextColor, fontSize: 13),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       '${widget.liveClass.subject} • ${widget.liveClass.examCategory}',
-                      style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 10.5, fontWeight: FontWeight.bold),
+                      style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 12.5, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -736,7 +737,7 @@ class _AmazonLivePlayerScreenState extends State<AmazonLivePlayerScreen>
             children: [
               Text(
                 'Session Overview',
-                style: TextStyle(color: _textColor, fontSize: 13, fontWeight: FontWeight.bold),
+                style: TextStyle(color: _textColor, fontSize: 15.5, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               _buildSpecRow(Icons.schedule_rounded, 'Duration', '${widget.liveClass.durationMinutes} Minutes'),
@@ -747,7 +748,7 @@ class _AmazonLivePlayerScreenState extends State<AmazonLivePlayerScreen>
                 const SizedBox(height: 6),
                 Text(
                   widget.liveClass.description,
-                  style: TextStyle(color: _subTextColor, fontSize: 11.5, height: 1.4),
+                  style: TextStyle(color: _subTextColor, fontSize: 13.5, height: 1.4),
                 ),
               ],
             ],
@@ -762,7 +763,7 @@ class _AmazonLivePlayerScreenState extends State<AmazonLivePlayerScreen>
             width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: () {
-                Navigator.push(
+                AppNavigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => PdfViewerScreen(
@@ -813,11 +814,11 @@ class _AmazonLivePlayerScreenState extends State<AmazonLivePlayerScreen>
         children: [
           Icon(icon, size: 16, color: const Color(0xFFFF7A00)),
           const SizedBox(width: 8),
-          Text('$label: ', style: TextStyle(color: _subTextColor, fontSize: 11.5)),
+          Text('$label: ', style: TextStyle(color: _subTextColor, fontSize: 13)),
           Expanded(
             child: Text(
               value,
-              style: TextStyle(color: _textColor, fontWeight: FontWeight.w600, fontSize: 11.5),
+              style: TextStyle(color: _textColor, fontWeight: FontWeight.w600, fontSize: 13),
             ),
           ),
         ],

@@ -6,6 +6,7 @@ import '../auth_screen/sign_up_login.dart';
 import 'about_us_screen.dart';
 import 'privacy_policy_screen.dart';
 import 'terms_conditions_screen.dart';
+import '../widgets/notification_bell_action.dart';
 
 class AboutExaminanttScreen extends StatefulWidget {
   const AboutExaminanttScreen({super.key});
@@ -15,6 +16,7 @@ class AboutExaminanttScreen extends StatefulWidget {
 }
 
 class _AboutExaminanttScreenState extends State<AboutExaminanttScreen> {
+  /*
   void _showRatingDialog() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     int rating = 5;
@@ -211,42 +213,76 @@ class _AboutExaminanttScreenState extends State<AboutExaminanttScreen> {
       },
     );
   }
+  */
 
   void _deleteAccountDialog() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: isDark ? const Color(0xFF0E1A3D) : Colors.white,
-          title: const Text('Delete Account Permanently?', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
-          content: const Text(
-            'This action is irreversible. All of your mock tests, achievements, goals, and purchases will be permanently deleted.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                Provider.of<UserProvider>(context, listen: false).logout();
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Account permanently deleted.')),
-                );
-                if (context.mounted) {
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (context) => const LoginScreen()),
-                    (route) => false,
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              child: const Text('Delete Permanently', style: TextStyle(color: Colors.white)),
-            ),
-          ],
+      barrierDismissible: false,
+      builder: (dialogCtx) {
+        bool isDeleting = false;
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return AlertDialog(
+              backgroundColor: isDark ? const Color(0xFF0E1A3D) : Colors.white,
+              title: const Text('Delete Account Permanently?', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+              content: const Text(
+                'This action is irreversible. All your data, purchases, and progress will be permanently deleted.\n\n⚠️ You will NOT be able to log in or create a new account with this email or mobile number ever again.',
+              ),
+              actions: [
+                if (!isDeleting)
+                  TextButton(
+                    onPressed: () => Navigator.pop(dialogCtx),
+                    child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+                  ),
+                ElevatedButton(
+                  onPressed: isDeleting
+                      ? null
+                      : () async {
+                          setModalState(() => isDeleting = true);
+                          final messenger = ScaffoldMessenger.of(context);
+                          final error = await Provider.of<UserProvider>(context, listen: false).deleteAccount();
+
+                          if (!dialogCtx.mounted) return;
+                          Navigator.pop(dialogCtx);
+
+                          if (error != null) {
+                            messenger.showSnackBar(
+                              SnackBar(
+                                content: Text(error),
+                                backgroundColor: Colors.redAccent,
+                              ),
+                            );
+                          } else {
+                            messenger.showSnackBar(
+                              const SnackBar(
+                                content: Text('Account permanently deleted. This number & email cannot be used again.'),
+                                backgroundColor: Colors.redAccent,
+                                duration: Duration(seconds: 4),
+                              ),
+                            );
+                            if (context.mounted) {
+                              Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(builder: (context) => const LoginScreen()),
+                                (route) => false,
+                              );
+                            }
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                  child: isDeleting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        )
+                      : const Text('Delete Permanently', style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -278,13 +314,17 @@ class _AboutExaminanttScreenState extends State<AboutExaminanttScreen> {
             fontSize: 18,
           ),
         ),
+        actions: const [
+          NotificationBellAction(),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top Header Banner
+            // [COMMENTED OUT] Top Header Banner
+            /*
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -330,6 +370,7 @@ class _AboutExaminanttScreenState extends State<AboutExaminanttScreen> {
               ),
             ).animate().fadeIn(duration: 400.ms),
             const SizedBox(height: 24),
+            */
 
             // Section 1: About & Policies Card
             _buildSectionHeader(context, 'About & Policies', Icons.shield_outlined, const Color(0xFF3B82F6)),
@@ -368,6 +409,8 @@ class _AboutExaminanttScreenState extends State<AboutExaminanttScreen> {
                     color: const Color(0xFF3B82F6),
                     destination: const PrivacyPolicyScreen(),
                   ),
+                  // [COMMENTED OUT] Refund Policy & Community Guidelines
+                  /*
                   const Divider(height: 1, indent: 56),
                   _buildPolicyRow(
                     context,
@@ -386,12 +429,14 @@ class _AboutExaminanttScreenState extends State<AboutExaminanttScreen> {
                     color: const Color(0xFF3B82F6),
                     destination: const Scaffold(body: Center(child: Text('Community Guidelines'))),
                   ),
+                  */
                 ],
               ),
             ).animate().fadeIn(delay: 100.ms, duration: 400.ms),
             const SizedBox(height: 24),
 
-            // Section 2: App & Community
+            // [COMMENTED OUT] Section 2: App & Community
+            /*
             _buildSectionHeader(context, 'App & Community', Icons.star_border_rounded, const Color(0xFFFFA000)),
             const SizedBox(height: 12),
             GridView.count(
@@ -409,8 +454,10 @@ class _AboutExaminanttScreenState extends State<AboutExaminanttScreen> {
               ],
             ).animate().fadeIn(delay: 150.ms, duration: 400.ms),
             const SizedBox(height: 24),
+            */
 
-            // Section 3: App Information Card
+            // [COMMENTED OUT] Section 3: App Information Card
+            /*
             _buildSectionHeader(context, 'App Information', Icons.developer_mode_outlined, const Color(0xFF8B5CF6)),
             const SizedBox(height: 12),
             Container(
@@ -465,6 +512,7 @@ class _AboutExaminanttScreenState extends State<AboutExaminanttScreen> {
               ),
             ).animate().fadeIn(delay: 200.ms, duration: 400.ms),
             const SizedBox(height: 24),
+            */
 
             // Section 4: Actions (Log Out / Delete Account)
             Container(
@@ -487,11 +535,11 @@ class _AboutExaminanttScreenState extends State<AboutExaminanttScreen> {
                     ),
                     title: Text(
                       'Log Out',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: textColor),
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: textColor),
                     ),
                     subtitle: Text(
                       'Sign out from your account',
-                      style: TextStyle(fontSize: 10, color: subColor),
+                      style: TextStyle(fontSize: 12.5, color: subColor),
                     ),
                     trailing: Icon(Icons.chevron_right_rounded, color: subColor, size: 18),
                     onTap: () async {
@@ -516,11 +564,11 @@ class _AboutExaminanttScreenState extends State<AboutExaminanttScreen> {
                     ),
                     title: const Text(
                       'Delete Account',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.red),
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.red),
                     ),
                     subtitle: Text(
                       'Permanently delete your account and all data',
-                      style: TextStyle(fontSize: 10, color: Colors.red.withValues(alpha: 0.7)),
+                      style: TextStyle(fontSize: 12.5, color: Colors.red.withValues(alpha: 0.7)),
                     ),
                     trailing: const Icon(Icons.chevron_right_rounded, color: Colors.red, size: 18),
                     onTap: _deleteAccountDialog,
@@ -528,9 +576,10 @@ class _AboutExaminanttScreenState extends State<AboutExaminanttScreen> {
                 ],
               ),
             ).animate().fadeIn(delay: 250.ms, duration: 400.ms),
-            const SizedBox(height: 24),
 
-            // Bottom trust banner
+            // [COMMENTED OUT] Bottom trust banner
+            /*
+            const SizedBox(height: 24),
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -568,6 +617,7 @@ class _AboutExaminanttScreenState extends State<AboutExaminanttScreen> {
                 ],
               ),
             ).animate().fadeIn(delay: 300.ms, duration: 400.ms),
+            */
           ],
         ),
       ),
@@ -584,7 +634,7 @@ class _AboutExaminanttScreenState extends State<AboutExaminanttScreen> {
         const SizedBox(width: 8),
         Text(
           label,
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: textColor),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textColor),
         ),
       ],
     );
@@ -614,11 +664,11 @@ class _AboutExaminanttScreenState extends State<AboutExaminanttScreen> {
       ),
       title: Text(
         title,
-        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: textColor),
+        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: textColor),
       ),
       subtitle: Text(
         desc,
-        style: TextStyle(fontSize: 10, color: subColor),
+        style: TextStyle(fontSize: 12.5, color: subColor),
       ),
       trailing: Icon(Icons.chevron_right_rounded, color: subColor, size: 18),
       onTap: () {
@@ -630,6 +680,7 @@ class _AboutExaminanttScreenState extends State<AboutExaminanttScreen> {
     );
   }
 
+  /*
   Widget _buildCommunityCard(
     BuildContext context,
     String label,
@@ -690,4 +741,5 @@ class _AboutExaminanttScreenState extends State<AboutExaminanttScreen> {
       ),
     );
   }
+  */
 }

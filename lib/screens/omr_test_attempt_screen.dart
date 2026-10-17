@@ -368,7 +368,7 @@ class _OmrTestAttemptScreenState extends State<OmrTestAttemptScreen> {
             children: [
               Text(
                 widget.test.title,
-                style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.bold),
+                style: TextStyle(color: textColor, fontSize: 15.5, fontWeight: FontWeight.bold),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -376,7 +376,7 @@ class _OmrTestAttemptScreenState extends State<OmrTestAttemptScreen> {
                 children: [
                   Icon(Icons.bubble_chart_rounded, size: 11, color: Color(0xFF10B981)),
                   SizedBox(width: 4),
-                  Text('OFFICIAL OMR BUBBLE MODE', style: TextStyle(color: Color(0xFF10B981), fontSize: 8.5, fontWeight: FontWeight.w900)),
+                  Text('OFFICIAL OMR BUBBLE MODE', style: TextStyle(color: Color(0xFF10B981), fontSize: 11.5, fontWeight: FontWeight.w900)),
                 ],
               ),
             ],
@@ -480,7 +480,7 @@ class _OmrTestAttemptScreenState extends State<OmrTestAttemptScreen> {
                       minimumSize: Size.zero,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                     ),
-                    child: const Text('SUBMIT', style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w900)),
+                    child: const Text('SUBMIT', style: TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.w900)),
                   ),
                 ],
               ),
@@ -609,11 +609,11 @@ class _OmrTestAttemptScreenState extends State<OmrTestAttemptScreen> {
         const SizedBox(width: 5),
         Text(
           '$label: ',
-          style: const TextStyle(color: Colors.white54, fontSize: 10),
+          style: const TextStyle(color: Colors.white54, fontSize: 12),
         ),
         Text(
           value,
-          style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold),
+          style: TextStyle(color: color, fontSize: 12.5, fontWeight: FontWeight.bold),
         ),
       ],
     );

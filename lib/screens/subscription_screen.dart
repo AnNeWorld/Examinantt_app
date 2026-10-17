@@ -62,7 +62,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     );
     AppTheme.showErrorSnackBar(
       context,
-      'Payment Failed: ${response.message ?? "User cancelled or transaction failed"}',
+      PaymentService.cleanErrorMessage(response),
     );
   }
 
@@ -308,7 +308,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                         'MOST POPULAR',
                         style: TextStyle(
                           color: badgeColor,
-                          fontSize: 10,
+                          fontSize: 12,
                           fontWeight: FontWeight.w900,
                           letterSpacing: 0.8,
                         ),
@@ -324,7 +324,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   ),
                   child: const Text(
                     'BEST VALUE',
-                    style: TextStyle(color: Color(0xFF10B981), fontSize: 9.5, fontWeight: FontWeight.bold),
+                    style: TextStyle(color: Color(0xFF10B981), fontSize: 12, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
@@ -346,7 +346,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               const SizedBox(width: 4),
               Text(
                 duration,
-                style: TextStyle(fontSize: 13, color: subColor, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 14, color: subColor, fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -362,7 +362,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     Expanded(
                       child: Text(
                         f,
-                        style: TextStyle(fontSize: 13, color: textColor, fontWeight: FontWeight.w500),
+                        style: TextStyle(fontSize: 14, color: textColor, fontWeight: FontWeight.w500),
                       ),
                     ),
                   ],

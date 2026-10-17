@@ -1,3 +1,4 @@
+import 'package:examinantt_app/utils/app_navigator.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
@@ -10,6 +11,7 @@ import 'amazon_live_player_screen.dart';
 import 'checkout_screen.dart';
 import 'pdf_viewer_screen.dart';
 import 'batch_details_screen.dart';
+import '../widgets/notification_bell_action.dart';
 
 class LiveClassesScreen extends StatefulWidget {
   final int initialTab;
@@ -93,7 +95,7 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
   }
 
   void _openLiveClass(LiveClass c) {
-    Navigator.push(
+    AppNavigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => AmazonLivePlayerScreen(liveClass: c),
@@ -106,7 +108,7 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
       AppTheme.showWarningSnackBar(context, 'PDF Notes will be available shortly after session.');
       return;
     }
-    Navigator.push(
+    AppNavigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => PdfViewerScreen(
@@ -149,7 +151,7 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
         ),
       );
       if (!mounted) return;
-      Navigator.push(
+      AppNavigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => BatchDetailsScreen(batch: match),
@@ -161,7 +163,7 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
   }
 
   void _openCheckout(LiveClass c) {
-    Navigator.push(
+    AppNavigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => CheckoutScreen(
@@ -333,6 +335,9 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
             ),
           ],
         ),
+        actions: [
+          NotificationBellAction(color: _textColor),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
           child: Container(
@@ -562,7 +567,7 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
                                 children: [
                                   Text(
                                     widget.batchTitle ?? 'Amazon AWS Live Classroom',
-                                    style: TextStyle(color: _textColor, fontSize: 11.5, fontWeight: FontWeight.bold),
+                                    style: TextStyle(color: _textColor, fontSize: 13, fontWeight: FontWeight.bold),
                                   ),
                                   const SizedBox(width: 6),
                                   Container(
@@ -571,14 +576,14 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
                                       color: const Color(0xFF10B981),
                                       borderRadius: BorderRadius.circular(4),
                                     ),
-                                    child: const Text('AWS IVS ACTIVE ✓', style: TextStyle(color: Colors.white, fontSize: 7, fontWeight: FontWeight.w900)),
+                                    child: const Text('AWS IVS ACTIVE ✓', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900)),
                                   ),
                                 ],
                               ),
                               const SizedBox(height: 2),
                               Text(
                                 'Ultra-low latency streaming • Real-time doubt chat • DPPs & Handouts',
-                                style: TextStyle(color: _isDark ? const Color(0xFF38BDF8) : const Color(0xFF0284C7), fontSize: 8.5, fontWeight: FontWeight.w600),
+                                style: TextStyle(color: _isDark ? const Color(0xFF38BDF8) : const Color(0xFF0284C7), fontSize: 12, fontWeight: FontWeight.w600),
                               ),
                             ],
                           ),
@@ -619,59 +624,82 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
     Set<String> purchasedItemIds,
   ) {
     if (enrolledClasses.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(28.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFF7A00).withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
+      return RefreshIndicator(
+        color: const Color(0xFFFF7A00),
+        backgroundColor: _cardBg,
+        onRefresh: () async {
+          await Future.delayed(const Duration(milliseconds: 650));
+          if (mounted) setState(() {});
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * 0.6,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(28.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF7A00).withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.workspace_premium_rounded, color: Color(0xFFFF7A00), size: 48),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No Enrolled Live Classes Yet',
+                      style: TextStyle(color: _textColor, fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Any live classes you purchase or receive through enrolled batches will appear here automatically with direct 1-tap live access.',
+                      style: TextStyle(color: _subTextColor, fontSize: 12),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 18),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        _tabController.animateTo(1);
+                      },
+                      icon: const Icon(Icons.explore_rounded, size: 16),
+                      label: const Text('Explore Active Live Classes'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF7A00),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                      ),
+                    ),
+                  ],
                 ),
-                child: const Icon(Icons.workspace_premium_rounded, color: Color(0xFFFF7A00), size: 48),
               ),
-              const SizedBox(height: 16),
-              Text(
-                'No Enrolled Live Classes Yet',
-                style: TextStyle(color: _textColor, fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Any live classes you purchase or receive through enrolled batches will appear here automatically with direct 1-tap live access.',
-                style: TextStyle(color: _subTextColor, fontSize: 12),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 18),
-              ElevatedButton.icon(
-                onPressed: () {
-                  _tabController.animateTo(1);
-                },
-                icon: const Icon(Icons.explore_rounded, size: 16),
-                label: const Text('Explore Active Live Classes'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF7A00),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: enrolledClasses.length,
-      itemBuilder: (context, index) {
-        final c = enrolledClasses[index];
-        return _buildLiveClassCard(c, isEnrolled: true);
+    return RefreshIndicator(
+      color: const Color(0xFFFF7A00),
+      backgroundColor: _cardBg,
+      onRefresh: () async {
+        await Future.delayed(const Duration(milliseconds: 650));
+        if (mounted) setState(() {});
       },
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+        padding: const EdgeInsets.all(16),
+        itemCount: enrolledClasses.length,
+        itemBuilder: (context, index) {
+          final c = enrolledClasses[index];
+          return _buildLiveClassCard(c, isEnrolled: true);
+        },
+      ),
     );
   }
 
@@ -842,7 +870,7 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
                           children: [
                             Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 12),
                             SizedBox(width: 4),
-                            Text('ENROLLED ✓', style: TextStyle(color: Color(0xFF10B981), fontSize: 9.5, fontWeight: FontWeight.w800)),
+                            Text('ENROLLED ✓', style: TextStyle(color: Color(0xFF10B981), fontSize: 12, fontWeight: FontWeight.w800)),
                           ],
                         ),
                       )
@@ -853,7 +881,7 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
                           color: const Color(0xFF38BDF8).withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: const Text('FREE PREVIEW', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 9.5, fontWeight: FontWeight.bold)),
+                        child: const Text('FREE PREVIEW', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 12, fontWeight: FontWeight.bold)),
                       )
                     else
                       Container(
@@ -864,7 +892,7 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
                         ),
                         child: Text(
                           '₹${c.price.toStringAsFixed(0)}',
-                          style: const TextStyle(color: Color(0xFFFF7A00), fontSize: 11, fontWeight: FontWeight.w800),
+                          style: const TextStyle(color: Color(0xFFFF7A00), fontSize: 13.5, fontWeight: FontWeight.w800),
                         ),
                       ),
                   ],
@@ -889,7 +917,7 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
                       ),
                       child: Text(
                         c.subject.toUpperCase(),
-                        style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w900),
+                        style: TextStyle(color: color, fontSize: 11.5, fontWeight: FontWeight.w900),
                       ),
                     ),
                     if (c.batchName.isNotEmpty || c.batchId.isNotEmpty) ...[
@@ -907,11 +935,11 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.class_outlined, color: Color(0xFF38BDF8), size: 10),
+                              const Icon(Icons.class_outlined, color: Color(0xFF38BDF8), size: 12),
                               const SizedBox(width: 3),
                               Text(
                                 c.batchName.isNotEmpty ? c.batchName.toUpperCase() : 'BATCH',
-                                style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 8.5, fontWeight: FontWeight.w800),
+                                style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 11.5, fontWeight: FontWeight.w800),
                               ),
                             ],
                           ),
@@ -928,7 +956,7 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
                         ),
                         child: Text(
                           c.examCategory.toUpperCase(),
-                          style: TextStyle(color: _subTextColor, fontSize: 8.5, fontWeight: FontWeight.w700),
+                          style: TextStyle(color: _subTextColor, fontSize: 11.5, fontWeight: FontWeight.w700),
                         ),
                       ),
                     ],
@@ -937,12 +965,12 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
                 const SizedBox(height: 6),
                 Text(
                   c.title,
-                  style: TextStyle(color: _textColor, fontSize: 15, fontWeight: FontWeight.w800),
+                  style: TextStyle(color: _textColor, fontSize: 16, fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   c.chapter,
-                  style: TextStyle(color: _subTextColor, fontSize: 11.5),
+                  style: TextStyle(color: _subTextColor, fontSize: 13),
                 ),
                 const SizedBox(height: 10),
 
@@ -964,11 +992,11 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
                         children: [
                           Text(
                             c.instructor,
-                            style: TextStyle(color: _textColor, fontWeight: FontWeight.bold, fontSize: 12),
+                            style: TextStyle(color: _textColor, fontWeight: FontWeight.bold, fontSize: 14),
                           ),
                           Text(
                             c.qualification,
-                            style: TextStyle(color: _subTextColor, fontSize: 9.5),
+                            style: TextStyle(color: _subTextColor, fontSize: 12),
                           ),
                         ],
                       ),
@@ -978,11 +1006,11 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
                       children: [
                         Text(
                           c.time,
-                          style: TextStyle(color: _textColor, fontSize: 11, fontWeight: FontWeight.w600),
+                          style: TextStyle(color: _textColor, fontSize: 13, fontWeight: FontWeight.w600),
                         ),
                         Text(
                           '${c.durationMinutes} mins',
-                          style: TextStyle(color: _subTextColor, fontSize: 9.5),
+                          style: TextStyle(color: _subTextColor, fontSize: 12),
                         ),
                       ],
                     ),
@@ -1037,7 +1065,7 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 11),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      textStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
+                      textStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
                     ),
                   ),
                 ),
@@ -1053,7 +1081,7 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
                       side: BorderSide(color: _borderColor),
                       padding: const EdgeInsets.symmetric(vertical: 11),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+                      textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                     ),
                   ),
                 ),
@@ -1151,7 +1179,7 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      Navigator.push(
+                      AppNavigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => PdfViewerScreen(pdfData: res),

@@ -3,7 +3,9 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../utils/app_theme.dart';
-import '../services/firestore_service.dart';
+import '../services/analytics_service.dart';
+import '../models/test_model.dart';
+import '../widgets/notification_bell_action.dart';
 
 class MyPreparationScreen extends StatelessWidget {
   const MyPreparationScreen({super.key});
@@ -45,6 +47,9 @@ class MyPreparationScreen extends StatelessWidget {
                 fontSize: 18,
               ),
             ),
+            actions: [
+              NotificationBellAction(color: textColor),
+            ],
             bottom: TabBar(
               indicatorColor: const Color(0xFFFFA000),
               labelColor: const Color(0xFFFFA000),
@@ -81,6 +86,21 @@ class _GoalsTabState extends State<GoalsTab> {
   String targetYear = '2027';
   String preferredMode = 'Online';
   String prepStatus = 'Active';
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final exam = userProvider.selectedExam;
+      if (exam.isNotEmpty && exam != 'General') {
+        setState(() {
+          primaryExam = exam;
+        });
+      }
+    });
+  }
 
   void _showOptionsBottomSheet({
     required String title,
@@ -166,6 +186,7 @@ class _GoalsTabState extends State<GoalsTab> {
           primaryExam = val;
           otherExams.removeWhere((element) => element['title'] == val);
         });
+        Provider.of<UserProvider>(context, listen: false).updateTargetExam(val);
       },
     );
   }
@@ -356,7 +377,7 @@ class _GoalsTabState extends State<GoalsTab> {
                               ),
                               child: const Text(
                                 'Primary',
-                                style: TextStyle(fontSize: 10, color: Color(0xFFFFA000), fontWeight: FontWeight.bold),
+                                style: TextStyle(fontSize: 12, color: Color(0xFFFFA000), fontWeight: FontWeight.bold),
                               ),
                             ),
                           ],
@@ -364,7 +385,7 @@ class _GoalsTabState extends State<GoalsTab> {
                         const SizedBox(height: 4),
                         Text(
                           'Engineering Entrance Exam',
-                          style: TextStyle(fontSize: 12, color: subColor),
+                          style: TextStyle(fontSize: 13, color: subColor),
                         ),
                       ],
                     ),
@@ -544,7 +565,7 @@ class _GoalsTabState extends State<GoalsTab> {
                       ),
                       child: Text(
                         badgeText,
-                        style: TextStyle(fontSize: 10, color: iconColor, fontWeight: FontWeight.bold),
+                        style: TextStyle(fontSize: 12, color: iconColor, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ],
@@ -552,7 +573,7 @@ class _GoalsTabState extends State<GoalsTab> {
                 const SizedBox(height: 4),
                 Text(
                   desc,
-                  style: TextStyle(fontSize: 11, color: subColor),
+                  style: TextStyle(fontSize: 13, color: subColor),
                 ),
               ],
             ),
@@ -641,18 +662,42 @@ class AnalyticsTab extends StatelessWidget {
       builder: (context, userProvider, child) {
         final user = userProvider.user;
 
-        return StreamBuilder<List<Map<String, dynamic>>>(
-          stream: FirestoreService().getUserTestResultsStream(),
+        return StreamBuilder<List<TestResult>>(
+          stream: AnalyticsService().getUserTestResultsStream(user?.uid),
           builder: (context, snapshot) {
-            final results = snapshot.data ?? [];
-            final summary = FirestoreService().calculateStatsFromResults(results, user);
-            final testsCount = summary.testsAttempted;
-            final double accuracyVal = summary.accuracy;
+            final testResults = snapshot.data ?? [];
+            final overall = AnalyticsService().getOverallAnalytics(testResults);
 
-            final studyTimeMin = user?.totalStudyTimeMinutes ?? 0;
-            final studyTimeStr = '${studyTimeMin ~/ 60}h ${studyTimeMin % 60}m';
-            final streakVal = user?.currentStreak ?? 0;
-            final double progressFactor = (accuracyVal / 100).clamp(0.05, 1.0);
+            final int testsCount = testResults.isNotEmpty ? overall.totalTests : (user?.testsAttempted ?? 0);
+            final double accuracyVal = testResults.isNotEmpty
+                ? overall.averageAccuracy
+                : (user?.accuracy != null && user!.accuracy > 0 ? user.accuracy : 0.0);
+
+            final int studyTimeMinutes = testResults.isNotEmpty && overall.totalDurationSeconds > 0
+                ? (overall.totalDurationSeconds ~/ 60)
+                : (user?.totalStudyTimeMinutes ?? 0);
+            final studyTimeStr = studyTimeMinutes >= 60
+                ? '${studyTimeMinutes ~/ 60}h ${studyTimeMinutes % 60}m'
+                : '${studyTimeMinutes}m';
+
+            final int streakVal = overall.currentStreakDays > 0
+                ? overall.currentStreakDays
+                : (user?.currentStreak ?? (testsCount > 0 ? 1 : 0));
+
+            final double progressFactor = (accuracyVal / 100).clamp(0.0, 1.0);
+
+            List<double> testsPoints = testResults.isNotEmpty
+                ? testResults.take(6).map((r) => r.score.toDouble()).toList().reversed.toList()
+                : [0.0, testsCount.toDouble()];
+            if (testsPoints.length < 2) testsPoints = [0.0, testsCount.toDouble()];
+
+            List<double> accuracyPoints = testResults.isNotEmpty
+                ? testResults.take(6).map((r) => r.accuracy.toDouble()).toList().reversed.toList()
+                : [0.0, accuracyVal];
+            if (accuracyPoints.length < 2) accuracyPoints = [0.0, accuracyVal];
+
+            List<double> timePoints = [0.0, studyTimeMinutes * 0.4, studyTimeMinutes * 0.7, studyTimeMinutes.toDouble()];
+            List<double> streakPoints = [0.0, streakVal * 0.5, streakVal.toDouble()];
 
             return SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -701,7 +746,7 @@ class AnalyticsTab extends StatelessWidget {
                     value: '$testsCount',
                     change: testsCount > 0 ? 'Active preparation' : 'No tests yet',
                     color: const Color(0xFF3B82F6),
-                    points: [0, testsCount * 0.3, testsCount * 0.6, testsCount.toDouble()],
+                    points: testsPoints,
                   ),
                   _buildSparklineCard(
                     context,
@@ -709,15 +754,15 @@ class AnalyticsTab extends StatelessWidget {
                     value: '${accuracyVal.toStringAsFixed(1)}%',
                     change: accuracyVal > 50 ? 'Good performance' : 'Keep practicing',
                     color: const Color(0xFF10B981),
-                    points: [0, accuracyVal * 0.5, accuracyVal * 0.8, accuracyVal],
+                    points: accuracyPoints,
                   ),
                   _buildSparklineCard(
                     context,
                     title: 'Total Study Time',
                     value: studyTimeStr,
-                    change: studyTimeMin > 0 ? 'Consistent learning' : 'Start studying',
+                    change: studyTimeMinutes > 0 ? 'Consistent learning' : 'Start studying',
                     color: const Color(0xFF8B5CF6),
-                    points: [0, studyTimeMin * 0.3, studyTimeMin * 0.7, studyTimeMin.toDouble()],
+                    points: timePoints,
                   ),
                   _buildSparklineCard(
                     context,
@@ -725,7 +770,7 @@ class AnalyticsTab extends StatelessWidget {
                     value: '$streakVal',
                     change: streakVal > 0 ? 'Keep it up!' : 'Start streak today',
                     color: const Color(0xFFF59E0B),
-                    points: [0, streakVal * 0.4, streakVal * 0.8, streakVal.toDouble()],
+                    points: streakPoints,
                   ),
                 ],
               ).animate().fadeIn(delay: 100.ms, duration: 400.ms),
@@ -874,13 +919,13 @@ class AnalyticsTab extends StatelessWidget {
                   children: [
                     Text(
                       value,
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: textColor),
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: textColor),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       change,
                       style: TextStyle(
-                        fontSize: 9, 
+                        fontSize: 11.5, 
                         fontWeight: FontWeight.bold, 
                         color: change.contains('Keep') ? const Color(0xFFFFA000) : const Color(0xFF10B981),
                       ),

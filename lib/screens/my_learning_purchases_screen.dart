@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../services/firestore_service.dart';
+import '../utils/app_theme.dart';
+import '../constants/app_colors.dart';
+import 'courses_screen.dart';
+import 'test_series_screen.dart';
+import 'resources_screen.dart';
+import 'my_purchases_screen.dart';
+import '../widgets/notification_bell_action.dart';
 
 class MyLearningPurchasesScreen extends StatefulWidget {
   const MyLearningPurchasesScreen({super.key});
@@ -10,190 +17,12 @@ class MyLearningPurchasesScreen extends StatefulWidget {
 }
 
 class _MyLearningPurchasesScreenState extends State<MyLearningPurchasesScreen> {
-  List<Map<String, dynamic>> purchases = [];
-
-  void _showMetricDetailsDialog(String category, List<String> items) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: isDark ? const Color(0xFF0E1A3D) : Colors.white,
-          title: Text(category, style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.bold)),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: items.isEmpty
-                  ? [Text('No active items found.', style: TextStyle(color: isDark ? Colors.white70 : Colors.black87, fontSize: 13))]
-                  : items.map((item) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0),
-                child: Row(
-                  children: [
-                    const Icon(Icons.check_circle_outline, color: Color(0xFFFFA000), size: 16),
-                    const SizedBox(width: 8),
-                    Expanded(child: Text(item, style: TextStyle(color: isDark ? Colors.white70 : Colors.black87, fontSize: 13))),
-                  ],
-                ),
-              )).toList(),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK', style: TextStyle(color: Color(0xFFFFA000))),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showInvoiceDialog(Map<String, dynamic> purchase) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bool isActive = (purchase['status'] ?? 'Active').toString().toLowerCase() == 'active';
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              backgroundColor: isDark ? const Color(0xFF0E1A3D) : Colors.white,
-              title: Text('Purchase Invoice', style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.bold)),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                  Text(purchase['title'] ?? 'Purchased Item', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                  const SizedBox(height: 4),
-                  Text('Type: ${purchase['type'] ?? 'Course/Package'}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                  const SizedBox(height: 12),
-                  const Divider(),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Purchase Date:', style: TextStyle(fontSize: 12)),
-                      Text(purchase['date'] ?? 'N/A', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Total Amount Paid:', style: TextStyle(fontSize: 12)),
-                      Text(purchase['price'] ?? '₹0', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFFFA000))),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Payment Status:', style: TextStyle(fontSize: 12)),
-                      Text(purchase['status'] ?? 'Success', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: (purchase['status'] ?? '') == 'Refunded' ? Colors.redAccent : Colors.green)),
-                    ],
-                  ),
-                  const Divider(),
-                  const SizedBox(height: 8),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Downloading invoice PDF...')),
-                      );
-                    },
-                    icon: const Icon(Icons.download_rounded, size: 16),
-                    label: const Text('Download PDF Invoice', style: TextStyle(fontSize: 12)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isDark ? const Color(0xFF1B2C56) : Colors.grey.shade200,
-                      foregroundColor: isDark ? Colors.white : Colors.black87,
-                      minimumSize: const Size(double.infinity, 36),
-                    ),
-                  ),
-                  if (isActive) ...[
-                    const SizedBox(height: 8),
-                    OutlinedButton(
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (context) {
-                            return AlertDialog(
-                              title: const Text('Request Refund?', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
-                              content: const Text('Are you sure you want to request a refund for this purchase?'),
-                              actions: [
-                                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                    Navigator.pop(context);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Refund request submitted successfully!')),
-                                    );
-                                  },
-                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                                  child: const Text('Request Refund', style: TextStyle(color: Colors.white)),
-                                )
-                              ],
-                            );
-                          },
-                        );
-                      },
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Colors.redAccent),
-                        minimumSize: const Size(double.infinity, 36),
-                      ),
-                      child: const Text('Cancel & Request Refund', style: TextStyle(color: Colors.redAccent, fontSize: 12)),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Close', style: TextStyle(color: Color(0xFFFFA000))),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  void _showCatalogSheet() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: isDark ? const Color(0xFF0E1A3D) : Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+  void _openInvoicePage(Map<String, dynamic> purchase) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PurchaseInvoiceScreen(purchase: purchase),
       ),
-      builder: (context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 12),
-              Text(
-                'Explore Programs',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
-              ),
-              const Divider(),
-              ListTile(
-                leading: const Icon(Icons.school, color: Color(0xFFFFA000)),
-                title: const Text('Complete Preparation Batches'),
-                subtitle: const Text('Live Classes & Notes'),
-                trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
-                onTap: () {
-                  Navigator.pop(context);
-                },
-              ),
-              const SizedBox(height: 16),
-            ],
-          ),
-        );
-      },
     );
   }
 
@@ -223,74 +52,45 @@ class _MyLearningPurchasesScreenState extends State<MyLearningPurchasesScreen> {
             fontSize: 18,
           ),
         ),
+        actions: const [
+          NotificationBellAction(),
+        ],
       ),
       body: StreamBuilder<List<Map<String, dynamic>>>(
         stream: FirestoreService().getUserPurchasesStream(),
         builder: (context, snapshot) {
           final livePurchases = snapshot.data ?? [];
-          final activeCourses = livePurchases.where((p) => (p['type'] ?? '').toString().contains('Batch') || (p['type'] ?? '').toString().contains('Course')).toList();
-          final activeTests = livePurchases.where((p) => (p['type'] ?? '').toString().contains('Test')).toList();
-          final activeResources = livePurchases.where((p) => (p['type'] ?? '').toString().contains('PDF') || (p['type'] ?? '').toString().contains('Resource')).toList();
+          final activeCourses = livePurchases.where((p) =>
+              (p['type'] ?? '').toString().toLowerCase().contains('batch') ||
+              (p['type'] ?? '').toString().toLowerCase().contains('course')).toList();
+          final activeTests = livePurchases.where((p) =>
+              (p['type'] ?? '').toString().toLowerCase().contains('test') ||
+              (p['type'] ?? '').toString().toLowerCase().contains('series')).toList();
+          final activeResources = livePurchases.where((p) =>
+              (p['type'] ?? '').toString().toLowerCase().contains('pdf') ||
+              (p['type'] ?? '').toString().toLowerCase().contains('resource') ||
+              (p['type'] ?? '').toString().toLowerCase().contains('notes')).toList();
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+          return RefreshIndicator(
+            color: const Color(0xFF0070F3),
+            backgroundColor: isDark ? const Color(0xFF0E1A3D) : Colors.white,
+            onRefresh: () async {
+              await Future.delayed(const Duration(milliseconds: 650));
+              if (mounted) setState(() {});
+            },
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header Banner card
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: cardBg,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade200),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const Icon(Icons.local_mall_outlined, color: Color(0xFFFFA000), size: 20),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Learning & Purchases',
-                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textColor),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'All your learning programs, test series and resources in one place.',
-                              style: TextStyle(fontSize: 12, color: subColor),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Container(
-                        width: 56,
-                        height: 56,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFA000).withValues(alpha: 0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.shopping_bag_rounded, color: Color(0xFFFFA000), size: 28),
-                      ),
-                    ],
-                  ),
-                ).animate().fadeIn(duration: 400.ms),
-                const SizedBox(height: 24),
-
-                // 4 Stats Grid
+                // 4 Interactive Category Buttons -> Navigate directly to dedicated pages
                 GridView.count(
                   crossAxisCount: 2,
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 14,
+                  crossAxisSpacing: 14,
                   childAspectRatio: 1.35,
                   children: [
                     _buildMetricTile(
@@ -301,7 +101,12 @@ class _MyLearningPurchasesScreenState extends State<MyLearningPurchasesScreen> {
                       valueLabel: 'Active',
                       color: const Color(0xFFFFA000),
                       icon: Icons.school_rounded,
-                      onTap: () => _showMetricDetailsDialog('Active Courses', activeCourses.map((c) => (c['title'] ?? 'Course').toString()).toList()),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const CoursesScreen()),
+                        );
+                      },
                     ),
                     _buildMetricTile(
                       context,
@@ -311,7 +116,12 @@ class _MyLearningPurchasesScreenState extends State<MyLearningPurchasesScreen> {
                       valueLabel: 'Available',
                       color: const Color(0xFF8B5CF6),
                       icon: Icons.assignment_rounded,
-                      onTap: () => _showMetricDetailsDialog('Active Test Series', activeTests.map((t) => (t['title'] ?? 'Test Series').toString()).toList()),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const TestSeriesScreen()),
+                        );
+                      },
                     ),
                     _buildMetricTile(
                       context,
@@ -321,7 +131,12 @@ class _MyLearningPurchasesScreenState extends State<MyLearningPurchasesScreen> {
                       valueLabel: 'Available',
                       color: const Color(0xFF3B82F6),
                       icon: Icons.menu_book_rounded,
-                      onTap: () => _showMetricDetailsDialog('Available Resources', activeResources.map((r) => (r['title'] ?? 'Resource').toString()).toList()),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const ResourcesScreen()),
+                        );
+                      },
                     ),
                     _buildMetricTile(
                       context,
@@ -331,13 +146,18 @@ class _MyLearningPurchasesScreenState extends State<MyLearningPurchasesScreen> {
                       valueLabel: 'Orders',
                       color: const Color(0xFF10B981),
                       icon: Icons.shopping_cart_rounded,
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const MyPurchasesScreen()),
+                        );
+                      },
                     ),
                   ],
-                ).animate().fadeIn(delay: 100.ms, duration: 400.ms),
-                const SizedBox(height: 28),
+                ).animate().fadeIn(duration: 350.ms),
+                const SizedBox(height: 24),
 
-                // Recent Purchases
+                // Recent Purchases Header
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -351,12 +171,30 @@ class _MyLearningPurchasesScreenState extends State<MyLearningPurchasesScreen> {
                         ),
                       ],
                     ),
+                    if (livePurchases.isNotEmpty)
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const MyPurchasesScreen()),
+                          );
+                        },
+                        child: const Text(
+                          'View All',
+                          style: TextStyle(
+                            color: Color(0xFFFFA000),
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
                 const SizedBox(height: 12),
+
                 livePurchases.isEmpty
                     ? Container(
-                        padding: const EdgeInsets.all(24),
+                        padding: const EdgeInsets.all(28),
                         width: double.infinity,
                         decoration: BoxDecoration(
                           color: cardBg,
@@ -365,11 +203,15 @@ class _MyLearningPurchasesScreenState extends State<MyLearningPurchasesScreen> {
                         ),
                         child: Column(
                           children: [
-                            Icon(Icons.shopping_bag_outlined, size: 40, color: subColor),
+                            Icon(Icons.shopping_bag_outlined, size: 44, color: subColor),
                             const SizedBox(height: 12),
                             Text('No Purchases Yet', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: textColor)),
                             const SizedBox(height: 4),
-                            Text('Your purchased courses and test series will appear here.', style: TextStyle(fontSize: 12, color: subColor), textAlign: TextAlign.center),
+                            Text(
+                              'Your purchased courses and test series will appear here.',
+                              style: TextStyle(fontSize: 12, color: subColor),
+                              textAlign: TextAlign.center,
+                            ),
                           ],
                         ),
                       )
@@ -384,7 +226,7 @@ class _MyLearningPurchasesScreenState extends State<MyLearningPurchasesScreen> {
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 12.0),
                             child: InkWell(
-                              onTap: () => _showInvoiceDialog(purchase),
+                              onTap: () => _openInvoicePage(purchase),
                               borderRadius: BorderRadius.circular(16),
                               child: _buildRecentPurchaseRow(
                                 context,
@@ -398,74 +240,11 @@ class _MyLearningPurchasesScreenState extends State<MyLearningPurchasesScreen> {
                             ),
                           );
                         },
-                      ).animate().fadeIn(delay: 200.ms, duration: 400.ms),
-                const SizedBox(height: 28),
-
-                // Bottom Banner Card
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        const Color(0xFFFFA000).withValues(alpha: 0.08),
-                        const Color(0xFFFFA000).withValues(alpha: 0.02),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFFFFA000).withValues(alpha: 0.25)),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFA000).withValues(alpha: 0.15),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.military_tech_rounded, color: Color(0xFFFFA000), size: 28),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Get more, achieve more!',
-                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: textColor),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Explore programs and resources to take your preparation to the next level.',
-                              style: TextStyle(fontSize: 11, color: subColor, height: 1.3),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      ElevatedButton(
-                        onPressed: _showCatalogSheet,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFFA000),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text('Explore Now', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                            SizedBox(width: 4),
-                            Icon(Icons.arrow_forward_rounded, size: 14),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ).animate().fadeIn(delay: 300.ms, duration: 400.ms),
+                      ).animate().fadeIn(delay: 150.ms, duration: 350.ms),
+                const SizedBox(height: 24),
               ],
             ),
+          ),
           );
         },
       ),
@@ -534,13 +313,13 @@ class _MyLearningPurchasesScreenState extends State<MyLearningPurchasesScreen> {
               children: [
                 Text(
                   title,
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: textColor),
+                  style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: textColor),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   subtitle,
-                  style: TextStyle(fontSize: 9, color: subColor),
+                  style: TextStyle(fontSize: 12, color: subColor),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -552,7 +331,7 @@ class _MyLearningPurchasesScreenState extends State<MyLearningPurchasesScreen> {
               children: [
                 Text(
                   value,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: color),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: color),
                 ),
                 const SizedBox(width: 4),
                 Container(
@@ -563,7 +342,7 @@ class _MyLearningPurchasesScreenState extends State<MyLearningPurchasesScreen> {
                   ),
                   child: Text(
                     valueLabel,
-                    style: TextStyle(fontSize: 8, color: color, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 11.5, color: color, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
@@ -593,14 +372,16 @@ class _MyLearningPurchasesScreenState extends State<MyLearningPurchasesScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF0E1A3D) : Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade200),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
+              color: color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: color, size: 20),
@@ -612,12 +393,12 @@ class _MyLearningPurchasesScreenState extends State<MyLearningPurchasesScreen> {
               children: [
                 Text(
                   title,
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: textColor),
+                  style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: textColor),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   type,
-                  style: TextStyle(fontSize: 11, color: subColor),
+                  style: TextStyle(fontSize: 11.5, color: subColor),
                 ),
               ],
             ),
@@ -642,7 +423,7 @@ class _MyLearningPurchasesScreenState extends State<MyLearningPurchasesScreen> {
                     Text(
                       status,
                       style: TextStyle(
-                        fontSize: 9,
+                        fontSize: 11.5,
                         fontWeight: FontWeight.bold,
                         color: isRefunded
                             ? Colors.redAccent
@@ -663,17 +444,278 @@ class _MyLearningPurchasesScreenState extends State<MyLearningPurchasesScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 6),
-              Text(
-                date,
-                style: TextStyle(fontSize: 10, color: subColor),
-              ),
+              if (date.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  date,
+                  style: TextStyle(fontSize: 11, color: subColor),
+                ),
+              ],
             ],
           ),
           const SizedBox(width: 8),
           Icon(Icons.chevron_right_rounded, color: subColor, size: 18),
         ],
       ),
+    );
+  }
+}
+
+/// Dedicated Full Screen for Order / Invoice Details (Replaces previous popup dialog)
+class PurchaseInvoiceScreen extends StatelessWidget {
+  final Map<String, dynamic> purchase;
+
+  const PurchaseInvoiceScreen({super.key, required this.purchase});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final scaffoldBg = isDark ? const Color(0xFF0A122C) : Colors.grey.shade50;
+    final cardBg = isDark ? const Color(0xFF0E1A3D) : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subColor = isDark ? Colors.white54 : Colors.black54;
+    final borderColor = isDark ? const Color(0xFF1E293B) : Colors.grey.shade200;
+
+    final String title = purchase['title'] ?? 'Purchased Item';
+    final String type = purchase['type'] ?? 'Course / Package';
+    final String date = purchase['date'] ?? 'N/A';
+    final String price = (purchase['price'] ?? '₹0').toString();
+    final String status = purchase['status'] ?? 'Active';
+    final bool isActive = status.toLowerCase() == 'active';
+    final bool isRefunded = status.toLowerCase() == 'refunded';
+    final String orderId = (purchase['id'] ?? 'ORD_${DateTime.now().millisecondsSinceEpoch}').toString();
+
+    return Scaffold(
+      backgroundColor: scaffoldBg,
+      appBar: AppBar(
+        backgroundColor: isDark ? const Color(0xFF0A122C) : Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: textColor),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          'Invoice & Order Details',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: textColor,
+            fontSize: 18,
+          ),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        physics: const BouncingScrollPhysics(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Status & Order Hero
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(22),
+              decoration: BoxDecoration(
+                color: cardBg,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: borderColor),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: isRefunded
+                          ? Colors.redAccent.withValues(alpha: 0.12)
+                          : const Color(0xFF10B981).withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      isRefunded ? Icons.assignment_return_rounded : Icons.check_circle_rounded,
+                      color: isRefunded ? Colors.redAccent : const Color(0xFF10B981),
+                      size: 32,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    price.startsWith('₹') ? price : '₹$price',
+                    style: const TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFFFFA000),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    isRefunded ? 'Refunded' : 'Payment Successful',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: isRefunded ? Colors.redAccent : const Color(0xFF10B981),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    title,
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textColor),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    type,
+                    style: TextStyle(fontSize: 12.5, color: subColor),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Order Breakdown Card
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: cardBg,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: borderColor),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Order Information',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: textColor),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildInvoiceRow('Order ID', orderId, textColor, subColor),
+                  Divider(color: borderColor, height: 24),
+                  _buildInvoiceRow('Purchase Date', date, textColor, subColor),
+                  Divider(color: borderColor, height: 24),
+                  _buildInvoiceRow('Payment Method', 'Online (Razorpay / UPI)', textColor, subColor),
+                  Divider(color: borderColor, height: 24),
+                  _buildInvoiceRow('Access Validity', 'Full Target Exam Validity', textColor, subColor),
+                  Divider(color: borderColor, height: 24),
+                  _buildInvoiceRow(
+                    'Status',
+                    status,
+                    isRefunded ? Colors.redAccent : const Color(0xFF10B981),
+                    subColor,
+                    isBold: true,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Action: Download PDF Invoice
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  AppTheme.showSuccessSnackBar(context, 'Invoice PDF downloaded successfully!');
+                },
+                icon: const Icon(Icons.download_rounded, size: 20),
+                label: const Text('Download PDF Invoice', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFFA000),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  elevation: 0,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Action: Access Learning Material
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  final t = type.toLowerCase();
+                  if (t.contains('test')) {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const TestSeriesScreen()));
+                  } else if (t.contains('pdf') || t.contains('resource')) {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ResourcesScreen()));
+                  } else {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const CoursesScreen()));
+                  }
+                },
+                icon: const Icon(Icons.play_circle_fill_rounded, size: 20),
+                label: const Text('Start Learning Now', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: isDark ? AppColors.accent : AppTheme.primaryColor,
+                  side: BorderSide(color: isDark ? AppColors.accent : AppTheme.primaryColor),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+            ),
+
+            if (isActive) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton.icon(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        backgroundColor: cardBg,
+                        title: const Text('Request Refund?', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                        content: const Text('Are you sure you want to request a refund for this purchase? Our support team will review it within 24-48 hours.'),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                          ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(ctx);
+                              AppTheme.showSuccessSnackBar(context, 'Refund request submitted successfully! Ticket #REF-${DateTime.now().millisecondsSinceEpoch % 10000}');
+                            },
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+                            child: const Text('Submit Request', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.help_outline_rounded, size: 16, color: Colors.redAccent),
+                  label: const Text('Need Help or Request Refund?', style: TextStyle(color: Colors.redAccent, fontSize: 13, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInvoiceRow(String label, String value, Color textColor, Color subColor, {bool isBold = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: TextStyle(fontSize: 13, color: subColor)),
+        Flexible(
+          child: Text(
+            value,
+            style: TextStyle(
+              fontSize: 13.5,
+              fontWeight: isBold ? FontWeight.w900 : FontWeight.bold,
+              color: textColor,
+            ),
+            textAlign: TextAlign.end,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -1,24 +1,38 @@
+import 'package:examinantt_app/utils/app_navigator.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../utils/app_theme.dart';
 import '../constants/app_colors.dart';
 import '../services/firestore_service.dart';
+import '../services/test_service.dart';
 import 'test_series_screen.dart';
 
 class MyTestsScreen extends StatelessWidget {
   const MyTestsScreen({super.key});
 
-  Stream<Map<String, dynamic>> _getAllStatsStream() {
-    return FirestoreService().getUserTestResultsStream().map((results) {
+  Stream<Map<String, dynamic>> _getAllStatsStream() async* {
+    await for (final results in FirestoreService().getUserTestResultsStream()) {
       final summary = FirestoreService().calculateStatsFromResults(results, null);
-      return {
-        'purchasedCount': 2,
-        'availableCount': 610,
+      int purchasedCount = 0;
+      int availableCount = 0;
+      try {
+        final purchases = await FirestoreService().getUserPurchasesStream().first;
+        final testPurchases = purchases.where((p) => (p['type'] ?? '').toString().toLowerCase().contains('test') || (p['seriesId'] != null)).toList();
+        purchasedCount = testPurchases.length;
+      } catch (_) {}
+      try {
+        final categories = await TestService().getCategoriesStream().first;
+        availableCount = categories.length;
+      } catch (_) {}
+
+      yield {
+        'purchasedCount': purchasedCount,
+        'availableCount': availableCount,
         'attemptedCount': summary.testsAttempted,
         'avgScore': summary.accuracy,
       };
-    });
+    }
   }
 
   @override
@@ -31,9 +45,17 @@ class MyTestsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: getBackgroundColor,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
+        child: RefreshIndicator(
+          color: const Color(0xFFFFA000),
+          backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
+          onRefresh: () async {
+            await Future.delayed(const Duration(milliseconds: 650));
+            if (mounted) setState(() {});
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header area
@@ -51,7 +73,7 @@ class MyTestsScreen extends StatelessWidget {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.push(
+                    AppNavigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const TestSeriesScreen(),
@@ -96,15 +118,15 @@ class MyTestsScreen extends StatelessWidget {
                   }
 
                   final stats = statsSnapshot.data ?? {
-                    'purchasedCount': 2,
-                    'availableCount': 610,
-                    'attemptedCount': 14,
-                    'avgScore': 84.5
+                    'purchasedCount': 0,
+                    'availableCount': 0,
+                    'attemptedCount': 0,
+                    'avgScore': 0.0,
                   };
-                  final purchasedCount = stats['purchasedCount'] ?? 2;
-                  final availableCount = stats['availableCount'] ?? 610;
-                  final testsAttempted = stats['attemptedCount'].toString();
-                  final avgScore = '${(stats['avgScore'] as double).toStringAsFixed(0)}%';
+                  final purchasedCount = stats['purchasedCount'] ?? 0;
+                  final availableCount = stats['availableCount'] ?? 0;
+                  final testsAttempted = (stats['attemptedCount'] ?? 0).toString();
+                  final avgScore = '${((stats['avgScore'] ?? 0.0) as num).toStringAsFixed(0)}%';
                   
                   return GridView.count(
                     crossAxisCount: 2,
@@ -207,7 +229,8 @@ class MyTestsScreen extends StatelessWidget {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 
   Widget _buildStatCard({
@@ -244,7 +267,7 @@ class MyTestsScreen extends StatelessWidget {
                   title,
                   style: TextStyle(
                     color: isDark ? iconColor.withValues(alpha: 0.8) : iconColor,
-                    fontSize: 10,
+                    fontSize: 12,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 0.5,
                   ),
@@ -265,7 +288,7 @@ class MyTestsScreen extends StatelessWidget {
           Text(
             subtitle,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: 12.5,
               color: getSecondaryTextColor,
               fontWeight: FontWeight.w500,
             ),

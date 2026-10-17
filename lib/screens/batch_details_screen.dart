@@ -1,4 +1,6 @@
+import 'package:examinantt_app/utils/app_navigator.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../models/content_models.dart';
 import '../models/test_model.dart';
 import '../services/firestore_service.dart';
@@ -140,7 +142,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen>
   }
 
   void _openLivePlayer(LiveClass c) {
-    Navigator.push(
+    AppNavigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => AmazonLivePlayerScreen(liveClass: c),
@@ -153,7 +155,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen>
         ? c.recordingUrl
         : (c.videoUrl.isNotEmpty ? c.videoUrl : '');
 
-    Navigator.push(
+    AppNavigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => VideoPlayerScreen(
@@ -171,7 +173,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen>
       AppTheme.showWarningSnackBar(context, 'PPT / Notes will be available shortly for this lecture.');
       return;
     }
-    Navigator.push(
+    AppNavigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => PdfViewerScreen(
@@ -499,6 +501,9 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Top Course Thumbnail (Thamnes) Banner
+            _buildCourseThumbnailHeader(currentBatch, isDark, borderColor),
+
             // Hero Card
             Container(
               padding: const EdgeInsets.all(16),
@@ -886,6 +891,320 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen>
   }
 
   // ===========================================================================
+  // TOP COURSE THUMBNAIL BANNER (DISPLAYED PROMINENTLY AT VERY TOP)
+  // ===========================================================================
+  Widget _buildCourseThumbnailHeader(CourseModel batch, bool isDark, Color borderColor) {
+    String thumb = batch.thumbnailUrl.trim();
+    if (thumb.isEmpty) {
+      thumb = batch.bannerUrl.trim();
+    }
+
+    if (thumb.isEmpty) {
+      final cat = ('${batch.examCategory} ${batch.title}').toLowerCase();
+      if (cat.contains('neet') || cat.contains('medical') || cat.contains('biology')) {
+        thumb = 'https://www.examinantt.com/assets/slider3-CgqkNE7j.png';
+      } else if (cat.contains('jee') || cat.contains('engineer') || cat.contains('iit')) {
+        thumb = 'https://www.examinantt.com/assets/slider11-BF0Iauqj.png';
+      } else if (cat.contains('board') || cat.contains('foundation') || cat.contains('class')) {
+        thumb = 'https://www.examinantt.com/assets/slioder4-BhKXNWYL.png';
+      } else {
+        thumb = 'https://www.examinantt.com/assets/slider5-K9I7QbE8.png';
+      }
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.45 : 0.12),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+        border: Border.all(
+          color: isDark ? const Color(0xFF1E3A8A).withValues(alpha: 0.5) : Colors.grey.shade300,
+          width: 1.5,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(19),
+        child: Stack(
+          children: [
+            // 1. High-Res Thumbnail Image
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: thumb.startsWith('http')
+                  ? CachedNetworkImage(
+                      imageUrl: thumb,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        color: isDark ? const Color(0xFF0F2347) : Colors.grey.shade200,
+                        child: const Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                      errorWidget: (context, url, error) => _buildFallbackThumbnail(batch, isDark),
+                    )
+                  : (thumb.isNotEmpty && thumb.startsWith('assets/')
+                      ? Image.asset(thumb, fit: BoxFit.cover)
+                      : _buildFallbackThumbnail(batch, isDark)),
+            ),
+
+            // 2. Gradient Shade Overlay on Bottom & Top for legibility
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.5),
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.8),
+                    ],
+                    stops: const [0.0, 0.4, 1.0],
+                  ),
+                ),
+              ),
+            ),
+
+            // 3. Top Badges Row (Category + Admission Status)
+            Positioned(
+              top: 12,
+              left: 12,
+              right: 12,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0070F3),
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.3),
+                          blurRadius: 4,
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.school_rounded, color: Colors.white, size: 12),
+                        const SizedBox(width: 5),
+                        Text(
+                          batch.examCategory.isNotEmpty
+                              ? batch.examCategory.toUpperCase()
+                              : 'EXAMINANTT PRO',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981),
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.3),
+                          blurRadius: 4,
+                        ),
+                      ],
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.fiber_manual_record, color: Colors.white, size: 9),
+                        SizedBox(width: 4),
+                        Text(
+                          'ADMISSION OPEN',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // 4. Center Play / Course Preview Overlay
+            Positioned.fill(
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.45),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.6), width: 1.5),
+                  ),
+                  child: const Icon(
+                    Icons.play_arrow_rounded,
+                    color: Colors.white,
+                    size: 32,
+                  ),
+                ),
+              ),
+            ),
+
+            // 5. Bottom Info Bar Overlaid on the Thumbnail
+            Positioned(
+              bottom: 12,
+              left: 14,
+              right: 14,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.65),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: Colors.white24, width: 0.8),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.event_available_rounded, color: Color(0xFFFFA000), size: 13),
+                            const SizedBox(width: 4),
+                            Text(
+                              batch.validity,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.65),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: Colors.white24, width: 0.8),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.live_tv_rounded, color: Color(0xFF38BDF8), size: 12),
+                            SizedBox(width: 4),
+                            Text(
+                              'Live + Recorded',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFA000),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      'COURSE PREVIEW',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFallbackThumbnail(CourseModel batch, bool isDark) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+              ? [const Color(0xFF0F2652), const Color(0xFF07142A)]
+              : [const Color(0xFF0B1E43), const Color(0xFF1E3A8A)],
+        ),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -20,
+            bottom: -20,
+            child: Icon(
+              Icons.school_rounded,
+              size: 140,
+              color: Colors.white.withValues(alpha: 0.06),
+            ),
+          ),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.asset('assets/app_icon.png', height: 44, width: 44),
+                  const SizedBox(height: 8),
+                  Text(
+                    batch.title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    batch.shortDescription.isNotEmpty
+                        ? batch.shortDescription
+                        : 'Examinantt Complete Batch Preparation',
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 11,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ===========================================================================
   // 2. PURCHASED: FULL BATCH CLASSROOM (THE 5 TABS: LIVE, RECORDED, PPT, ETC.)
   // ===========================================================================
   Widget _buildBatchClassroomPage({
@@ -1088,13 +1407,27 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen>
       ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF10B981).withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(10),
+          // Course Thumbnail
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: SizedBox(
+              width: 52,
+              height: 52,
+              child: batch.thumbnailUrl.trim().isNotEmpty && batch.thumbnailUrl.startsWith('http')
+                  ? CachedNetworkImage(
+                      imageUrl: batch.thumbnailUrl.trim(),
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(color: Colors.grey.shade300),
+                      errorWidget: (context, url, error) => Container(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                        child: const Icon(Icons.school_rounded, color: Color(0xFF10B981), size: 24),
+                      ),
+                    )
+                  : Container(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                      child: const Icon(Icons.school_rounded, color: Color(0xFF10B981), size: 24),
+                    ),
             ),
-            child: const Icon(Icons.verified_rounded, color: Color(0xFF10B981), size: 20),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -1858,7 +2191,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen>
                       const SizedBox(width: 8),
                       ElevatedButton(
                         onPressed: () {
-                          Navigator.push(
+                          AppNavigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) => PdfViewerScreen(pdfData: res),
@@ -2023,7 +2356,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen>
                   const SizedBox(width: 8),
                   ElevatedButton(
                     onPressed: () {
-                      Navigator.push(
+                      AppNavigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => PdfViewerScreen(pdfData: res),
@@ -2184,7 +2517,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen>
                     children: [
                       ElevatedButton(
                         onPressed: () {
-                          Navigator.push(
+                          AppNavigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) => TestSeriesDetailScreen(

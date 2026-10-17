@@ -221,7 +221,7 @@ class _CommunityChatViewState extends State<CommunityChatView> {
                   style: TextStyle(color: _isDark ? Colors.white : const Color(0xFF1E293B), fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 const Text(
-                  '🟢 140+ Students & Teachers Active',
+                  '🟢 Community Active',
                   style: TextStyle(color: Color(0xFF34D399), fontSize: 11),
                 ),
               ],

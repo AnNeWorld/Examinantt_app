@@ -1,3 +1,4 @@
+import 'package:examinantt_app/utils/app_navigator.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -204,7 +205,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                 height: 56,
                                 child: ElevatedButton(
                                   onPressed: () {
-                                    Navigator.push(
+                                    AppNavigator.push(
                                       context,
                                       MaterialPageRoute(
                                         builder: (context) =>
@@ -237,7 +238,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                 height: 56,
                                 child: OutlinedButton(
                                   onPressed: () {
-                                    Navigator.push(
+                                    AppNavigator.push(
                                       context,
                                       MaterialPageRoute(
                                         builder: (context) =>
