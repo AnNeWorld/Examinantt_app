@@ -50,3 +50,10 @@ play-store-key.json
 android/play-store-key.json
 *.keystore
 *.jks
+
+# Node / Web / Next.js
+node_modules/
+**/node_modules/
+.next/
+**/.next/
+.env*.local

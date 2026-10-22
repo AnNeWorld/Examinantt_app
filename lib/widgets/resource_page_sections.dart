@@ -1,6 +1,8 @@
 import 'package:examinantt_app/utils/app_navigator.dart';
 // ignore_for_file: unused_element, unused_field
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../constants/app_colors.dart';
 import '../utils/app_theme.dart';
 import '../services/firestore_service.dart';
 import '../models/content_models.dart';
@@ -18,22 +20,58 @@ class ResourcePageSections extends StatefulWidget {
   final Function(String title, double price)? onUnlockRequested;
   final ValueChanged<int>? onTabChanged;
 
+  final int initialTab;
+
   const ResourcePageSections({
     super.key,
     this.onExamChanged,
     this.onResourceOpened,
     this.onUnlockRequested,
     this.onTabChanged,
+    this.initialTab = 0,
   });
 
   @override
   State<ResourcePageSections> createState() => _ResourcePageSectionsState();
 }
 
-class _ResourcePageSectionsState extends State<ResourcePageSections> {
+class _ResourcePageSectionsState extends State<ResourcePageSections> with SingleTickerProviderStateMixin {
   // Navigation:
-  // 0: Overview, 1: Community, 2: My Resources, 3: Included with Batch, 4: Explore Resources, 5: Categories/Notes, 6: Other Exams, 7: Recommended
-  int _activeTabIndex = 0;
+  // 0: My Resources, 1: Included with Batch, 2: Explore Resources, 3: Recommended, 4: Other Exams, 5: Community
+  static const int tabMyResources = 0;
+  static const int tabIncludedWithBatch = 1;
+  static const int tabExploreResources = 2;
+  static const int tabRecommended = 3;
+  static const int tabOtherExams = 4;
+  static const int tabCommunity = 5;
+
+  late int _activeTabIndex;
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _activeTabIndex = widget.initialTab.clamp(0, 5);
+    _tabController = TabController(length: 6, vsync: this, initialIndex: _activeTabIndex);
+    _tabController.addListener(_handleTabSelection);
+  }
+
+  void _handleTabSelection() {
+    if (_tabController.index != _activeTabIndex) {
+      setState(() {
+        _activeTabIndex = _tabController.index;
+        _isViewingNotesDeepDive = false;
+      });
+      widget.onTabChanged?.call(_activeTabIndex);
+    }
+  }
+
+  @override
+  void dispose() {
+    _tabController.removeListener(_handleTabSelection);
+    _tabController.dispose();
+    super.dispose();
+  }
 
   // Whether currently deep-diving into Page 5 (Notes / Category Detail View)
   bool _isViewingNotesDeepDive = false;
@@ -63,17 +101,20 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> {
   final Set<String> _bookmarkedIds = {'my_res_01', 'note_01', 'note_03'};
 
   final List<Map<String, dynamic>> _tabs = [
-    {'title': 'Overview', 'icon': Icons.home_outlined},
-    {'title': 'Community', 'icon': Icons.forum_rounded},
     {'title': 'My Resources', 'icon': Icons.folder_outlined},
     {'title': 'Included with Batch', 'icon': Icons.card_giftcard_outlined},
     {'title': 'Explore Resources', 'icon': Icons.menu_book_outlined},
-    {'title': 'Categories', 'icon': Icons.grid_view_outlined},
-    {'title': 'Other Exams', 'icon': Icons.school_outlined},
     {'title': 'Recommended', 'icon': Icons.star_border_rounded},
+    {'title': 'Other Exams', 'icon': Icons.school_outlined},
+    {'title': 'Community', 'icon': Icons.forum_rounded},
   ];
 
   void _switchTab(int index) {
+    if (index >= 0 && index < _tabController.length) {
+      if (_tabController.index != index) {
+        _tabController.animateTo(index);
+      }
+    }
     setState(() {
       _activeTabIndex = index;
       _isViewingNotesDeepDive = false;
@@ -108,15 +149,57 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> {
     );
   }
 
-  void _openPdfResource(ResourceItem item) {
+  Future<void> _handleOpenResource(ResourceItem item) async {
     FirestoreService().recordResourceView(item, 0.85);
     widget.onResourceOpened?.call(item.title);
-    AppNavigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PdfViewerScreen(pdfData: item),
-      ),
-    );
+
+    final rawUrl = item.url.trim();
+    if (rawUrl.isEmpty) {
+      AppTheme.showErrorSnackBar(context, 'Resource link is not available.');
+      return;
+    }
+
+    String normalizedUrl = rawUrl;
+    if (normalizedUrl.startsWith('/')) {
+      normalizedUrl = 'https://www.examinantt.com$normalizedUrl';
+    }
+
+    final lowerUrl = normalizedUrl.toLowerCase();
+    final isPdf = item.type.toLowerCase() == 'pdf' ||
+        lowerUrl.endsWith('.pdf') ||
+        lowerUrl.contains('.pdf?') ||
+        item.fileType.toLowerCase() == 'pdf';
+    final isVideo = item.type.toLowerCase() == 'video' ||
+        lowerUrl.contains('youtu.be') ||
+        lowerUrl.contains('youtube.com');
+    final isLink = item.type.toLowerCase() == 'link';
+
+    if (isVideo || isLink || !isPdf) {
+      final uri = Uri.tryParse(normalizedUrl);
+      if (uri != null) {
+        try {
+          final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+          if (!launched) {
+            await launchUrl(uri, mode: LaunchMode.platformDefault);
+          }
+        } catch (e) {
+          if (mounted) {
+            AppTheme.showErrorSnackBar(context, 'Unable to open link: $normalizedUrl');
+          }
+        }
+      }
+    } else {
+      AppNavigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PdfViewerScreen(pdfData: item.copyWith(url: normalizedUrl)),
+        ),
+      );
+    }
+  }
+
+  void _openPdfResource(ResourceItem item) {
+    _handleOpenResource(item);
   }
 
   // ---------------------------------------------------------------------------
@@ -124,48 +207,30 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> {
   // ---------------------------------------------------------------------------
 
   void _showChangeExamDialog() {
-    final exams = [
-      'JEE Main 2027',
-      'NEET UG 2027',
-      'CUET UG 2027',
-      'GATE 2027',
-      'SSC CGL 2027',
-      'Defence Exams',
-    ];
-
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: const Color(0xFF0F172A),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) {
-        return SafeArea(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(ctx).size.height * 0.85,
-            ),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text('Select Target Exam', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
-                  const SizedBox(height: 4),
-                  const Text('Choose your exam to customize notes, formula sheets, and lectures.', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                  const SizedBox(height: 16),
-                  ...exams.map((exam) {
-                    final isSel = _selectedExam == exam;
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF0F172A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.school, color: Color(0xFFFFA000), size: 20),
+            SizedBox(width: 8),
+            Text('Select Target Exam', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: StreamBuilder<List<String>>(
+              stream: FirestoreService().getExamsStream(),
+              initialData: FirestoreService.fallbackExams,
+              builder: (context, examSnap) {
+                final liveExams = examSnap.data ?? FirestoreService.fallbackExams;
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: liveExams.map((exam) {
+                    final isSel = _selectedExam.toLowerCase().trim() == exam.toLowerCase().trim();
                     return ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: Container(
@@ -193,13 +258,13 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> {
                         AppTheme.showSuccessSnackBar(context, 'Exam switched to $exam in real-time!');
                       },
                     );
-                  }),
-                ],
-              ),
+                  }).toList(),
+                );
+              },
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -396,53 +461,34 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> {
   }
 
   Widget _buildHorizontalTabs() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      height: 44,
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Colors.white10)),
-      ),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        itemCount: _tabs.length,
-        itemBuilder: (context, index) {
-          final isSelected = _activeTabIndex == index;
-          final tab = _tabs[index];
-
-          return InkWell(
-            onTap: () => _switchTab(index),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: isSelected ? const Color(0xFFFFA000) : Colors.transparent,
-                    width: 2.5,
-                  ),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    tab['icon'] as IconData,
-                    size: 15,
-                    color: isSelected ? const Color(0xFFFFA000) : Colors.white60,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    tab['title'] as String,
-                    style: TextStyle(
-                      color: isSelected ? const Color(0xFFFFA000) : Colors.white70,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
+      width: double.infinity,
+      color: isDark ? const Color(0xFF071326) : Colors.white,
+      child: Material(
+        color: Colors.transparent,
+        child: TabBar(
+          controller: _tabController,
+          onTap: _switchTab,
+          isScrollable: true,
+          tabAlignment: TabAlignment.start,
+          indicatorColor: AppColors.accent,
+          indicatorWeight: 3,
+          dividerColor: Colors.transparent,
+          dividerHeight: 0,
+          labelColor: AppColors.accent,
+          unselectedLabelColor: isDark ? Colors.white60 : Colors.grey.shade600,
+          labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+          tabs: const [
+            Tab(text: 'MY RESOURCES'),
+            Tab(text: 'INCLUDED WITH BATCH'),
+            Tab(text: 'EXPLORE RESOURCES'),
+            Tab(text: 'RECOMMENDED'),
+            Tab(text: 'OTHER EXAMS'),
+            Tab(text: 'COMMUNITY'),
+          ],
+        ),
       ),
     );
   }
@@ -454,24 +500,43 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> {
     required List<ResourceItem> recentResources,
   }) {
     switch (_activeTabIndex) {
-      case 0:
-        return _buildPage1Overview(liveResources: liveResources, purchasedIds: purchasedIds, bookmarkedIds: bookmarkedIds);
-      case 1:
+      case tabMyResources:
+        return _buildPage2MyResources(
+          liveResources: liveResources,
+          purchasedIds: purchasedIds,
+          bookmarkedIds: bookmarkedIds,
+          recentResources: recentResources,
+        );
+      case tabIncludedWithBatch:
+        return _buildPage3IncludedWithBatch(
+          liveResources: liveResources,
+          purchasedIds: purchasedIds,
+        );
+      case tabExploreResources:
+        return _buildPage4ExploreResources(
+          liveResources: liveResources,
+          purchasedIds: purchasedIds,
+          bookmarkedIds: bookmarkedIds,
+        );
+      case tabRecommended:
+        return _buildPage7Recommended(
+          liveResources: liveResources,
+          purchasedIds: purchasedIds,
+          bookmarkedIds: bookmarkedIds,
+        );
+      case tabOtherExams:
+        return _buildPage6OtherExams(
+          liveResources: liveResources,
+        );
+      case tabCommunity:
         return const CommunityChatView(isEmbedded: true);
-      case 2:
-        return _buildPage2MyResources(liveResources: liveResources, purchasedIds: purchasedIds, bookmarkedIds: bookmarkedIds, recentResources: recentResources);
-      case 3:
-        return _buildPage3IncludedWithBatch(liveResources: liveResources, purchasedIds: purchasedIds);
-      case 4:
-        return _buildPage4ExploreResources(liveResources: liveResources, purchasedIds: purchasedIds, bookmarkedIds: bookmarkedIds);
-      case 5:
-        return _buildPage5CategoriesSelector(liveResources: liveResources, purchasedIds: purchasedIds, bookmarkedIds: bookmarkedIds);
-      case 6:
-        return _buildPage6OtherExams(liveResources: liveResources);
-      case 7:
-        return _buildPage7Recommended(liveResources: liveResources, purchasedIds: purchasedIds, bookmarkedIds: bookmarkedIds);
       default:
-        return _buildPage1Overview(liveResources: liveResources, purchasedIds: purchasedIds, bookmarkedIds: bookmarkedIds);
+        return _buildPage2MyResources(
+          liveResources: liveResources,
+          purchasedIds: purchasedIds,
+          bookmarkedIds: bookmarkedIds,
+          recentResources: recentResources,
+        );
     }
   }
 
@@ -485,12 +550,12 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> {
     required Set<String> bookmarkedIds,
   }) {
     final navItems = [
-      {'title': 'Community Chat', 'icon': Icons.forum_rounded, 'tab': 1},
-      {'title': 'My Resources', 'icon': Icons.folder_outlined, 'tab': 2},
-      {'title': 'Included with Batch', 'icon': Icons.card_giftcard_outlined, 'tab': 3},
-      {'title': 'Explore Resources', 'icon': Icons.menu_book_outlined, 'tab': 4},
-      {'title': 'Categories', 'icon': Icons.grid_view_outlined, 'tab': 5},
-      {'title': 'Other Exams', 'icon': Icons.school_outlined, 'tab': 6},
+      {'title': 'Community Chat', 'icon': Icons.forum_rounded, 'tab': tabCommunity},
+      {'title': 'My Resources', 'icon': Icons.folder_outlined, 'tab': tabMyResources},
+      {'title': 'Included with Batch', 'icon': Icons.card_giftcard_outlined, 'tab': tabIncludedWithBatch},
+      {'title': 'Explore Resources', 'icon': Icons.menu_book_outlined, 'tab': tabExploreResources},
+      {'title': 'Recommended', 'icon': Icons.star_border_rounded, 'tab': tabRecommended},
+      {'title': 'Other Exams', 'icon': Icons.school_outlined, 'tab': tabOtherExams},
     ];
 
     return SingleChildScrollView(
@@ -501,7 +566,7 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> {
         children: [
           // Student Community & Faculty Chat Interactive Card
           InkWell(
-            onTap: () => _switchTab(1),
+            onTap: () => _switchTab(tabCommunity),
             borderRadius: BorderRadius.circular(16),
             child: Container(
               padding: const EdgeInsets.all(14),
@@ -566,7 +631,7 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> {
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton(
-                    onPressed: () => _switchTab(1),
+                    onPressed: () => _switchTab(tabCommunity),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFFFA000),
                       foregroundColor: Colors.black,
@@ -637,7 +702,7 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> {
                   ],
                 ),
                 TextButton(
-                  onPressed: () => _switchTab(5),
+                  onPressed: () => _switchTab(tabExploreResources),
                   child: const Text('View All >', style: TextStyle(color: Color(0xFFFFA000), fontSize: 11.5, fontWeight: FontWeight.bold)),
                 ),
               ],
@@ -688,6 +753,7 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> {
   IconData _getResourceIcon(String type, [String fileType = '']) {
     final t = ('$type $fileType').toLowerCase();
     if (t.contains('video') || t.contains('lecture')) return Icons.play_circle_fill_rounded;
+    if (t.contains('link') || t.contains('web') || t.contains('url')) return Icons.link_rounded;
     if (t.contains('pyq') || t.contains('quiz') || t.contains('question')) return Icons.quiz_rounded;
     if (t.contains('mind map') || t.contains('map')) return Icons.psychology_rounded;
     if (t.contains('formula')) return Icons.science_rounded;
@@ -702,7 +768,9 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> {
     if (s.contains('math')) return const Color(0xFFFB923C);
     if (s.contains('bio')) return const Color(0xFF34D399);
     final t = type.toLowerCase();
-    if (t.contains('video') || t.contains('lecture')) return const Color(0xFF38BDF8);
+    if (t.contains('video') || t.contains('lecture')) return const Color(0xFFA855F7);
+    if (t.contains('link') || t.contains('web')) return const Color(0xFF10B981);
+    if (t.contains('pdf')) return const Color(0xFFEF4444);
     if (t.contains('pyq')) return const Color(0xFF2DD4BF);
     if (t.contains('mind map')) return const Color(0xFF34D399);
     if (t.contains('formula')) return const Color(0xFF06B6D4);
@@ -753,47 +821,7 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Expanded(
-                child: Row(
-                  children: [
-                    Icon(Icons.folder_rounded, color: Color(0xFFFFA000), size: 22),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('My Resources', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                          Text("Quick access to the resources you've used or saved.", style: TextStyle(color: Colors.white60, fontSize: 11)),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Wrap(
-                spacing: 8,
-                runSpacing: 6,
-                alignment: WrapAlignment.end,
-                children: [
-                  OutlinedButton(
-                    onPressed: () => _switchTab(4),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFFFFA000)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    ),
-                    child: const Text('Explore All >', style: TextStyle(color: Color(0xFFFFA000), fontSize: 10.5, fontWeight: FontWeight.bold)),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+        const SizedBox(height: 10),
 
         // Filter chips row
         SizedBox(
@@ -855,7 +883,7 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> {
                             ),
                             const SizedBox(height: 16),
                             ElevatedButton(
-                              onPressed: () => _switchTab(4),
+                              onPressed: () => _switchTab(tabExploreResources),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFFFA000),
                                 foregroundColor: Colors.black,
@@ -1115,7 +1143,7 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> {
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () => _switchTab(4),
+                    onPressed: () => _switchTab(tabExploreResources),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFFFA000),
                       foregroundColor: Colors.black,
@@ -1205,14 +1233,28 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> {
     required Set<String> purchasedIds,
     required Set<String> bookmarkedIds,
   }) {
-    final categories = ['All', 'Notes', 'PYQs', 'Study Material', 'Mind Maps', 'PPTs', 'Formula Sheets', 'Revision Notes'];
+    final categories = ['All', 'PDFs & Notes', 'Videos', 'Links & Web', 'Physics', 'Chemistry', 'Mathematics', 'Biology', 'General', 'PYQs'];
 
     final filtered = _exploreCategoryFilter == 'All'
         ? liveResources
         : liveResources.where((i) {
             final q = _exploreCategoryFilter.toLowerCase();
+            if (q == 'pdfs & notes') {
+              return i.type.toLowerCase() == 'pdf' ||
+                     i.type.toLowerCase().contains('note') ||
+                     i.fileType.toLowerCase() == 'pdf';
+            }
+            if (q == 'videos') {
+              return i.type.toLowerCase() == 'video' ||
+                     i.url.toLowerCase().contains('youtu');
+            }
+            if (q == 'links & web') {
+              return i.type.toLowerCase() == 'link' ||
+                     (!i.url.toLowerCase().endsWith('.pdf') && !i.url.toLowerCase().contains('youtu'));
+            }
             return i.type.toLowerCase().contains(q) ||
                    i.category.toLowerCase().contains(q) ||
+                   i.subject.toLowerCase().contains(q) ||
                    i.title.toLowerCase().contains(q) ||
                    i.subtitle.toLowerCase().contains(q);
           }).toList();
@@ -1220,35 +1262,7 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('| Explore Resources ✨', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                    SizedBox(height: 2),
-                    Text('Discover high-quality resources to supercharge your preparation.', style: TextStyle(color: Colors.white60, fontSize: 11)),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              OutlinedButton.icon(
-                onPressed: () => _switchTab(2),
-                icon: const Icon(Icons.shopping_bag_outlined, color: Color(0xFFFFA000), size: 14),
-                label: const Text('View My Purchases', style: TextStyle(color: Color(0xFFFFA000), fontSize: 10.5, fontWeight: FontWeight.bold)),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xFFFFA000)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                ),
-              ),
-            ],
-          ),
-        ),
+        const SizedBox(height: 10),
 
         // Filter chips
         SizedBox(
@@ -1326,99 +1340,116 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> {
                     final badgeColor = _getBadgeColor(badge, item.isFree, item.isBatchIncluded, isPurchased);
                     final isBookmarked = bookmarkedIds.contains(item.id);
 
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0F172A),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.white10),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: iconColor.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(10),
+                    return InkWell(
+                      onTap: () {
+                        if (price > 0 && !isUnlocked) {
+                          _showResourceDetailsDialog(
+                            title: item.title,
+                            category: item.type,
+                            meta: '${item.subject} • ${item.fileType}',
+                            badge: badge,
+                            price: price,
+                            resourceItem: item,
+                          );
+                        } else {
+                          _handleOpenResource(item);
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(14),
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0F172A),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: Colors.white10),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: iconColor.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(icon, color: iconColor, size: 26),
                             ),
-                            child: Icon(icon, color: iconColor, size: 26),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Wrap(
+                                    crossAxisAlignment: WrapCrossAlignment.center,
+                                    spacing: 6,
+                                    runSpacing: 2,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(color: badgeColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(4)),
+                                        child: Text(badge, style: TextStyle(color: badgeColor, fontSize: 9, fontWeight: FontWeight.bold)),
+                                      ),
+                                      Text(
+                                        '★ ${item.rating > 0 ? item.rating.toStringAsFixed(1) : '4.8'} (${item.downloads.isNotEmpty ? item.downloads : '10K+'})',
+                                        style: const TextStyle(color: Colors.amber, fontSize: 10.5, fontWeight: FontWeight.bold),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(item.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  Text(
+                                    item.subtitle.isNotEmpty
+                                        ? item.subtitle
+                                        : '${item.subject.isNotEmpty ? item.subject : item.exam} • ${item.fileType.isNotEmpty ? item.fileType : item.type}',
+                                    style: const TextStyle(color: Colors.white54, fontSize: 10.5),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                Wrap(
-                                  crossAxisAlignment: WrapCrossAlignment.center,
-                                  spacing: 6,
-                                  runSpacing: 2,
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(color: badgeColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(4)),
-                                      child: Text(badge, style: TextStyle(color: badgeColor, fontSize: 9, fontWeight: FontWeight.bold)),
-                                    ),
-                                    Text(
-                                      '★ ${item.rating > 0 ? item.rating.toStringAsFixed(1) : '4.8'} (${item.downloads.isNotEmpty ? item.downloads : '10K+'})',
-                                      style: const TextStyle(color: Colors.amber, fontSize: 10.5, fontWeight: FontWeight.bold),
-                                    ),
-                                  ],
+                                IconButton(
+                                  icon: Icon(isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded, color: isBookmarked ? const Color(0xFFFFA000) : Colors.white38, size: 20),
+                                  onPressed: () => _toggleBookmark(item.id, item.title),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
                                 ),
                                 const SizedBox(height: 4),
-                                Text(item.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                Text(
-                                  item.subtitle.isNotEmpty
-                                      ? item.subtitle
-                                      : '${item.subject.isNotEmpty ? item.subject : item.exam} • ${item.fileType.isNotEmpty ? item.fileType : item.type}',
-                                  style: const TextStyle(color: Colors.white54, fontSize: 10.5),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                                if (price > 0 && !isUnlocked) ...[
+                                  Text('₹${price.toStringAsFixed(0)}', style: const TextStyle(color: Color(0xFFFFA000), fontWeight: FontWeight.w900, fontSize: 15)),
+                                  const SizedBox(height: 4),
+                                ],
+                                ElevatedButton(
+                                  onPressed: () {
+                                    if (price > 0 && !isUnlocked) {
+                                      _showResourceDetailsDialog(
+                                        title: item.title,
+                                        category: item.type,
+                                        meta: '${item.subject} • ${item.fileType}',
+                                        badge: badge,
+                                        price: price,
+                                        resourceItem: item,
+                                      );
+                                    } else {
+                                      _handleOpenResource(item);
+                                    }
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFFFFA000),
+                                    foregroundColor: Colors.black,
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  ),
+                                  child: Text((price > 0 && !isUnlocked) ? 'View Details' : 'Open Resource >>', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10.5)),
                                 ),
                               ],
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              IconButton(
-                                icon: Icon(isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded, color: isBookmarked ? const Color(0xFFFFA000) : Colors.white38, size: 20),
-                                onPressed: () => _toggleBookmark(item.id, item.title),
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
-                              ),
-                              const SizedBox(height: 4),
-                              if (price > 0) ...[
-                                Text('₹${price.toStringAsFixed(0)}', style: const TextStyle(color: Color(0xFFFFA000), fontWeight: FontWeight.w900, fontSize: 15)),
-                                const SizedBox(height: 4),
-                              ],
-                              ElevatedButton(
-                                onPressed: () {
-                                  if (price > 0) {
-                                    _showResourceDetailsDialog(
-                                      title: item.title,
-                                      category: item.type,
-                                      meta: '${item.subject} • ${item.fileType}',
-                                      badge: badge,
-                                      price: price,
-                                      resourceItem: item,
-                                    );
-                                  } else {
-                                    _openPdfResource(item);
-                                  }
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFFFFA000),
-                                  foregroundColor: Colors.black,
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                ),
-                                child: Text(price > 0 ? 'View Details' : 'Open Resource >>', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10.5)),
-                              ),
-                            ],
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -1969,34 +2000,7 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('| Resources for Other Exams ✨', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                    SizedBox(height: 2),
-                    Text('Explore high quality resources for all major exams', style: TextStyle(color: Colors.white60, fontSize: 11)),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              OutlinedButton(
-                onPressed: _showChangeExamDialog,
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xFFFFA000)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                ),
-                child: const Text('View All Exams >', style: TextStyle(color: Color(0xFFFFA000), fontSize: 10.5, fontWeight: FontWeight.bold)),
-              ),
-            ],
-          ),
-        ),
+        const SizedBox(height: 10),
         Expanded(
           child: ListView.builder(
             physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
@@ -2066,8 +2070,8 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> {
                       onTap: () {
                         setState(() {
                           _selectedExam = name;
-                          _activeTabIndex = 4; // Explore Resources
                         });
+                        _switchTab(tabExploreResources);
                         FirestoreService().updateTargetExam(name);
                         widget.onExamChanged?.call(name);
                         AppTheme.showSuccessSnackBar(context, 'Switched to $name resources in real-time!');
@@ -2132,32 +2136,6 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('| Recommended for You ✨', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                    SizedBox(height: 2),
-                    Text('Resources curated based on your performance and study activity.', style: TextStyle(color: Colors.white60, fontSize: 11)),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              OutlinedButton(
-                onPressed: () => _switchTab(4),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xFFFFA000)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                ),
-                child: const Text('View All >', style: TextStyle(color: Color(0xFFFFA000), fontSize: 10.5, fontWeight: FontWeight.bold)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
 
           // 5 Recommended Cards from live stream
           ...displayItems.asMap().entries.map((entry) {

@@ -57,7 +57,7 @@ class AppNavigator {
 
   static bool _isNavigating = false;
   static DateTime _lastNavTime = DateTime.fromMillisecondsSinceEpoch(0);
-  static const Duration _debounceDuration = Duration(milliseconds: 500);
+  static const Duration _debounceDuration = Duration(milliseconds: 60);
 
   /// Pushes either a [Widget] or a [Route] safely. Returns null if navigation
   /// is currently in flight or if the destination is already the active top route.
@@ -69,7 +69,12 @@ class AppNavigator {
   }) async {
     final now = DateTime.now();
 
-    // 1. Guard against rapid multiple taps and in-flight transitions
+    // Auto-heal if _isNavigating was left stuck for > 600ms
+    if (_isNavigating && now.difference(_lastNavTime) > const Duration(milliseconds: 600)) {
+      _isNavigating = false;
+    }
+
+    // 1. Guard against rapid multiple taps
     if (_isNavigating || now.difference(_lastNavTime) < _debounceDuration) {
       debugPrint('[AppNavigator] Blocked rapid/in-flight navigation');
       return null;
@@ -117,13 +122,15 @@ class AppNavigator {
     _isNavigating = true;
     _lastNavTime = now;
 
+    // Release lock after screen transition begins so newly opened screen can navigate
+    Timer(const Duration(milliseconds: 80), () {
+      _isNavigating = false;
+    });
+
     try {
       return await Navigator.of(context).push<T>(route);
     } finally {
-      // Release lock after screen transition has begun
-      Future.delayed(const Duration(milliseconds: 400), () {
-        _isNavigating = false;
-      });
+      _isNavigating = false;
     }
   }
 
@@ -136,6 +143,9 @@ class AppNavigator {
   }) async {
     final now = DateTime.now();
 
+    if (_isNavigating && now.difference(_lastNavTime) > const Duration(milliseconds: 600)) {
+      _isNavigating = false;
+    }
     if (_isNavigating || now.difference(_lastNavTime) < _debounceDuration) {
       return null;
     }
@@ -176,12 +186,14 @@ class AppNavigator {
     _isNavigating = true;
     _lastNavTime = now;
 
+    Timer(const Duration(milliseconds: 80), () {
+      _isNavigating = false;
+    });
+
     try {
       return await Navigator.of(context).pushReplacement<T, TO>(route, result: result);
     } finally {
-      Future.delayed(const Duration(milliseconds: 400), () {
-        _isNavigating = false;
-      });
+      _isNavigating = false;
     }
   }
 
@@ -194,6 +206,9 @@ class AppNavigator {
   }) async {
     final now = DateTime.now();
 
+    if (_isNavigating && now.difference(_lastNavTime) > const Duration(milliseconds: 600)) {
+      _isNavigating = false;
+    }
     if (_isNavigating || now.difference(_lastNavTime) < _debounceDuration) {
       return null;
     }
@@ -234,12 +249,14 @@ class AppNavigator {
     _isNavigating = true;
     _lastNavTime = now;
 
+    Timer(const Duration(milliseconds: 80), () {
+      _isNavigating = false;
+    });
+
     try {
       return await Navigator.of(context).pushAndRemoveUntil<T>(route, predicate);
     } finally {
-      Future.delayed(const Duration(milliseconds: 400), () {
-        _isNavigating = false;
-      });
+      _isNavigating = false;
     }
   }
 

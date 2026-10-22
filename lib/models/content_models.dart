@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LiveClass {
   final String id;
@@ -31,7 +32,12 @@ class LiveClass {
   final List<String> enrolledStudentIds;
   final String streamServer; // 'Amazon AWS IVS' / 'AWS MediaLive'
   final String awsChannelArn;
+  final String awsRegion;
+  final String chatRoomArn;
+  final String chatToken;
   final String recordingUrl;
+  final String streamProvider;
+  final String roomName;
   final Color color;
 
   LiveClass({
@@ -65,9 +71,61 @@ class LiveClass {
     this.enrolledStudentIds = const [],
     this.streamServer = 'Amazon AWS IVS',
     this.awsChannelArn = '',
+    this.awsRegion = 'us-west-2',
+    this.chatRoomArn = '',
+    this.chatToken = '',
     this.recordingUrl = '',
+    this.streamProvider = '',
+    this.roomName = '',
     Color? color,
   }) : color = color ?? _getColorForSubject(subject);
+
+  bool get isIvsStream {
+    final s = streamServer.toLowerCase();
+    final v = videoUrl.toLowerCase();
+    return awsChannelArn.isNotEmpty ||
+        v.contains('live-video.net') ||
+        (s.contains('ivs') && (v.contains('.m3u8') || awsChannelArn.isNotEmpty));
+  }
+
+  bool get isJitsi {
+    final p = streamProvider.toLowerCase().trim();
+    final s = streamServer.toLowerCase().trim();
+    final v = videoUrl.toLowerCase().trim();
+    final r = roomName.toLowerCase().trim();
+
+    // 1. Explicit Jitsi indicators
+    if (p.contains('jitsi') || s.contains('jitsi') || s.contains('8x8')) return true;
+    if (v.contains('meet.jit.si') || v.contains('8x8.vc')) return true;
+    if (r.isNotEmpty) return true;
+
+    // 2. External third-party or dedicated stream
+    if (isYoutube || isGoogleMeet || isZoom) return false;
+    if (isIvsStream) return false;
+    if (v.endsWith('.mp4')) return false;
+
+    // 3. Default: Website examinantt.com live classes run via Jitsi Meet
+    return true;
+  }
+
+  bool get isYoutube {
+    final p = streamProvider.toLowerCase();
+    final u = videoUrl.toLowerCase();
+    return p.contains('youtube') || u.contains('youtube.com') || u.contains('youtu.be');
+  }
+
+  bool get isGoogleMeet {
+    final p = streamProvider.toLowerCase().trim();
+    final u = videoUrl.toLowerCase().trim();
+    if (p.contains('jitsi') || u.contains('jit.si') || u.contains('8x8')) return false;
+    return p.contains('google') || p == 'gmeet' || u.contains('meet.google.com');
+  }
+
+  bool get isZoom {
+    final p = streamProvider.toLowerCase();
+    final u = videoUrl.toLowerCase();
+    return p.contains('zoom') || u.contains('zoom.us');
+  }
 
   bool isUserEnrolled({
     required String? uid,
@@ -102,21 +160,51 @@ class LiveClass {
     return const Color(0xFF38BDF8);
   }
 
+  factory LiveClass.fromFirestore(Map<String, dynamic> data, String documentId) =>
+      LiveClass.fromMap(data, documentId);
+
   factory LiveClass.fromMap(Map<String, dynamic> data, String documentId) {
     final title = (data['title'] ?? data['name'] ?? 'Examinantt Live Lecture').toString();
     final instructor = (data['educatorName'] ?? data['instructor'] ?? data['teacher'] ?? 'Examinantt Faculty').toString();
     final educatorAvatar = (data['educatorAvatar'] ?? data['avatar'] ?? '').toString();
     final qualification = (data['qualification'] ?? data['facultyRole'] ?? 'Master Faculty • Top Educator').toString();
 
-    final thumb = (data['thumbnailUrl'] ?? data['thumbnail'] ?? data['imageUrl'] ?? '').toString();
+    String thumb = (data['thumbnailUrl'] ?? data['thumbnail'] ?? data['imageUrl'] ?? data['poster'] ?? data['desktopUrl'] ?? data['image'] ?? data['banner'] ?? '').toString();
     final notes = (data['notesUrl'] ?? data['notesPdf'] ?? data['pdfUrl'] ?? '').toString();
     final subject = (data['subject'] ?? data['category'] ?? 'General').toString();
     final examCategory = (data['examCategory'] ?? data['exam'] ?? 'All Exams').toString();
     final desc = (data['description'] ?? data['details'] ?? '').toString();
     final chapter = (data['chapter'] ?? (desc.isNotEmpty ? desc : 'Interactive Session & Doubts')).toString();
 
+    // High quality subject-specific study posters matching examinantt.com website fallbacks
+    if (thumb.trim().isEmpty) {
+      final s = subject.toLowerCase();
+      if (s.contains('physic')) {
+        thumb = 'https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?q=80&w=800&auto=format&fit=crop';
+      } else if (s.contains('chem')) {
+        thumb = 'https://images.unsplash.com/photo-1603126857599-f6e157fa2fe6?q=80&w=800&auto=format&fit=crop';
+      } else if (s.contains('math') || s.contains('calculus')) {
+        thumb = 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?q=80&w=800&auto=format&fit=crop';
+      } else if (s.contains('english')) {
+        thumb = 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=800&auto=format&fit=crop';
+      } else {
+        thumb = 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=800&auto=format&fit=crop';
+      }
+    }
+
     final batchId = (data['batchId'] ?? '').toString();
     final batchName = (data['batchName'] ?? '').toString();
+    final provider = (data['streamProvider'] ?? data['provider'] ?? '').toString().toLowerCase();
+    String roomName = (data['roomName'] ?? data['room'] ?? data['roomId'] ?? '').toString().trim();
+    if (roomName.isEmpty) {
+      final possibleUrl = (data['streamUrl'] ?? data['playbackUrl'] ?? data['videoUrl'] ?? data['url'] ?? '').toString();
+      if (possibleUrl.contains('meet.jit.si/') || possibleUrl.contains('8x8.vc/')) {
+        final uri = Uri.tryParse(possibleUrl);
+        if (uri != null && uri.pathSegments.isNotEmpty) {
+          roomName = uri.pathSegments.last;
+        }
+      }
+    }
 
     final rawStatus = (data['status'] ?? data['streamStatus'] ?? data['state'] ?? '').toString().toLowerCase().trim();
     bool rawIsLive = data['isLive'] == true ||
@@ -133,7 +221,8 @@ class LiveClass {
         rawStatus == 'completed' ||
         rawStatus == 'recorded' ||
         rawStatus == 'ended' ||
-        rawStatus == 'finished';
+        rawStatus == 'finished' ||
+        (data['recordingUrl'] != null && data['recordingUrl'].toString().trim().isNotEmpty);
 
     bool rawIsUpcoming = rawStatus == 'upcoming' ||
         rawStatus == 'scheduled' ||
@@ -141,44 +230,22 @@ class LiveClass {
         rawStatus == 'not_started' ||
         rawStatus == 'cancelled';
 
-    // Comprehensive video link detection (streamUrl, videoUrl, recordingUrl, url, video)
-    // When live, streamUrl (used by website) takes precedence
+    // Comprehensive video link detection (streamUrl, playbackUrl, recordingUrl, videoUrl, url, video, youtubeUrl, link, hlsUrl)
     String streamUrl = '';
+    final List<String> priorityKeys;
     if (rawIsLive) {
-      if (data['streamUrl'] != null && data['streamUrl'].toString().trim().isNotEmpty) {
-        streamUrl = data['streamUrl'].toString().trim();
-      } else if (data['videoUrl'] != null && data['videoUrl'].toString().trim().isNotEmpty) {
-        streamUrl = data['videoUrl'].toString().trim();
-      } else if (data['url'] != null && data['url'].toString().trim().isNotEmpty) {
-        streamUrl = data['url'].toString().trim();
-      } else if (data['recordingUrl'] != null && data['recordingUrl'].toString().trim().isNotEmpty) {
-        streamUrl = data['recordingUrl'].toString().trim();
-      } else if (data['video'] != null && data['video'].toString().trim().isNotEmpty) {
-        streamUrl = data['video'].toString().trim();
-      }
+      priorityKeys = ['streamUrl', 'playbackUrl', 'videoUrl', 'url', 'recordingUrl', 'video', 'youtubeUrl', 'link', 'hlsUrl'];
     } else if (rawIsCompleted) {
-      if (data['recordingUrl'] != null && data['recordingUrl'].toString().trim().isNotEmpty) {
-        streamUrl = data['recordingUrl'].toString().trim();
-      } else if (data['streamUrl'] != null && data['streamUrl'].toString().trim().isNotEmpty) {
-        streamUrl = data['streamUrl'].toString().trim();
-      } else if (data['videoUrl'] != null && data['videoUrl'].toString().trim().isNotEmpty) {
-        streamUrl = data['videoUrl'].toString().trim();
-      } else if (data['url'] != null && data['url'].toString().trim().isNotEmpty) {
-        streamUrl = data['url'].toString().trim();
-      } else if (data['video'] != null && data['video'].toString().trim().isNotEmpty) {
-        streamUrl = data['video'].toString().trim();
-      }
+      priorityKeys = ['recordingUrl', 'playbackUrl', 'streamUrl', 'videoUrl', 'url', 'video', 'youtubeUrl', 'link', 'hlsUrl'];
     } else {
-      if (data['streamUrl'] != null && data['streamUrl'].toString().trim().isNotEmpty) {
-        streamUrl = data['streamUrl'].toString().trim();
-      } else if (data['videoUrl'] != null && data['videoUrl'].toString().trim().isNotEmpty) {
-        streamUrl = data['videoUrl'].toString().trim();
-      } else if (data['recordingUrl'] != null && data['recordingUrl'].toString().trim().isNotEmpty) {
-        streamUrl = data['recordingUrl'].toString().trim();
-      } else if (data['url'] != null && data['url'].toString().trim().isNotEmpty) {
-        streamUrl = data['url'].toString().trim();
-      } else if (data['video'] != null && data['video'].toString().trim().isNotEmpty) {
-        streamUrl = data['video'].toString().trim();
+      priorityKeys = ['streamUrl', 'playbackUrl', 'videoUrl', 'recordingUrl', 'url', 'video', 'youtubeUrl', 'link', 'hlsUrl'];
+    }
+
+    for (final key in priorityKeys) {
+      final val = data[key];
+      if (val != null && val.toString().trim().isNotEmpty) {
+        streamUrl = val.toString().trim();
+        break;
       }
     }
 
@@ -218,12 +285,19 @@ class LiveClass {
       if (startTime != null) {
         final now = DateTime.now();
         final isToday = startTime.year == now.year && startTime.month == now.month && startTime.day == now.day;
-        final hour = startTime.hour > 12 ? startTime.hour - 12 : (startTime.hour == 0 ? 12 : startTime.hour);
+        final hourNum = startTime.hour > 12 ? startTime.hour - 12 : (startTime.hour == 0 ? 12 : startTime.hour);
+        final hour = hourNum.toString().padLeft(2, '0');
         final minute = startTime.minute.toString().padLeft(2, '0');
         final ampm = startTime.hour >= 12 ? 'PM' : 'AM';
-        formattedTime = '${isToday ? "Today" : "${startTime.day}/${startTime.month}"}, $hour:$minute $ampm';
+        if (isToday) {
+          formattedTime = 'Today at $hour:$minute $ampm';
+        } else {
+          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          final m = months[startTime.month - 1];
+          formattedTime = '$m ${startTime.day} at $hour:$minute $ampm';
+        }
       } else {
-        formattedTime = rawIsLive ? 'Live Now' : (rawIsCompleted ? 'Recorded' : 'Scheduled Soon');
+        formattedTime = rawIsLive ? 'Live Now' : 'Scheduled soon';
       }
     }
 
@@ -267,7 +341,21 @@ class LiveClass {
 
     final server = (data['streamServer'] ?? data['server'] ?? 'Amazon AWS IVS').toString();
     final awsArn = (data['awsChannelArn'] ?? data['channelArn'] ?? '').toString();
-    final recording = (data['recordingUrl'] ?? data['recording'] ?? '').toString();
+    final awsRegion = (data['awsRegion'] ?? data['region'] ?? 'us-west-2').toString();
+    final chatRoomArn = (data['chatRoomArn'] ?? data['roomArn'] ?? '').toString();
+    final chatToken = (data['chatToken'] ?? '').toString();
+    String recording = (data['recordingUrl'] ?? data['recording'] ?? '').toString();
+    if (recording.trim().isEmpty) {
+      if (streamUrl.endsWith('.mp4') || streamUrl.contains('storage.googleapis.com')) {
+        recording = streamUrl;
+      } else if (rawIsCompleted || streamUrl.contains('live-video.net')) {
+        recording = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+      }
+    }
+
+    final effectiveVideoUrl = (rawIsCompleted && recording.trim().isNotEmpty && !streamUrl.contains('youtube') && !streamUrl.contains('meet.google.com'))
+        ? recording.trim()
+        : (streamUrl.isNotEmpty ? streamUrl : recording.trim());
 
     return LiveClass(
       id: documentId,
@@ -275,7 +363,7 @@ class LiveClass {
       instructor: instructor,
       educatorAvatar: educatorAvatar,
       qualification: qualification,
-      videoUrl: streamUrl,
+      videoUrl: effectiveVideoUrl,
       thumbnailUrl: thumb,
       subject: subject,
       examCategory: examCategory,
@@ -300,7 +388,12 @@ class LiveClass {
       enrolledStudentIds: enrolledIds,
       streamServer: server,
       awsChannelArn: awsArn,
+      awsRegion: awsRegion,
+      chatRoomArn: chatRoomArn,
+      chatToken: chatToken,
       recordingUrl: recording,
+      streamProvider: provider,
+      roomName: roomName,
       color: _getColorForSubject(subject),
     );
   }
@@ -364,10 +457,17 @@ class CourseModel {
     this.updatedAt,
   });
 
+  String get imageUrl => thumbnailUrl.isNotEmpty ? thumbnailUrl : bannerUrl;
+
   factory CourseModel.fromMap(Map<String, dynamic> data, String docId) {
     final pricing = data['pricing'] as Map<String, dynamic>?;
+    final accessType = (data['accessType'] ?? pricing?['type'] ?? '').toString().toLowerCase().trim();
+    final isExplicitlyFree = accessType == 'free' || data['isFree'] == true || data['isFree'] == 'true';
+
     double amount = 0.0;
-    if (data.containsKey('price')) {
+    if (isExplicitlyFree) {
+      amount = 0.0;
+    } else if (data.containsKey('price')) {
       amount = (data['price'] ?? 0).toDouble();
     } else if (pricing != null) {
       amount = (pricing['amount'] ?? 0).toDouble();
@@ -568,7 +668,9 @@ class ResourceItem {
   final dynamic updatedAt;
   final String thumbnailUrl;
 
-  bool get isFree => price == 0.0 || badge.toUpperCase().contains('FREE');
+  final bool isFreeField;
+
+  bool get isFree => (isFreeField && price == 0.0) || price == 0.0 || badge.toUpperCase().contains('FREE');
   bool get isBatchIncluded => badge.toUpperCase().contains('INCLUDED');
 
   ResourceItem({
@@ -589,7 +691,7 @@ class ResourceItem {
     this.badgeColorHex = '#34D399',
     this.downloads = '24.5k',
     this.rating = 4.8,
-    this.exam = 'JEE Main 2027',
+    this.exam = 'All',
     this.progress = 0.0,
     this.isCompleted = false,
     this.chapter = '',
@@ -601,6 +703,7 @@ class ResourceItem {
     this.createdAt,
     this.updatedAt,
     this.thumbnailUrl = '',
+    this.isFreeField = true,
   })  : chapterNum = chapterNum ?? num ?? '01',
         date = date ?? DateTime.now();
 
@@ -614,6 +717,17 @@ class ResourceItem {
       }
     }
 
+    bool parsedIsFree = true;
+    if (data['isFree'] != null) {
+      if (data['isFree'] is bool) {
+        parsedIsFree = data['isFree'];
+      } else if (data['isFree'] is String) {
+        parsedIsFree = data['isFree'].toString().toLowerCase() == 'true';
+      }
+    } else {
+      parsedIsFree = parsedPrice == 0.0;
+    }
+
     bool parsedPublic = true;
     if (data['isPublic'] != null) {
       if (data['isPublic'] is bool) {
@@ -622,7 +736,7 @@ class ResourceItem {
         parsedPublic = data['isPublic'].toString().toLowerCase() == 'true';
       }
     } else {
-      parsedPublic = parsedPrice == 0.0;
+      parsedPublic = parsedIsFree || parsedPrice == 0.0;
     }
 
     double parsedProgress = 0.0;
@@ -644,7 +758,58 @@ class ResourceItem {
       }
     }
 
-    final cat = data['category']?.toString() ?? data['subject']?.toString() ?? 'Physics';
+    final cat = (data['category'] ?? data['subject'] ?? 'General').toString();
+
+    // Smart exam mapping: if not specified on website, default to 'All' so all students see it!
+    String parsedExam = (data['exam'] ?? '').toString();
+    if (parsedExam.isEmpty) {
+      final catLower = cat.toLowerCase();
+      if (catLower.contains('cuet')) {
+        parsedExam = 'CUET UG';
+      } else if (catLower.contains('neet')) {
+        parsedExam = 'NEET';
+      } else if (catLower.contains('jee')) {
+        parsedExam = 'JEE Main 2027';
+      } else {
+        parsedExam = 'All'; // Visible to all students!
+      }
+    }
+
+    // Normalizing URL for relative paths uploaded on examinantt.com
+    String rawUrl = (data['url'] ?? data['pdfUrl'] ?? '').toString().trim();
+    if (rawUrl.startsWith('/')) {
+      rawUrl = 'https://www.examinantt.com$rawUrl';
+    }
+
+    final rawType = (data['type'] ?? 'Notes').toString();
+    String detectedFileType = (data['fileType'] ?? '').toString();
+    if (detectedFileType.isEmpty) {
+      final lower = rawType.toLowerCase();
+      if (lower == 'pdf') {
+        detectedFileType = 'PDF';
+      } else if (lower == 'video') {
+        detectedFileType = 'VIDEO';
+      } else if (lower == 'link') {
+        detectedFileType = 'LINK';
+      } else {
+        detectedFileType = 'PDF';
+      }
+    }
+
+    DateTime parsedDate = DateTime.now();
+    if (data['createdAt'] != null) {
+      if (data['createdAt'] is Timestamp) {
+        parsedDate = (data['createdAt'] as Timestamp).toDate();
+      } else if (data['createdAt'] is String) {
+        parsedDate = DateTime.tryParse(data['createdAt']) ?? DateTime.now();
+      }
+    } else if (data['date'] != null) {
+      if (data['date'] is String) {
+        parsedDate = DateTime.tryParse(data['date']) ?? DateTime.now();
+      } else if (data['date'] is Timestamp) {
+        parsedDate = (data['date'] as Timestamp).toDate();
+      }
+    }
 
     List<String> parsedBatchIds = [];
     if (data['batchIds'] is List) {
@@ -660,20 +825,21 @@ class ResourceItem {
       title: data['title']?.toString() ?? '',
       category: cat,
       subject: data['subject']?.toString() ?? cat,
-      type: data['type']?.toString() ?? 'Notes',
-      url: data['url']?.toString() ?? data['pdfUrl']?.toString() ?? '',
+      type: rawType,
+      url: rawUrl,
       price: parsedPrice,
       isPublic: parsedPublic,
+      isFreeField: parsedIsFree,
       description: data['description']?.toString() ?? '',
-      date: data['date'] is String ? (DateTime.tryParse(data['date']) ?? DateTime.now()) : DateTime.now(),
+      date: parsedDate,
       subtitle: data['subtitle']?.toString() ?? data['description']?.toString() ?? '',
-      fileType: data['fileType']?.toString() ?? 'PDF',
-      fileSize: data['fileSize']?.toString() ?? data['size']?.toString() ?? '2.4 MB',
-      badge: data['badge']?.toString() ?? (parsedPrice > 0 ? 'PREMIUM' : 'FREE'),
-      badgeColorHex: data['badgeColorHex']?.toString() ?? (parsedPrice > 0 ? '#FFA000' : '#34D399'),
+      fileType: detectedFileType,
+      fileSize: data['fileSize']?.toString() ?? data['size']?.toString() ?? (rawType.toLowerCase() == 'video' ? 'Video Stream' : rawType.toLowerCase() == 'link' ? 'Web Link' : '2.4 MB'),
+      badge: data['badge']?.toString() ?? (parsedIsFree || parsedPrice == 0 ? 'FREE' : 'PREMIUM'),
+      badgeColorHex: data['badgeColorHex']?.toString() ?? (parsedIsFree || parsedPrice == 0 ? '#34D399' : '#FFA000'),
       downloads: data['downloads']?.toString() ?? '18.2k',
       rating: parsedRating,
-      exam: data['exam']?.toString() ?? 'JEE Main 2027',
+      exam: parsedExam,
       progress: parsedProgress,
       isCompleted: data['isCompleted'] == true || parsedProgress >= 1.0,
       chapter: data['chapter']?.toString() ?? '',
@@ -703,6 +869,7 @@ class ResourceItem {
       'exam': exam,
       'price': price,
       'isPublic': isPublic,
+      'isFree': isFree,
       'description': description,
       'progress': progress,
       'isCompleted': isCompleted,
@@ -744,6 +911,10 @@ class ResourceItem {
     String? chapter,
     String? chapterNum,
     List<String>? batchIds,
+    bool? isFreeField,
+    dynamic createdAt,
+    dynamic updatedAt,
+    String? thumbnailUrl,
   }) {
     return ResourceItem(
       id: id ?? this.id,
@@ -769,6 +940,12 @@ class ResourceItem {
       chapter: chapter ?? this.chapter,
       chapterNum: chapterNum ?? this.chapterNum,
       batchIds: batchIds ?? this.batchIds,
+      status: status,
+      createdBy: createdBy,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
+      isFreeField: isFreeField ?? this.isFreeField,
     );
   }
 }

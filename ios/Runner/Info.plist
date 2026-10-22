@@ -47,5 +47,9 @@
 		<true/>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<key>NSCameraUsageDescription</key>
+		<string>Examinantt requires camera access to allow video interaction during live classes.</string>
+		<key>NSMicrophoneUsageDescription</key>
+		<string>Examinantt requires microphone access to speak and ask questions during live classes.</string>
 	</dict>
 </plist>

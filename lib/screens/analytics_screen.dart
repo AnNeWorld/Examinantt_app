@@ -66,11 +66,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
             backgroundColor: backgroundColor,
             elevation: 0,
             scrolledUnderElevation: 0,
+            leadingWidth: 42,
+            titleSpacing: 6,
             leading: IconButton(
               icon: Icon(
-                Icons.arrow_back_ios_new,
+                Icons.arrow_back,
                 color: textColor,
-                size: 20,
               ),
               onPressed: () => Navigator.pop(context),
             ),

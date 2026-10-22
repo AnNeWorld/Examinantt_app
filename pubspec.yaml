@@ -31,6 +31,10 @@ dependencies:
   firebase_auth: ^5.5.1
   image_picker: ^1.2.3
   cached_network_image: ^3.4.1
+  aws_ivs_player: ^0.1.2
+  web_socket_channel: ^3.0.3
+  http: ^1.2.0
+  jitsi_meet_flutter_sdk: 13.2.0
 
 
 

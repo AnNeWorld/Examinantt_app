@@ -20,6 +20,12 @@ class BookmarksScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: scaffoldBg,
       appBar: AppBar(
+        leadingWidth: 42,
+        titleSpacing: 6,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: textColor),
+          onPressed: () => Navigator.maybePop(context),
+        ),
         title: Text('Bookmarks', style: TextStyle(fontWeight: FontWeight.bold, color: textColor)),
         backgroundColor: scaffoldBg,
         elevation: 0,
@@ -123,9 +129,10 @@ class BookmarksScreen extends StatelessWidget {
                       answer: correctAnswer,
                     ).animate(delay: (50 * index).ms).fade().slideY(begin: 0.1, end: 0, curve: Curves.easeOutCubic);
                   },
-                );
-              },
-            ),
+                ),
+              );
+            },
+          ),
     );
   }
 

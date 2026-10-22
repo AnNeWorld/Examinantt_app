@@ -1,12 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/content_models.dart';
 import '../utils/app_logger.dart';
+import 'firestore_service.dart';
 
 class ContentService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   static List<LiveClass>? _cachedLiveClasses;
-  static List<CourseModel>? _cachedCourses;
   static List<ResourceItem>? _cachedResources;
 
   // Live Classes Real-Time Stream (Direct from Firestore live_classes collection)
@@ -53,26 +53,8 @@ class ContentService {
   }
 
   // Real Courses / Batches Stream from Firestore
-  Stream<List<CourseModel>> getCoursesStream() async* {
-    if (_cachedCourses != null && _cachedCourses!.isNotEmpty) {
-      yield _cachedCourses!;
-    }
-    AppLogger.firestore("courses", "Listening to real-time courses stream from Firestore");
-    yield* _db.collection('courses').snapshots().map((snapshot) {
-      final list = snapshot.docs
-          .where((doc) {
-            final data = doc.data();
-            return data['status'] == null || data['status'] == 'published';
-          })
-          .map((doc) => CourseModel.fromMap(doc.data(), doc.id))
-          .toList();
-      _cachedCourses = list;
-      AppLogger.s("Real-time courses stream updated: ${list.length} courses direct from Firestore", tag: "CONTENT_SERVICE");
-      return list;
-    }).handleError((e) {
-      AppLogger.e("Error in getCoursesStream", error: e, tag: "CONTENT_SERVICE");
-      return _cachedCourses ?? <CourseModel>[];
-    });
+  Stream<List<CourseModel>> getCoursesStream() {
+    return FirestoreService().getBatchesStream();
   }
 
   // Active Live Now Stream
@@ -108,6 +90,15 @@ class ContentService {
     AppLogger.firestore("resources", "Listening to resources collection stream");
     yield* _db.collection('resources').snapshots().map((snapshot) {
       final list = snapshot.docs.map((doc) => ResourceItem.fromMap(doc.data(), doc.id)).toList();
+      list.sort((a, b) {
+        final aTime = a.createdAt is Timestamp
+            ? (a.createdAt as Timestamp).toDate()
+            : a.date;
+        final bTime = b.createdAt is Timestamp
+            ? (b.createdAt as Timestamp).toDate()
+            : b.date;
+        return bTime.compareTo(aTime);
+      });
       _cachedResources = list;
       AppLogger.s("Resources stream updated: ${list.length} items from Firestore", tag: "RESOURCES");
       return list;

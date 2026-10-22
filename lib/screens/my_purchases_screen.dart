@@ -6,6 +6,8 @@ import '../services/firestore_service.dart';
 import '../constants/app_colors.dart';
 import 'test_series_detail_screen.dart';
 import 'live_classes_screen.dart';
+import 'batch_details_screen.dart';
+import '../models/content_models.dart';
 
 class MyPurchasesScreen extends StatelessWidget {
   const MyPurchasesScreen({super.key});
@@ -19,6 +21,12 @@ class MyPurchasesScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: scaffoldBg,
       appBar: AppBar(
+        leadingWidth: 42,
+        titleSpacing: 6,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: textColor),
+          onPressed: () => Navigator.maybePop(context),
+        ),
         title: Text('My Purchases', style: TextStyle(fontWeight: FontWeight.bold, color: textColor)),
         backgroundColor: scaffoldBg,
         elevation: 0,
@@ -104,11 +112,26 @@ class MyPurchasesScreen extends StatelessWidget {
 
               return GestureDetector(
                 onTap: () {
+                  final isBatch = type.toLowerCase().contains('batch') || type.toLowerCase().contains('course');
                   if (isLiveClass) {
                     AppNavigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const LiveClassesScreen(initialTab: 0),
+                      ),
+                    );
+                  } else if (isBatch) {
+                    AppNavigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => BatchDetailsScreen(
+                          batch: CourseModel(
+                            id: id,
+                            title: title,
+                            examCategory: (purchase['examCategory'] ?? purchase['category'] ?? '').toString(),
+                            price: double.tryParse(price.replaceAll('₹', '').trim()) ?? 0.0,
+                          ),
+                        ),
                       ),
                     );
                   } else {
@@ -220,9 +243,10 @@ class MyPurchasesScreen extends StatelessWidget {
                 ),
               ).animate().fade(delay: (50 * index).ms).slideX(begin: 0.1, end: 0);
             },
-          );
-        },
-      ),
-    );
-  }
+          ),
+        );
+      },
+    ),
+  );
+}
 }

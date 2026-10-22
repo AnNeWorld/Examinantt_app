@@ -10,6 +10,7 @@ import '../services/payment_service.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import '../constants/app_colors.dart';
 import '../widgets/notification_bell_action.dart';
+import '../widgets/safe_app_image.dart';
 
 class TestSeriesDetailScreen extends StatefulWidget {
   final String categoryId;
@@ -233,6 +234,18 @@ class _TestSeriesDetailScreenState extends State<TestSeriesDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (widget.imageUrl.isNotEmpty) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: SafeAppImage(
+                imageUrl: widget.imageUrl,
+                height: 140,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [

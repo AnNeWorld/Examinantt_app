@@ -10,9 +10,11 @@ import '../services/test_service.dart';
 import '../models/test_model.dart';
 import 'test_series_detail_screen.dart';
 import '../widgets/notification_bell_action.dart';
+import '../widgets/test_page_sections.dart';
 
 class TestSeriesScreen extends StatefulWidget {
-  const TestSeriesScreen({super.key});
+  final int initialTab;
+  const TestSeriesScreen({super.key, this.initialTab = 0});
 
   @override
   State<TestSeriesScreen> createState() => _TestSeriesScreenState();
@@ -78,9 +80,17 @@ class _TestSeriesScreenState extends State<TestSeriesScreen> {
               // Top App Bar matching Home, Batches & PDF Header
               _buildTopAppBar(),
 
-              // Unified Test Center for both dark and light modes (same functions)
+              // Test Page Sections containing: My Test, All Test, Included with Batch
               Expanded(
-                child: _buildTestCenter(isDark),
+                child: TestPageSections(
+                  initialTab: widget.initialTab,
+                  onOpenHistory: () {
+                    AppNavigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const TestHistoryScreen()),
+                    );
+                  },
+                ),
               ),
             ],
           ),
@@ -521,21 +531,27 @@ class _TestSeriesScreenState extends State<TestSeriesScreen> {
     );
   }
 
-  // Standard Header matching PDF: Hamburger / Shield + EXAMINANTT TEST CENTER + Bell + Search
+  // Standard Header matching PDF: Shield + EXAMINANTT TEST CENTER + Bell + Back Button
   Widget _buildTopAppBar() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final scaffoldBg = isDark ? Colors.transparent : Colors.white;
+    final scaffoldBg = isDark ? const Color(0xFF071326) : Colors.white;
     final textColor = isDark ? Colors.white : AppTheme.darkSlate;
-    final borderColor = isDark ? Colors.white10 : Colors.grey.shade200;
+    final canPop = Navigator.canPop(context);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: scaffoldBg,
-        border: Border(bottom: BorderSide(color: borderColor)),
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      color: scaffoldBg,
       child: Row(
         children: [
+          if (canPop) ...[
+            IconButton(
+              icon: Icon(Icons.arrow_back, color: textColor),
+              onPressed: () => Navigator.maybePop(context),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            ),
+            const SizedBox(width: 4),
+          ],
           // Logo Badge
           Container(
             padding: const EdgeInsets.all(6),
@@ -544,9 +560,9 @@ class _TestSeriesScreenState extends State<TestSeriesScreen> {
               borderRadius: BorderRadius.circular(10),
               border: Border.all(color: const Color(0xFFFFA000).withValues(alpha: 0.3)),
             ),
-            child: const Icon(Icons.shield_rounded, color: Color(0xFFFFA000), size: 22),
+            child: const Icon(Icons.shield_rounded, color: Color(0xFFFFA000), size: 20),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -554,24 +570,18 @@ class _TestSeriesScreenState extends State<TestSeriesScreen> {
               children: [
                 Text(
                   'EXAMINANTT',
-                  style: TextStyle(color: textColor, fontWeight: FontWeight.w900, fontSize: 15, letterSpacing: 0.8),
+                  style: TextStyle(color: textColor, fontWeight: FontWeight.w900, fontSize: 14, letterSpacing: 0.8),
                   overflow: TextOverflow.ellipsis,
                 ),
                 const Text(
                   'TEST CENTER',
-                  style: TextStyle(color: Color(0xFFFFA000), fontWeight: FontWeight.w800, fontSize: 11, letterSpacing: 0.5),
+                  style: TextStyle(color: Color(0xFFFFA000), fontWeight: FontWeight.w800, fontSize: 10.5, letterSpacing: 0.5),
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
           NotificationBellAction(color: textColor),
-          IconButton(
-            icon: Icon(Icons.search_rounded, color: textColor),
-            onPressed: () {
-              AppTheme.showSuccessSnackBar(context, 'Search mock tests & question banks...');
-            },
-          ),
         ],
       ),
     );

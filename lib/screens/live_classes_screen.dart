@@ -8,10 +8,14 @@ import '../services/firestore_service.dart';
 import '../providers/user_provider.dart';
 import '../utils/app_theme.dart';
 import 'amazon_live_player_screen.dart';
-import 'checkout_screen.dart';
-import 'pdf_viewer_screen.dart';
 import 'batch_details_screen.dart';
+import 'checkout_screen.dart';
+import 'jitsi_live_meeting_screen.dart';
+import 'pdf_viewer_screen.dart';
+import '../models/live_class_session_models.dart';
+import '../services/ivs_live_service.dart';
 import '../widgets/notification_bell_action.dart';
+import '../widgets/safe_app_image.dart';
 
 class LiveClassesScreen extends StatefulWidget {
   final int initialTab;
@@ -94,13 +98,132 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
     return true;
   }
 
-  void _openLiveClass(LiveClass c) {
-    AppNavigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AmazonLivePlayerScreen(liveClass: c),
+  String? _joiningClassId;
+
+  Future<void> _openLiveClass(
+    LiveClass c, {
+    Set<String> purchasedBatchIds = const {},
+    Set<String> purchasedItemIds = const {},
+  }) async {
+    // 1. If it's a Jitsi Live Class (examinantt.com Virtual Classroom),
+    // launch immediately with 0ms latency - no blocking authorization dialog or timeouts!
+    if (c.isJitsi) {
+      await AppNavigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => JitsiLiveMeetingScreen(
+            liveClass: c,
+            sessionId: c.id,
+            roomName: c.roomName,
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (_joiningClassId != null) return;
+
+    setState(() {
+      _joiningClassId = c.id;
+    });
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Center(
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 40),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 22),
+          decoration: BoxDecoration(
+            color: const Color(0xFF071733),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white24, width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.6),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 38,
+                height: 38,
+                child: CircularProgressIndicator(
+                  strokeWidth: 3.2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFA000)),
+                ),
+              ),
+              SizedBox(height: 18),
+              Text(
+                'Authorizing Live Class...',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14.5),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 6),
+              Text(
+                'Verifying student enrollment & Amazon IVS stream tokens',
+                style: TextStyle(color: Colors.white70, fontSize: 11.5),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
       ),
     );
+
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final uid = FirebaseAuth.instance.currentUser?.uid ?? userProvider.user?.id;
+      final name = userProvider.user?.name ?? FirebaseAuth.instance.currentUser?.displayName;
+
+      final LiveClassAccessSession session = await IvsLiveService().requestJoinAccess(
+        liveClass: c,
+        currentUid: uid,
+        currentUserName: name,
+        purchasedBatchIds: purchasedBatchIds,
+        purchasedItemIds: purchasedItemIds,
+      );
+
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      if (!mounted) return;
+
+      if (session.isAuthorized) {
+        AppNavigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AmazonLivePlayerScreen(
+              liveClass: c,
+              accessSession: session,
+            ),
+          ),
+        );
+      } else {
+        AppTheme.showWarningSnackBar(
+          context,
+          session.message ?? 'Access could not be authorized. Please enroll in this session.',
+        );
+      }
+    } catch (e) {
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+      if (mounted) {
+        AppTheme.showErrorSnackBar(context, 'Failed to join live stream: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _joiningClassId = null;
+        });
+      }
+    }
   }
 
   void _openPdfNotes(String title, String subject, String url) {
@@ -280,6 +403,11 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFFFA000),
                     foregroundColor: Colors.black,
+                    elevation: 0,
+                    shadowColor: Colors.transparent,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                   ),
@@ -697,7 +825,12 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
         itemCount: enrolledClasses.length,
         itemBuilder: (context, index) {
           final c = enrolledClasses[index];
-          return _buildLiveClassCard(c, isEnrolled: true);
+          return _buildLiveClassCard(
+            c,
+            isEnrolled: true,
+            purchasedBatchIds: purchasedBatchIds,
+            purchasedItemIds: purchasedItemIds,
+          );
         },
       ),
     );
@@ -748,7 +881,12 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
           purchasedBatchIds: purchasedBatchIds,
           purchasedItemIds: purchasedItemIds,
         );
-        return _buildLiveClassCard(c, isEnrolled: isEnrolled);
+        return _buildLiveClassCard(
+          c,
+          isEnrolled: isEnrolled,
+          purchasedBatchIds: purchasedBatchIds,
+          purchasedItemIds: purchasedItemIds,
+        );
       },
     );
   }
@@ -756,7 +894,12 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
   // ===========================================================================
   // REUSABLE LIVE CLASS CARD
   // ===========================================================================
-  Widget _buildLiveClassCard(LiveClass c, {required bool isEnrolled}) {
+  Widget _buildLiveClassCard(
+    LiveClass c, {
+    required bool isEnrolled,
+    Set<String> purchasedBatchIds = const {},
+    Set<String> purchasedItemIds = const {},
+  }) {
     final color = c.color;
 
     return Container(
@@ -901,6 +1044,23 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
             ),
           ),
 
+          // Class Thumbnail Banner
+          if (c.thumbnailUrl.isNotEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: SafeAppImage(
+                  imageUrl: c.thumbnailUrl,
+                  height: 130,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+
           // Title & Faculty Details
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -1034,31 +1194,48 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
                 Expanded(
                   flex: 3,
                   child: ElevatedButton.icon(
-                    onPressed: () {
-                      if (isEnrolled) {
-                        if (c.isLive || c.isRecorded) {
-                          _openLiveClass(c);
-                        } else {
-                          _showWaitingRoom(c);
-                        }
-                      } else {
-                        _openCheckout(c);
-                      }
-                    },
-                    icon: Icon(
-                      isEnrolled
-                          ? (c.isLive
-                              ? Icons.play_circle_fill_rounded
-                              : (c.isRecorded ? Icons.replay_rounded : Icons.timer_outlined))
-                          : Icons.shopping_bag_rounded,
-                      size: 17,
-                    ),
+                    onPressed: _joiningClassId != null
+                        ? null
+                        : () {
+                            if (isEnrolled) {
+                              if (c.isLive || c.isRecorded) {
+                                _openLiveClass(
+                                  c,
+                                  purchasedBatchIds: purchasedBatchIds,
+                                  purchasedItemIds: purchasedItemIds,
+                                );
+                              } else {
+                                _showWaitingRoom(c);
+                              }
+                            } else {
+                              _openCheckout(c);
+                            }
+                          },
+                    icon: _joiningClassId == c.id
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : Icon(
+                            isEnrolled
+                                ? (c.isLive
+                                    ? Icons.play_circle_fill_rounded
+                                    : (c.isRecorded ? Icons.replay_rounded : Icons.timer_outlined))
+                                : Icons.shopping_bag_rounded,
+                            size: 17,
+                          ),
                     label: Text(
-                      isEnrolled
-                          ? (c.isLive
-                              ? 'JOIN LIVE CLASS'
-                              : (c.isRecorded ? 'WATCH RECORDING' : 'WAITING ROOM'))
-                          : 'ENROLL (₹${c.price.toStringAsFixed(0)})',
+                      _joiningClassId == c.id
+                          ? 'CONNECTING...'
+                          : (isEnrolled
+                              ? (c.isLive
+                                  ? 'JOIN LIVE CLASS'
+                                  : (c.isRecorded ? 'WATCH RECORDING' : 'WAITING ROOM'))
+                              : 'ENROLL (₹${c.price.toStringAsFixed(0)})'),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: c.isLive ? const Color(0xFFEF4444) : const Color(0xFFFF7A00),

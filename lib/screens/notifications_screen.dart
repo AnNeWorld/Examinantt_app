@@ -283,11 +283,12 @@ class NotificationsScreen extends StatelessWidget {
                 ),
               ).animate().fade(delay: (35 * index).ms).slideY(begin: 0.05, end: 0);
             },
-          );
-        },
-      ),
-    );
-  }
+          ),
+        );
+      },
+    ),
+  );
+}
 
   void _confirmClearAll(BuildContext context, List<NotificationModel> list) {
     final isDark = Theme.of(context).brightness == Brightness.dark;

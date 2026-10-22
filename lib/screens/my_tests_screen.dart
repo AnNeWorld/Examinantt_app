@@ -50,7 +50,6 @@ class MyTestsScreen extends StatelessWidget {
           backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
           onRefresh: () async {
             await Future.delayed(const Duration(milliseconds: 650));
-            if (mounted) setState(() {});
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
@@ -76,7 +75,7 @@ class MyTestsScreen extends StatelessWidget {
                     AppNavigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const TestSeriesScreen(),
+                        builder: (context) => const TestSeriesScreen(initialTab: 1),
                       ),
                     );
                   },

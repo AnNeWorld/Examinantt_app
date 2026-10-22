@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -432,11 +433,21 @@ class FirestoreService {
         .collection('live_classes')
         .doc(liveClassId)
         .collection('chat')
-        .orderBy('timestamp', descending: false)
-        .limit(100)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) => {'id': doc.id, ...doc.data()}).toList();
+      final list = snapshot.docs.map((doc) => {'id': doc.id, ...doc.data()}).toList();
+      list.sort((a, b) {
+        final tA = a['timestamp'];
+        final tB = b['timestamp'];
+        if (tA == null && tB == null) return 0;
+        if (tA == null) return 1;
+        if (tB == null) return -1;
+        if (tA is Timestamp && tB is Timestamp) {
+          return tA.compareTo(tB);
+        }
+        return 0;
+      });
+      return list;
     });
   }
 
@@ -542,6 +553,35 @@ class FirestoreService {
         'createdAt': FieldValue.serverTimestamp(),
       });
 
+      // Jitsi Live Classroom Session matching website session-101
+      await _db.collection('live_classes').doc('session-101').set({
+        'title': 'Lecture 12: Graph Traversal & Dijkstra Algorithm',
+        'instructor': 'Dr. Sarah Connor',
+        'educatorName': 'Dr. Sarah Connor',
+        'qualification': 'Senior Computer Science Faculty',
+        'subject': 'Mathematics',
+        'examCategory': 'GATE & Engineering',
+        'chapter': 'Graph Algorithms • BFS, DFS & Shortest Path',
+        'description': 'Live interactive session covering BFS, DFS, and shortest path algorithms with live coding on Jitsi.',
+        'status': 'live',
+        'isLive': true,
+        'isUpcoming': false,
+        'isRecorded': false,
+        'streamServer': 'Jitsi Meet / 8x8 JaaS',
+        'streamProvider': 'jitsi',
+        'roomName': 'cs101-graph-traversal',
+        'activeViewers': '850',
+        'durationMinutes': 60,
+        'remainingTime': '42 mins remaining',
+        'time': 'Live Now',
+        'price': 0.0,
+        'isFree': true,
+        'hasLiveChat': true,
+        'batchId': 'batch_jee_main_2027',
+        'batchName': 'JEE Main 2027 Conqueror Batch',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
       // 3. Completed Live Class - AWS CloudFront / Recorded HLS Stream (Inside JEE Batch)
       await _db.collection('live_classes').doc('live_aws_maths_calculus_301').set({
         'title': 'Integral Calculus: Definite Integrals & Area Under Curves',
@@ -590,6 +630,62 @@ class FirestoreService {
         'recordingUrl': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
         'time': '3 days ago',
         'durationMinutes': 70,
+        'price': 0.0,
+        'isFree': true,
+        'notesUrl': 'https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf',
+        'hasLiveChat': false,
+        'batchId': 'batch_jee_main_2027',
+        'batchName': 'JEE Main 2027 Conqueror Batch',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      // 5. Recorded Replay - Neha Ma'am Class (General)
+      await _db.collection('live_classes').doc('live_class_neha_501').set({
+        'title': 'Class',
+        'instructor': 'Neha Ma\'am',
+        'educatorName': 'Neha Ma\'am',
+        'qualification': 'Examinantt Master Faculty',
+        'subject': 'General',
+        'examCategory': 'All Exams',
+        'chapter': 'Special Foundation Class & Core Concepts',
+        'description': 'Interactive foundation session focusing on fundamental problem solving and conceptual clarity.',
+        'status': 'completed',
+        'isLive': false,
+        'isUpcoming': false,
+        'isRecorded': true,
+        'streamServer': 'Amazon AWS CloudFront',
+        'streamUrl': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+        'recordingUrl': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+        'time': '4 days ago',
+        'durationMinutes': 60,
+        'price': 0.0,
+        'isFree': true,
+        'notesUrl': 'https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf',
+        'hasLiveChat': false,
+        'batchId': 'batch_general_2027',
+        'batchName': 'Foundation Learning Batch',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      // 6. Recorded Replay - Trigonometry 01 (Aditya Kushwaha Sir)
+      await _db.collection('live_classes').doc('live_class_trigo_601').set({
+        'title': 'Trigonometry 01',
+        'instructor': 'Aditya kushwaha Sir',
+        'educatorName': 'Aditya kushwaha Sir',
+        'qualification': 'Senior Mathematics Faculty',
+        'subject': 'Mathematics',
+        'examCategory': 'JEE Main 2027',
+        'chapter': 'Trigonometric Functions, Identities & Compound Angles',
+        'description': 'Comprehensive live lecture recording covering core trigonometric identities and previous years questions.',
+        'status': 'completed',
+        'isLive': false,
+        'isUpcoming': false,
+        'isRecorded': true,
+        'streamServer': 'Amazon AWS CloudFront',
+        'streamUrl': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+        'recordingUrl': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+        'time': '5 days ago',
+        'durationMinutes': 60,
         'price': 0.0,
         'isFree': true,
         'notesUrl': 'https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf',
@@ -770,14 +866,58 @@ class FirestoreService {
       }
       var list = snapshot.docs.map((doc) => ResourceItem.fromMap(doc.data(), doc.id)).toList();
 
+      // Sort newest first in real-time (by createdAt / date)
+      list.sort((a, b) {
+        final aTime = a.createdAt is Timestamp
+            ? (a.createdAt as Timestamp).toDate()
+            : a.date;
+        final bTime = b.createdAt is Timestamp
+            ? (b.createdAt as Timestamp).toDate()
+            : b.date;
+        return bTime.compareTo(aTime);
+      });
+
       if (exam != null && exam.isNotEmpty && exam != 'All') {
-        list = list.where((r) => r.exam.toLowerCase() == exam.toLowerCase() || r.exam == 'All').toList();
+        list = list.where((r) {
+          final rExam = r.exam.toLowerCase();
+          final rCat = r.category.toLowerCase();
+          final target = exam.toLowerCase();
+          return rExam == 'all' ||
+              rExam.isEmpty ||
+              rExam == target ||
+              rCat == 'general' ||
+              rCat.contains(target) ||
+              target.contains(rCat);
+        }).toList();
       }
       if (subject != null && subject.isNotEmpty && subject != 'All') {
-        list = list.where((r) => r.subject.toLowerCase() == subject.toLowerCase() || r.category.toLowerCase() == subject.toLowerCase()).toList();
+        list = list.where((r) {
+          final s = subject.toLowerCase();
+          final rSub = r.subject.toLowerCase();
+          final rCat = r.category.toLowerCase();
+          return rSub == s ||
+              rCat == s ||
+              rCat.contains(s) ||
+              s.contains(rCat) ||
+              rCat == 'general';
+        }).toList();
       }
       if (type != null && type.isNotEmpty && type != 'All') {
-        list = list.where((r) => r.type.toLowerCase().contains(type.toLowerCase())).toList();
+        list = list.where((r) {
+          final t = type.toLowerCase();
+          final rType = r.type.toLowerCase();
+          final rFile = r.fileType.toLowerCase();
+          if (t == 'pdf' || t == 'notes') {
+            return rType == 'pdf' || rType.contains('note') || rFile == 'pdf';
+          }
+          if (t == 'video') {
+            return rType == 'video' || rFile == 'video' || r.url.contains('youtu');
+          }
+          if (t == 'link') {
+            return rType == 'link' || rFile == 'link';
+          }
+          return rType.contains(t) || rFile.contains(t);
+        }).toList();
       }
 
       return list;
@@ -915,29 +1055,62 @@ class FirestoreService {
   // ===========================================================================
 
   Stream<List<CourseModel>> getBatchesStream() {
-    AppLogger.firestore("batches", "Listening to real-time batches & courses stream from Firestore");
-    // Listen to both 'batches' and 'courses' collections and merge seamlessly
-    return _db.collection('batches').snapshots().asyncMap((batchesSnap) async {
-      final coursesSnap = await _db.collection('courses').get();
+    AppLogger.firestore("batches", "Listening to real-time batches & courses dual stream from Firestore");
+    late StreamController<List<CourseModel>> controller;
+    StreamSubscription? subBatches;
+    StreamSubscription? subCourses;
+    List<CourseModel> batchesList = [];
+    List<CourseModel> coursesList = [];
 
+    void emitMerged() {
       final Map<String, CourseModel> uniqueBatches = {};
-
-      for (final doc in [...batchesSnap.docs, ...coursesSnap.docs]) {
-        final data = doc.data();
-        final status = data['status']?.toString().toLowerCase();
-        if (status != null && status != 'published' && status != 'active') {
-          continue;
-        }
-        if (!uniqueBatches.containsKey(doc.id)) {
-          uniqueBatches[doc.id] = CourseModel.fromMap(data, doc.id);
+      for (final batch in [...batchesList, ...coursesList]) {
+        if (!uniqueBatches.containsKey(batch.id)) {
+          uniqueBatches[batch.id] = batch;
         }
       }
+      if (!controller.isClosed) {
+        controller.add(uniqueBatches.values.toList());
+      }
+    }
 
-      return uniqueBatches.values.toList();
-    }).handleError((e) {
-      AppLogger.e("Error in getBatchesStream", error: e, tag: "BATCH_SERVICE");
-      return <CourseModel>[];
-    });
+    controller = StreamController<List<CourseModel>>.broadcast(
+      onListen: () {
+        subBatches = _db.collection('batches').snapshots().listen((snap) {
+          batchesList = snap.docs
+              .where((doc) {
+                final status = doc.data()['status']?.toString().toLowerCase().trim();
+                return status != 'deleted';
+              })
+              .map((doc) => CourseModel.fromMap(doc.data(), doc.id))
+              .where((b) => b.title.trim().isNotEmpty)
+              .toList();
+          emitMerged();
+        }, onError: (e) {
+          AppLogger.e("batches stream error", error: e, tag: "BATCH_SERVICE");
+        });
+
+        subCourses = _db.collection('courses').snapshots().listen((snap) {
+          coursesList = snap.docs
+              .where((doc) {
+                final status = doc.data()['status']?.toString().toLowerCase().trim();
+                return status != 'deleted';
+              })
+              .map((doc) => CourseModel.fromMap(doc.data(), doc.id))
+              .where((b) => b.title.trim().isNotEmpty)
+              .toList();
+          emitMerged();
+        }, onError: (e) {
+          AppLogger.e("courses stream error", error: e, tag: "BATCH_SERVICE");
+        });
+      },
+      onCancel: () {
+        subBatches?.cancel();
+        subCourses?.cancel();
+      },
+    );
+
+    return controller.stream;
   }
 
   Future<void> saveBatch(
@@ -1209,8 +1382,9 @@ class FirestoreService {
           .where((item) {
             final active = item['isActive'];
             if (active is bool && !active) return false;
-            final img = (item['imageUrl'] ?? item['bannerUrl'] ?? item['image'] ?? item['url'] ?? '').toString().trim();
-            return img.isNotEmpty && (img.startsWith('http://') || img.startsWith('https://'));
+            final img = (item['imageUrl'] ?? item['desktopUrl'] ?? item['bannerUrl'] ?? item['image'] ?? item['url'] ?? '').toString().trim();
+            item['resolvedImageUrl'] = img;
+            return img.isNotEmpty && (img.startsWith('http://') || img.startsWith('https://') || img.startsWith('data:image') || img.startsWith('assets/'));
           })
           .toList();
 
@@ -1221,6 +1395,51 @@ class FirestoreService {
       });
 
       return list;
+    });
+  }
+
+  // --- Dynamic Exams Stream (matching examinantt.com Admin Exams Management) ---
+
+  static const List<String> fallbackExams = [
+    'JEE Main 2027',
+    'NEET UG 2027',
+    'CUET UG',
+    'SSC CGL Tier 1',
+    'SSC CGL Tier 2',
+    'Railways',
+    'UPP Constable',
+    'Banking',
+    'Defence exams',
+    'Medical entrance',
+    'Engineering entrance',
+    'State PCS',
+    'Boards',
+    'State govt. Exam',
+    'Teaching exams',
+  ];
+
+  /// Stream dynamic exams list from Firestore collection 'exams'
+  Stream<List<String>> getExamsStream() {
+    return _db.collection('exams').snapshots().map((snapshot) {
+      final Set<String> examSet = {};
+      for (final doc in snapshot.docs) {
+        final data = doc.data();
+        final name = (data['name'] ?? data['title'] ?? data['examName'] ?? '').toString().trim();
+        if (name.isNotEmpty) {
+          examSet.add(name);
+        }
+      }
+
+      if (examSet.isEmpty) {
+        return fallbackExams;
+      }
+
+      // Merge with popular defaults for unmatched exams if any, preserving distinct values
+      final list = examSet.toList()..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+      return list;
+    }).handleError((e) {
+      AppLogger.e("Error in getExamsStream", error: e, tag: "EXAM_SERVICE");
+      return fallbackExams;
     });
   }
 }

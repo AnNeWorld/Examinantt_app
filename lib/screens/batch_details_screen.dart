@@ -1,6 +1,5 @@
 import 'package:examinantt_app/utils/app_navigator.dart';
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../models/content_models.dart';
 import '../models/test_model.dart';
 import '../services/firestore_service.dart';
@@ -9,9 +8,10 @@ import '../services/test_service.dart';
 import '../services/payment_service.dart';
 import '../utils/app_theme.dart';
 import 'amazon_live_player_screen.dart';
+import 'jitsi_live_meeting_screen.dart';
 import 'pdf_viewer_screen.dart';
-import 'video_player_screen.dart';
 import 'test_series_detail_screen.dart';
+import '../widgets/safe_app_image.dart';
 
 /// Complete Batch Screen:
 /// 1. UNPURCHASED: Batch Overview & Landing Page with Syllabus, Highlights, and "Enroll Now" CTA.
@@ -138,10 +138,28 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen>
         return true;
       }
     }
+    // If the batch title is generic or default (e.g. "Batch Course", "All Courses", "All Batches")
+    final bLower = batch.title.trim().toLowerCase();
+    if (bLower.isEmpty || bLower == 'batch course' || bLower == 'all batches' || bLower == 'all courses') {
+      return true;
+    }
     return false;
   }
 
   void _openLivePlayer(LiveClass c) {
+    if (c.isJitsi) {
+      AppNavigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => JitsiLiveMeetingScreen(
+            liveClass: c,
+            sessionId: c.id,
+            roomName: c.roomName,
+          ),
+        ),
+      );
+      return;
+    }
     AppNavigator.push(
       context,
       MaterialPageRoute(
@@ -151,19 +169,10 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen>
   }
 
   void _openVideoPlayer(LiveClass c) {
-    final playUrl = c.recordingUrl.isNotEmpty
-        ? c.recordingUrl
-        : (c.videoUrl.isNotEmpty ? c.videoUrl : '');
-
     AppNavigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => VideoPlayerScreen(
-          title: c.title,
-          instructor: c.instructor,
-          videoUrl: playUrl,
-          isLive: false,
-        ),
+        builder: (context) => AmazonLivePlayerScreen(liveClass: c),
       ),
     );
   }
@@ -397,16 +406,37 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen>
                 final allClasses = classSnap.data ?? [];
                 final batchClasses = allClasses.where((c) => _matchesBatch(c, currentBatch)).toList();
 
-                final liveNowClasses = batchClasses.where((c) => c.isLive).toList();
-                final upcomingClasses = batchClasses.where((c) => c.isUpcoming).toList();
-                final recordedClasses = batchClasses.where((c) => c.isRecorded).toList();
+                // Recorded classes check (marked recorded, completed status, or having video/recording URL)
+                bool isAnyRecorded(LiveClass c) =>
+                    c.isRecorded ||
+                    c.status == 'completed' ||
+                    c.recordingUrl.isNotEmpty ||
+                    (!c.isLive && c.videoUrl.isNotEmpty);
+
+                var liveNowClasses = batchClasses.where((c) => c.isLive).toList();
+                var upcomingClasses = batchClasses.where((c) => c.isUpcoming).toList();
+                var recordedClasses = batchClasses.where(isAnyRecorded).toList();
+
+                // If this batch has no recorded classes assigned yet, fallback to all recorded live classes
+                // so the student has immediate access to all lecture recordings!
+                if (recordedClasses.isEmpty) {
+                  recordedClasses = allClasses.where(isAnyRecorded).toList();
+                }
+
+                // If this batch has no live/upcoming classes, fallback to all available live sessions
+                if (liveNowClasses.isEmpty && upcomingClasses.isEmpty) {
+                  liveNowClasses = allClasses.where((c) => c.isLive).toList();
+                  upcomingClasses = allClasses.where((c) => c.isUpcoming).toList();
+                }
+
+                final effectiveBatchClasses = batchClasses.isNotEmpty ? batchClasses : allClasses;
 
                 // If NOT purchased, OR if enrolled user explicitly clicked "About Batch"
                 if (!isPurchased || _forceOverviewView) {
                   return _buildBatchLandingPage(
                     currentBatch: currentBatch,
                     isPurchased: isPurchased,
-                    batchClassesCount: batchClasses.length,
+                    batchClassesCount: effectiveBatchClasses.length,
                     liveNowCount: liveNowClasses.length,
                     recordedCount: recordedClasses.length,
                     isDark: isDark,
@@ -422,7 +452,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen>
                 // IF PURCHASED: SHOW COMPLETE BATCH CLASSROOM (THE 5 TABS)
                 return _buildBatchClassroomPage(
                   currentBatch: currentBatch,
-                  batchClasses: batchClasses,
+                  batchClasses: effectiveBatchClasses,
                   liveNowClasses: liveNowClasses,
                   upcomingClasses: upcomingClasses,
                   recordedClasses: recordedClasses,
@@ -935,21 +965,11 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen>
             // 1. High-Res Thumbnail Image
             AspectRatio(
               aspectRatio: 16 / 9,
-              child: thumb.startsWith('http')
-                  ? CachedNetworkImage(
-                      imageUrl: thumb,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(
-                        color: isDark ? const Color(0xFF0F2347) : Colors.grey.shade200,
-                        child: const Center(
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      ),
-                      errorWidget: (context, url, error) => _buildFallbackThumbnail(batch, isDark),
-                    )
-                  : (thumb.isNotEmpty && thumb.startsWith('assets/')
-                      ? Image.asset(thumb, fit: BoxFit.cover)
-                      : _buildFallbackThumbnail(batch, isDark)),
+              child: SafeAppImage(
+                imageUrl: thumb,
+                fit: BoxFit.cover,
+                errorWidget: _buildFallbackThumbnail(batch, isDark),
+              ),
             ),
 
             // 2. Gradient Shade Overlay on Bottom & Top for legibility
@@ -1413,20 +1433,14 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen>
             child: SizedBox(
               width: 52,
               height: 52,
-              child: batch.thumbnailUrl.trim().isNotEmpty && batch.thumbnailUrl.startsWith('http')
-                  ? CachedNetworkImage(
-                      imageUrl: batch.thumbnailUrl.trim(),
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(color: Colors.grey.shade300),
-                      errorWidget: (context, url, error) => Container(
-                        color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                        child: const Icon(Icons.school_rounded, color: Color(0xFF10B981), size: 24),
-                      ),
-                    )
-                  : Container(
-                      color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                      child: const Icon(Icons.school_rounded, color: Color(0xFF10B981), size: 24),
-                    ),
+              child: SafeAppImage(
+                imageUrl: batch.thumbnailUrl.trim().isNotEmpty ? batch.thumbnailUrl.trim() : batch.bannerUrl.trim(),
+                fit: BoxFit.cover,
+                errorWidget: Container(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                  child: const Icon(Icons.school_rounded, color: Color(0xFF10B981), size: 24),
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -1958,10 +1972,10 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen>
         }).toList();
 
         // Collect PPTs from live/recorded classes that have notesUrl:
-        final classPpts = batchClasses.where((c) => c.notesUrl.trim().isNotEmpty).toList();
+        var classPpts = batchClasses.where((c) => c.notesUrl.trim().isNotEmpty).toList();
 
         // Also collect resources with type PPT / Notes / Slides
-        final resourcePpts = batchResources.where((r) {
+        var resourcePpts = batchResources.where((r) {
           final t = r.type.toLowerCase();
           final ft = r.fileType.toLowerCase();
           final tit = r.title.toLowerCase();
@@ -1972,6 +1986,22 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen>
               tit.contains('ppt') ||
               tit.contains('slide');
         }).toList();
+
+        if (classPpts.isEmpty && resourcePpts.isEmpty) {
+          resourcePpts = allResources.where((r) {
+            final t = r.type.toLowerCase();
+            final ft = r.fileType.toLowerCase();
+            final tit = r.title.toLowerCase();
+            return t.contains('ppt') ||
+                t.contains('slide') ||
+                t.contains('notes') ||
+                ft.contains('ppt') ||
+                tit.contains('ppt') ||
+                tit.contains('slide') ||
+                t.contains('formula') ||
+                tit.contains('formula');
+          }).toList();
+        }
 
         if (classPpts.isEmpty && resourcePpts.isEmpty) {
           return _buildEmptyState(
@@ -2242,9 +2272,13 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen>
         }
 
         final allResources = snapshot.data ?? [];
-        final batchResources = allResources.where((r) {
+        var batchResources = allResources.where((r) {
           return r.batchIds.contains(batch.id) || batch.resourceIds.contains(r.id);
         }).toList();
+
+        if (batchResources.isEmpty) {
+          batchResources = allResources;
+        }
 
         if (batchResources.isEmpty) {
           return _buildEmptyState(
@@ -2405,9 +2439,13 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen>
         }
 
         final allSeries = snapshot.data ?? [];
-        final batchSeries = allSeries.where((s) {
+        var batchSeries = allSeries.where((s) {
           return batch.testSeriesIds.contains(s.id);
         }).toList();
+
+        if (batchSeries.isEmpty) {
+          batchSeries = allSeries;
+        }
 
         if (batchSeries.isEmpty) {
           return _buildEmptyState(

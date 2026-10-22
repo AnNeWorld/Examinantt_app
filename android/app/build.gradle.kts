@@ -36,7 +36,7 @@ android {
         applicationId = "com.examinantt.studentapp"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        minSdk = maxOf(flutter.minSdkVersion, 26)
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -60,4 +60,10 @@ android {
 
 flutter {
     source = "../.."
+}
+
+configurations.all {
+    // Resolve duplicate class conflict between video_player_android (media3-exoplayer-rtsp)
+    // and react-native-video (bundled in jitsi-meet-sdk).
+    exclude(group = "androidx.media3", module = "media3-exoplayer-rtsp")
 }

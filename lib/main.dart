@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'auth_screen/splash_screen.dart';
 import 'screens/main_screen.dart';
 import 'utils/app_theme.dart';
-import 'widgets/global_tap_effect.dart';
 
 import 'package:provider/provider.dart';
 import 'providers/user_provider.dart';
@@ -57,11 +56,6 @@ class MyApp extends StatelessWidget {
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           themeMode: themeProvider.themeMode,
-          builder: (context, child) {
-            return GlobalTapEffect(
-              child: child ?? const SizedBox.shrink(),
-            );
-          },
           home: const SplashScreen(),
         );
       },

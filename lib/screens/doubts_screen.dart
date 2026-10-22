@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:examinantt_app/utils/app_navigator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -25,7 +26,7 @@ class _DoubtsScreenState extends State<DoubtsScreen> {
   @override
   void initState() {
     super.initState();
-    _doubtsStream = _db.collection('doubts').orderBy('createdAt', descending: true).snapshots();
+    _doubtsStream = _db.collection('doubts').snapshots();
   }
 
   void _askDoubt() {
@@ -48,6 +49,12 @@ class _DoubtsScreenState extends State<DoubtsScreen> {
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
+        leadingWidth: 42,
+        titleSpacing: 6,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: textColor),
+          onPressed: () => Navigator.maybePop(context),
+        ),
         title: Text('Doubt Forum', style: TextStyle(fontSize: 18, color: textColor, fontWeight: FontWeight.bold)),
         backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
         foregroundColor: textColor,
@@ -145,14 +152,25 @@ class _DoubtsScreenState extends State<DoubtsScreen> {
             child: StreamBuilder<QuerySnapshot>(
               stream: _doubtsStream,
               builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator(color: Color(0xFFFFA000)));
+                }
+
                 List<Map<String, dynamic>> doubtsList = [];
                 if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
                   doubtsList = snapshot.data!.docs.map((doc) {
                     final d = doc.data() as Map<String, dynamic>;
                     return {'id': doc.id, ...d};
                   }).toList();
-                } else {
-                  doubtsList = [];
+
+                  doubtsList.sort((a, b) {
+                    final aTime = a['createdAt'];
+                    final bTime = b['createdAt'];
+                    if (aTime is Timestamp && bTime is Timestamp) {
+                      return bTime.compareTo(aTime);
+                    }
+                    return 0;
+                  });
                 }
 
                 return RefreshIndicator(
@@ -201,6 +219,28 @@ class _DoubtsScreenState extends State<DoubtsScreen> {
     );
   }
 
+  void _openDoubtDetail(Map<String, dynamic> doubt) {
+    AppNavigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DoubtDetailScreen(
+          doubt: doubt,
+          onAnswerAdded: (newAnswer) {
+            setState(() {
+              if (doubt['answers'] is List) {
+                (doubt['answers'] as List).add(newAnswer);
+              } else {
+                doubt['answers'] = [newAnswer];
+              }
+              doubt['answersCount'] = (doubt['answers'] as List).length;
+              doubt['isAnswered'] = true;
+            });
+          },
+        ),
+      ),
+    );
+  }
+
   Widget _buildDoubtCard({
     required Map<String, dynamic> doubt,
     required bool isDark,
@@ -208,42 +248,30 @@ class _DoubtsScreenState extends State<DoubtsScreen> {
     required Color textColor,
     required Color secondaryTextColor,
   }) {
-    final String studentName = doubt['studentName'] ?? 'Student';
+    final String studentName = doubt['studentName']?.toString() ?? 'Student';
     DateTime? doubtDate;
     if (doubt['createdAt'] is Timestamp) {
       doubtDate = (doubt['createdAt'] as Timestamp).toDate();
     } else if (doubt['createdAt'] is String) {
       doubtDate = DateTime.tryParse(doubt['createdAt'] as String);
     }
-    String time = doubt['time'] ?? '';
+    String time = doubt['time']?.toString() ?? '';
     if (doubtDate != null) {
       time = DateFormat('dd MMM, hh:mm a').format(doubtDate);
     } else if (time.isEmpty || time == 'Just now') {
       time = DateFormat('dd MMM, hh:mm a').format(DateTime.now());
     }
-    final String subject = doubt['subject'] ?? '';
-    final String question = doubt['question'] ?? '';
-    final bool isAnswered = doubt['isAnswered'] ?? false;
-    final int answersCount = doubt['answersCount'] ?? 0;
+    final String subject = doubt['subject']?.toString() ?? 'General';
+    final String question = doubt['question']?.toString() ?? '';
+    final bool isAnswered = doubt['isAnswered'] == true;
+    final rawAnswers = doubt['answers'];
+    final int answersCount = (rawAnswers is List)
+        ? rawAnswers.length
+        : (doubt['answersCount'] is int ? doubt['answersCount'] as int : 0);
+    final bool hasAnswers = answersCount > 0 || isAnswered;
 
     return GestureDetector(
-      onTap: () {
-        AppNavigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => DoubtDetailScreen(
-              doubt: doubt,
-              onAnswerAdded: (newAnswer) {
-                setState(() {
-                  doubt['answers'].add(newAnswer);
-                  doubt['answersCount'] = doubt['answers'].length;
-                  doubt['isAnswered'] = true;
-                });
-              },
-            ),
-          ),
-        );
-      },
+      onTap: () => _openDoubtDetail(doubt),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -326,35 +354,19 @@ class _DoubtsScreenState extends State<DoubtsScreen> {
                 Row(
                   children: [
                     Icon(
-                      isAnswered ? Icons.check_circle : Icons.help_outline,
-                      color: isAnswered ? Colors.green : Colors.orange,
+                      hasAnswers ? Icons.check_circle : Icons.help_outline,
+                      color: hasAnswers ? Colors.green : Colors.orange,
                       size: 18,
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      isAnswered ? '$answersCount Answers' : 'Unanswered',
-                      style: AppTextStyles.captionBold.withColor(isAnswered ? Colors.green : Colors.orange).size(13),
+                      hasAnswers ? '$answersCount Answers' : 'Unanswered',
+                      style: AppTextStyles.captionBold.withColor(hasAnswers ? Colors.green : Colors.orange).size(13),
                     ),
                   ],
                 ),
                 TextButton(
-                  onPressed: () {
-                    AppNavigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => DoubtDetailScreen(
-                          doubt: doubt,
-                          onAnswerAdded: (newAnswer) {
-                            setState(() {
-                              doubt['answers'].add(newAnswer);
-                              doubt['answersCount'] = doubt['answers'].length;
-                              doubt['isAnswered'] = true;
-                            });
-                          },
-                        ),
-                      ),
-                    );
-                  },
+                  onPressed: () => _openDoubtDetail(doubt),
                   style: TextButton.styleFrom(
                     foregroundColor: isDark ? AppColors.accent : AppTheme.primaryColor,
                     padding: EdgeInsets.zero,
@@ -362,8 +374,8 @@ class _DoubtsScreenState extends State<DoubtsScreen> {
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                   child: Text(
-                    isAnswered ? 'View Answers' : 'Write Answer',
-                    style: const TextStyle(fontSize: 13),
+                    hasAnswers ? 'View Answers' : 'Write Answer',
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
@@ -391,10 +403,53 @@ class DoubtDetailScreen extends StatefulWidget {
 
 class _DoubtDetailScreenState extends State<DoubtDetailScreen> {
   final TextEditingController _answerController = TextEditingController();
+  List<Map<String, dynamic>> _answers = [];
+  StreamSubscription<DocumentSnapshot>? _docSubscription;
+  bool _isSending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final rawAnswers = widget.doubt['answers'];
+    if (rawAnswers is List) {
+      _answers = rawAnswers.map((a) {
+        if (a is Map) return Map<String, dynamic>.from(a);
+        return <String, dynamic>{'answer': a.toString()};
+      }).toList();
+    }
+
+    final doubtId = widget.doubt['id']?.toString();
+    if (doubtId != null && doubtId.isNotEmpty) {
+      _docSubscription = FirebaseFirestore.instance
+          .collection('doubts')
+          .doc(doubtId)
+          .snapshots()
+          .listen((snap) {
+        if (snap.exists && mounted) {
+          final data = snap.data();
+          if (data != null && data['answers'] is List) {
+            setState(() {
+              _answers = (data['answers'] as List).map((a) {
+                if (a is Map) return Map<String, dynamic>.from(a);
+                return <String, dynamic>{'answer': a.toString()};
+              }).toList();
+            });
+          }
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _docSubscription?.cancel();
+    _answerController.dispose();
+    super.dispose();
+  }
 
   Future<void> _postAnswer() async {
     final text = _answerController.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty || _isSending) return;
 
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final userName = userProvider.user?.name ?? 'Expert';
@@ -407,29 +462,30 @@ class _DoubtDetailScreenState extends State<DoubtDetailScreen> {
       'createdAt': timeFormatted,
     };
 
+    setState(() {
+      _answers.add(newAnswer);
+      _answerController.clear();
+      _isSending = true;
+    });
+
     widget.onAnswerAdded(newAnswer);
 
-    final doubtId = widget.doubt['id'];
-    if (doubtId != null && doubtId.toString().length > 5) {
+    final doubtId = widget.doubt['id']?.toString();
+    if (doubtId != null && doubtId.isNotEmpty) {
       try {
-        await FirebaseFirestore.instance.collection('doubts').doc(doubtId.toString()).update({
+        await FirebaseFirestore.instance.collection('doubts').doc(doubtId).set({
           'answers': FieldValue.arrayUnion([newAnswer]),
           'answersCount': FieldValue.increment(1),
           'isAnswered': true,
-        });
+        }, SetOptions(merge: true));
       } catch (e) {
         debugPrint("Error updating doubt answer in Firestore: $e");
       }
     }
 
-    setState(() {
-      _answerController.clear();
-    });
-
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Answer posted successfully!')),
-      );
+      setState(() => _isSending = false);
+      AppTheme.showSuccessSnackBar(context, 'Answer posted successfully!');
     }
   }
 
@@ -442,14 +498,20 @@ class _DoubtDetailScreenState extends State<DoubtDetailScreen> {
     final secondaryTextColor = isDark ? AppColors.textDarkSecondary : Colors.grey;
     final borderColor = isDark ? AppColors.greyDark : Colors.grey.withValues(alpha: 0.15);
 
-    final studentName = widget.doubt['studentName'] ?? 'Student';
-    final subject = widget.doubt['subject'] ?? '';
-    final question = widget.doubt['question'] ?? '';
-    final answers = widget.doubt['answers'] as List;
+    final studentName = widget.doubt['studentName']?.toString() ?? 'Student';
+    final subject = widget.doubt['subject']?.toString() ?? 'General';
+    final question = widget.doubt['question']?.toString() ?? '';
+    final answers = _answers;
 
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
+        leadingWidth: 42,
+        titleSpacing: 6,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: textColor),
+          onPressed: () => Navigator.maybePop(context),
+        ),
         title: Text('Doubt Discussion', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textColor)),
         backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
         foregroundColor: textColor,
@@ -531,9 +593,10 @@ class _DoubtDetailScreenState extends State<DoubtDetailScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemCount: answers.length,
                     itemBuilder: (context, index) {
-                      final answerData = answers[index] as Map<String, dynamic>;
-                      final author = answerData['authorName'] ?? 'Expert';
-                      final answerText = answerData['answer'] ?? '';
+                      final answerData = answers[index];
+                      final author = answerData['authorName']?.toString() ?? 'Expert';
+                      final answerText = answerData['answer']?.toString() ?? '';
+                      final createdAt = answerData['createdAt']?.toString();
 
                       return Container(
                         margin: const EdgeInsets.only(bottom: 10),
@@ -565,9 +628,9 @@ class _DoubtDetailScreenState extends State<DoubtDetailScreen> {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                                if (answerData['createdAt'] != null)
+                                if (createdAt != null)
                                   Text(
-                                    answerData['createdAt'].toString(),
+                                    createdAt,
                                     style: TextStyle(fontSize: 12, color: secondaryTextColor),
                                   ),
                               ],
@@ -617,10 +680,16 @@ class _DoubtDetailScreenState extends State<DoubtDetailScreen> {
                   const SizedBox(width: 8),
                   CircleAvatar(
                     backgroundColor: isDark ? AppColors.accent : AppTheme.primaryColor,
-                    child: IconButton(
-                      icon: const Icon(Icons.send, color: Colors.white, size: 16),
-                      onPressed: _postAnswer,
-                    ),
+                    child: _isSending
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          )
+                        : IconButton(
+                            icon: const Icon(Icons.send_rounded, color: Colors.white, size: 16),
+                            onPressed: _postAnswer,
+                          ),
                   ),
                 ],
               ),

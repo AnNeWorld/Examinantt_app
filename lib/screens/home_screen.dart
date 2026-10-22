@@ -5,26 +5,22 @@ import '../providers/user_provider.dart';
 import '../providers/theme_provider.dart';
 import '../widgets/quick_access_widget.dart';
 import 'package:carousel_slider/carousel_slider.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../widgets/notification_bell_action.dart';
 import '../services/firestore_service.dart';
 import 'courses_screen.dart';
 import '../constants/app_colors.dart';
 import '../models/content_models.dart';
-import '../services/content_service.dart';
-import '../services/test_service.dart';
-import '../models/test_model.dart';
 import '../utils/app_theme.dart';
-import 'live_classes_screen.dart';
-import 'amazon_live_player_screen.dart';
 import 'test_series_screen.dart';
 import 'resources_screen.dart';
 import 'doubts_screen.dart';
 import 'pyqs_screen.dart';
-import 'test_series_detail_screen.dart';
+import 'batch_details_screen.dart';
 
 import 'profile_screen.dart';
 import '../widgets/app_drawer.dart';
+import '../widgets/safe_app_image.dart';
+import '../widgets/home_live_classes_section.dart';
 
 class HomeScreen extends StatefulWidget {
   final void Function(int index)? onSelectTab;
@@ -250,16 +246,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
 
   void _showChangeExamDialog(String currentExam) {
-    final exams = [
-      'JEE Main 2027',
-      'NEET UG 2027',
-      'JEE Advanced',
-      'CUET UG 2027',
-      'GATE 2027',
-      'SSC CGL 2027',
-      'Defence Exams',
-    ];
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -304,59 +290,69 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: TextStyle(color: Colors.white70, fontSize: 12),
                 ),
                 const SizedBox(height: 16),
-                ...exams.map((exam) {
-                  final isSel = currentExam == exam;
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: isSel ? AppColors.accent.withValues(alpha: 0.2) : Colors.white10,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        isSel ? Icons.check_circle : Icons.school_outlined,
-                        color: isSel ? AppColors.accent : Colors.white70,
-                        size: 18,
-                      ),
-                    ),
-                    title: Text(
-                      exam,
-                      style: TextStyle(
-                        color: isSel ? AppColors.accent : Colors.white,
-                        fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
-                      ),
-                    ),
-                    trailing: isSel
-                        ? Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                StreamBuilder<List<String>>(
+                  stream: FirestoreService().getExamsStream(),
+                  initialData: FirestoreService.fallbackExams,
+                  builder: (context, examSnap) {
+                    final liveExams = examSnap.data ?? FirestoreService.fallbackExams;
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: liveExams.map((exam) {
+                        final isSel = currentExam.toLowerCase().trim() == exam.toLowerCase().trim();
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: AppColors.accent,
-                              borderRadius: BorderRadius.circular(6),
+                              color: isSel ? AppColors.accent.withValues(alpha: 0.2) : Colors.white10,
+                              shape: BoxShape.circle,
                             ),
-                            child: const Text('Active', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                          )
-                        : null,
-                    onTap: () {
-                      Provider.of<UserProvider>(context, listen: false).updateTargetExam(exam);
-                      Navigator.pop(ctx);
-                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Row(
-                            children: [
-                              const Icon(Icons.check_circle_rounded, color: Colors.white, size: 16),
-                              const SizedBox(width: 8),
-                              Text('Target exam switched to $exam!'),
-                            ],
+                            child: Icon(
+                              isSel ? Icons.check_circle : Icons.school_outlined,
+                              color: isSel ? AppColors.accent : Colors.white70,
+                              size: 18,
+                            ),
                           ),
-                          backgroundColor: AppColors.accent,
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    },
-                  );
-                }),
+                          title: Text(
+                            exam,
+                            style: TextStyle(
+                              color: isSel ? AppColors.accent : Colors.white,
+                              fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+                          trailing: isSel
+                              ? Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.accent,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: const Text('Active', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                                )
+                              : null,
+                          onTap: () {
+                            Provider.of<UserProvider>(context, listen: false).updateTargetExam(exam);
+                            Navigator.pop(ctx);
+                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Row(
+                                  children: [
+                                    const Icon(Icons.check_circle_rounded, color: Colors.white, size: 16),
+                                    const SizedBox(width: 8),
+                                    Text('Target exam switched to $exam!'),
+                                  ],
+                                ),
+                                backgroundColor: AppColors.accent,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          },
+                        );
+                      }).toList(),
+                    );
+                  },
+                ),
               ],
             ),
           ),
@@ -383,7 +379,6 @@ class _HomeScreenState extends State<HomeScreen> {
         }
 
         final safeIndex = _currentCarouselIndex.clamp(0, banners.length - 1);
-
         return Column(
           children: [
             CarouselSlider(
@@ -402,7 +397,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               ),
               items: banners.map((banner) {
-                final imgUrl = (banner['imageUrl'] ?? banner['bannerUrl'] ?? banner['image'] ?? banner['url'] ?? '').toString().trim();
+                final imgUrl = (banner['resolvedImageUrl'] ?? banner['imageUrl'] ?? banner['desktopUrl'] ?? banner['bannerUrl'] ?? banner['image'] ?? banner['url'] ?? '').toString().trim();
                 return Builder(
                   builder: (BuildContext context) {
                     return GestureDetector(
@@ -425,29 +420,11 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ],
                         ),
-                        child: ClipRRect(
+                        child: SafeAppImage(
+                          imageUrl: imgUrl,
+                          fit: BoxFit.fill,
+                          width: double.infinity,
                           borderRadius: BorderRadius.circular(12),
-                          child: CachedNetworkImage(
-                            imageUrl: imgUrl,
-                            fit: BoxFit.fill,
-                            width: double.infinity,
-                            placeholder: (context, url) => Container(
-                              color: _isDark ? AppColors.surfaceDark : Colors.grey.shade200,
-                              child: const Center(
-                                child: SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                ),
-                              ),
-                            ),
-                            errorWidget: (context, url, error) => Container(
-                              color: _isDark ? AppColors.surfaceDark : Colors.grey.shade200,
-                              child: const Center(
-                                child: Icon(Icons.image_not_supported_outlined, color: Colors.grey, size: 28),
-                              ),
-                            ),
-                          ),
                         ),
                       ),
                     );
@@ -499,118 +476,12 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Live Session Card (If any live class active)
-          StreamBuilder<List<LiveClass>>(
-            stream: ContentService().getLiveClasses(),
-            builder: (context, snapshot) {
-              final classes = snapshot.data ?? [];
-              final liveNow = classes.where((c) => c.isLive).toList();
-              if (liveNow.isEmpty) return const SizedBox.shrink();
-
-              final hero = liveNow.first;
-              return Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: cardBg,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.45 : 0.3)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFFEF4444).withValues(alpha: isDark ? 0.14 : 0.08),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEF4444),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(Icons.circle, color: Colors.white, size: 7),
-                              SizedBox(width: 4),
-                              Text('LIVE NOW', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900)),
-                            ],
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            Text(
-                              hero.instructor,
-                              style: TextStyle(
-                                color: subtitleColor,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            InkWell(
-                              onTap: () {
-                                AppNavigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (_) => const LiveClassesScreen(initialTab: 0)),
-                                );
-                              },
-                              child: const Row(
-                                children: [
-                                  Text('All Classes', style: TextStyle(color: Color(0xFFFF7A00), fontSize: 13, fontWeight: FontWeight.bold)),
-                                  SizedBox(width: 2),
-                                  Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFFFF7A00), size: 10),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      hero.title,
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: titleColor),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${hero.subject} • ${hero.chapter}',
-                      style: TextStyle(fontSize: 13, color: isDark ? Colors.white60 : Colors.grey.shade600),
-                    ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          AppNavigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => AmazonLivePlayerScreen(liveClass: hero),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.play_circle_fill, size: 16),
-                        label: const Text('Join Live Interactive Stream', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFEF4444),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(vertical: 11),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
+          // 1. Dedicated Live Classes & Video Lectures Section (Synced real-time with website)
+          HomeLiveClassesSection(
+            selectedExam: selectedExam,
+            isDark: isDark,
           ),
+          const SizedBox(height: 10),
 
           // 2. Featured Batches Section
           Row(
@@ -637,12 +508,18 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
           const SizedBox(height: 6),
-
-          StreamBuilder<List<TestCategory>>(
-            stream: TestService().getCategoriesStream(),
+          StreamBuilder<List<CourseModel>>(
+            stream: FirestoreService().getBatchesStream(),
             builder: (context, snapshot) {
-              final courses = snapshot.data ?? [];
-              final topCourses = courses.take(2).toList();
+              final batches = snapshot.data ?? [];
+              final matchingBatches = batches.where((b) {
+                if (selectedExam.isEmpty || selectedExam == 'All') return true;
+                final cat = b.examCategory.toLowerCase();
+                final sel = selectedExam.toLowerCase();
+                return cat.contains(sel) || sel.contains(cat) || b.title.toLowerCase().contains(sel);
+              }).toList();
+              final displayBatches = matchingBatches.isNotEmpty ? matchingBatches : batches;
+              final topCourses = displayBatches.take(3).toList();
               if (topCourses.isEmpty) {
                 return Container(
                   padding: const EdgeInsets.all(20),
@@ -659,6 +536,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
               return Column(
                 children: topCourses.map((c) {
+                  final isFree = c.price <= 0;
+                  final categoryTag = c.examCategory.isNotEmpty ? c.examCategory.toUpperCase() : 'BATCH';
                   return Container(
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.all(14),
@@ -676,14 +555,33 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     child: Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF0070F3).withValues(alpha: isDark ? 0.2 : 0.1),
+                        if (c.thumbnailUrl.trim().isNotEmpty)
+                          SafeAppImage(
+                            imageUrl: c.thumbnailUrl.trim(),
+                            width: 50,
+                            height: 50,
+                            fit: BoxFit.cover,
                             borderRadius: BorderRadius.circular(12),
+                            fallbackIcon: Icons.school_rounded,
+                            errorWidget: Container(
+                              width: 50,
+                              height: 50,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF0070F3).withValues(alpha: isDark ? 0.2 : 0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(Icons.school_rounded, color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0070F3), size: 24),
+                            ),
+                          )
+                        else
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0070F3).withValues(alpha: isDark ? 0.2 : 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(Icons.school_rounded, color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0070F3), size: 24),
                           ),
-                          child: Icon(Icons.school_rounded, color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0070F3), size: 24),
-                        ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
@@ -691,19 +589,19 @@ class _HomeScreenState extends State<HomeScreen> {
                             children: [
                               Text(
                                 c.title,
-                                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: titleColor),
+                                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: titleColor),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                c.badge.isNotEmpty ? c.badge.toUpperCase() : 'PREMIUM BATCH',
-                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFFFF7A00)),
+                                isFree ? 'FREE BATCH • $categoryTag' : categoryTag,
+                                style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: isFree ? const Color(0xFF10B981) : const Color(0xFFFF7A00)),
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                c.price == 0 ? 'FREE' : '₹${c.price.toInt()} Complete Course',
-                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
+                                isFree ? 'FREE ACCESS' : '₹${c.price.toInt()} Complete Batch',
+                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: isFree ? const Color(0xFF10B981) : (isDark ? Colors.white70 : AppColors.text)),
                               ),
                             ],
                           ),
@@ -713,29 +611,23 @@ class _HomeScreenState extends State<HomeScreen> {
                             AppNavigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => TestSeriesDetailScreen(
-                                  categoryId: c.id,
-                                  title: c.title,
-                                  badge: c.badge.isNotEmpty ? c.badge : 'PREMIUM',
-                                  price: c.price.toStringAsFixed(0),
-                                  originalPrice: c.originalPrice.toStringAsFixed(0),
-                                  features: c.features.isEmpty
-                                      ? ['Chapter-wise Tests', 'Full Length Mocks']
-                                      : c.features,
-                                  badgeColor: const Color(0xFFFF7A00),
-                                  imageUrl: c.iconUrl,
-                                ),
+                                builder: (_) => BatchDetailsScreen(batch: c),
                               ),
                             );
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryColor,
+                            backgroundColor: isFree ? const Color(0xFF10B981) : AppTheme.primaryColor,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                             elevation: 0,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
-                          child: const Text('Explore', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                          child: Text(
+                            isFree ? 'Start Free' : 'View Batch',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                          ),
                         ),
                       ],
                     ),

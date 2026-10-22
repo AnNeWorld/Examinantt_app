@@ -9,6 +9,7 @@ import '../screens/test_series_detail_screen.dart';
 import '../services/test_service.dart';
 import '../services/firestore_service.dart';
 import '../models/test_model.dart';
+import '../services/payment_service.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../services/analytics_service.dart';
@@ -16,26 +17,58 @@ import '../models/analytics_model.dart';
 import '../screens/analytics_screen.dart';
 import '../screens/my_preparation_screen.dart';
 import '../screens/test_history_screen.dart';
+import 'safe_app_image.dart';
 
 /// Complete Test Center UI Widget matching all 7 pages of `test page.pdf`.
 class TestPageSections extends StatefulWidget {
   final VoidCallback? onOpenHistory;
   final Function(String examName)? onExamChanged;
+  final int initialTab;
 
   const TestPageSections({
     super.key,
     this.onOpenHistory,
     this.onExamChanged,
+    this.initialTab = 0,
   });
 
   @override
   State<TestPageSections> createState() => _TestPageSectionsState();
 }
 
-class _TestPageSectionsState extends State<TestPageSections> {
+class _TestPageSectionsState extends State<TestPageSections> with SingleTickerProviderStateMixin {
   // Navigation:
-  // 0: Overview, 1: My Test, 2: All Test, 3: Included with Batch, 4: Other Exams, 5: My Performance
-  int _activeTabIndex = 0;
+  // 0: My Test, 1: All Test, 2: Included with Batch
+  static const int tabMyTests = 0;
+  static const int tabAllTests = 1;
+  static const int tabIncludedWithBatch = 2;
+
+  late int _activeTabIndex;
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _activeTabIndex = widget.initialTab.clamp(0, 2);
+    _tabController = TabController(length: 3, vsync: this, initialIndex: _activeTabIndex);
+    _tabController.addListener(_handleTabSelection);
+  }
+
+  void _handleTabSelection() {
+    if (_tabController.index != _activeTabIndex) {
+      setState(() {
+        _activeTabIndex = _tabController.index;
+        _isViewingSeriesDetail = false;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _tabController.removeListener(_handleTabSelection);
+    _tabController.dispose();
+    super.dispose();
+  }
 
   // Whether currently viewing a series detail screen (Page 5 of PDF)
   bool _isViewingSeriesDetail = false;
@@ -48,7 +81,9 @@ class _TestPageSectionsState extends State<TestPageSections> {
   // Sort & Filters
   String _mySeriesSort = 'Recent';
   final String _allSeriesSort = 'Popularity';
-  String _allSeriesFilter = 'All';
+  String _mySeriesFilter = 'All';
+  String _allSeriesFilter = 'Test Series';
+  String _allTestsSearchQuery = '';
   String _performanceTimeframe = 'Last 30 Days';
 
   // Page 5 (Series Detail) state
@@ -63,15 +98,17 @@ class _TestPageSectionsState extends State<TestPageSections> {
   final Set<String> _bookmarkededTestIds = {'test_01'};
 
   final List<Map<String, dynamic>> _tabs = [
-    {'title': 'Overview', 'icon': Icons.home_outlined},
-    {'title': 'My Test', 'icon': Icons.school_outlined},
-    {'title': 'All Test', 'icon': Icons.format_list_bulleted},
+    {'title': 'My Test', 'icon': Icons.assignment_turned_in_outlined},
+    {'title': 'All Test', 'icon': Icons.format_list_bulleted_rounded},
     {'title': 'Included with Batch', 'icon': Icons.card_giftcard_outlined},
-    {'title': 'Other Exams', 'icon': Icons.grid_view_outlined},
-    {'title': 'My Performance', 'icon': Icons.trending_up},
   ];
 
   void _switchTab(int index) {
+    if (index >= 0 && index < _tabController.length) {
+      if (_tabController.index != index) {
+        _tabController.animateTo(index);
+      }
+    }
     setState(() {
       _activeTabIndex = index;
       _isViewingSeriesDetail = false;
@@ -123,61 +160,30 @@ class _TestPageSectionsState extends State<TestPageSections> {
   // ---------------------------------------------------------------------------
 
   void _showChangeExamDialog() {
-    final exams = [
-      'JEE Main 2027',
-      'NEET UG 2027',
-      'CUET UG 2027',
-      'GATE 2027',
-      'SSC CGL 2027',
-      'Defence Exams',
-    ];
-
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: const Color(0xFF0F172A),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) {
-        return SafeArea(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(ctx).size.height * 0.85,
-            ),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.white24,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Select Target Exam',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Choose your target competitive exam to personalize your practice.',
-                    style: TextStyle(color: Colors.white70, fontSize: 12),
-                  ),
-                  const SizedBox(height: 16),
-                  ...exams.map((exam) {
-                    final isSel = _selectedExam == exam;
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF0F172A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.school, color: AppColors.accent, size: 20),
+            SizedBox(width: 8),
+            Text('Select Target Exam', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: StreamBuilder<List<String>>(
+              stream: FirestoreService().getExamsStream(),
+              initialData: FirestoreService.fallbackExams,
+              builder: (context, examSnap) {
+                final liveExams = examSnap.data ?? FirestoreService.fallbackExams;
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: liveExams.map((exam) {
+                    final isSel = _selectedExam.toLowerCase().trim() == exam.toLowerCase().trim();
                     return ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: Container(
@@ -217,13 +223,13 @@ class _TestPageSectionsState extends State<TestPageSections> {
                         AppTheme.showSuccessSnackBar(context, 'Exam switched to $exam');
                       },
                     );
-                  }),
-                ],
-              ),
+                  }).toList(),
+                );
+              },
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -653,73 +659,45 @@ class _TestPageSectionsState extends State<TestPageSections> {
   // ---------------------------------------------------------------------------
 
   Widget _buildHorizontalTabs() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      height: 44,
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Colors.white10)),
-      ),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        itemCount: _tabs.length,
-        itemBuilder: (context, index) {
-          final isSelected = _activeTabIndex == index;
-          final tab = _tabs[index];
-
-          return InkWell(
-            onTap: () => _switchTab(index),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: isSelected ? const Color(0xFFFFA000) : Colors.transparent,
-                    width: 2.5,
-                  ),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    tab['icon'] as IconData,
-                    size: 15,
-                    color: isSelected ? const Color(0xFFFFA000) : Colors.white60,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    tab['title'] as String,
-                    style: TextStyle(
-                      color: isSelected ? const Color(0xFFFFA000) : Colors.white70,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
+      width: double.infinity,
+      color: isDark ? const Color(0xFF071326) : Colors.white,
+      child: Material(
+        color: Colors.transparent,
+        child: TabBar(
+          controller: _tabController,
+          onTap: _switchTab,
+          isScrollable: true,
+          tabAlignment: TabAlignment.start,
+          indicatorColor: AppColors.accent,
+          indicatorWeight: 3,
+          dividerColor: Colors.transparent,
+          dividerHeight: 0,
+          labelColor: AppColors.accent,
+          unselectedLabelColor: isDark ? Colors.white60 : Colors.grey.shade600,
+          labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+          tabs: const [
+            Tab(text: 'MY TEST'),
+            Tab(text: 'ALL TEST'),
+            Tab(text: 'INCLUDED WITH BATCH'),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildActiveTabContent() {
     switch (_activeTabIndex) {
-      case 0:
-        return _buildPage1Overview();
-      case 1:
+      case tabMyTests:
         return _buildPage2MySeries();
-      case 2:
+      case tabAllTests:
         return _buildPage4AllSeries();
-      case 3:
+      case tabIncludedWithBatch:
         return _buildPage3IncludedWithBatch();
-      case 4:
-        return _buildPage6OtherExams();
-      case 5:
-        return _buildPage7MyPerformance();
       default:
-        return _buildPage1Overview();
+        return _buildPage2MySeries();
     }
   }
 
@@ -769,7 +747,7 @@ class _TestPageSectionsState extends State<TestPageSections> {
                           color: const Color(0xFF38BDF8),
                           value: myTestSeriesCount,
                           label: 'My Test',
-                          onTap: () => _switchTab(1),
+                          onTap: () => _switchTab(tabMyTests),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -779,7 +757,7 @@ class _TestPageSectionsState extends State<TestPageSections> {
                           color: const Color(0xFF34D399),
                           value: allTestSeriesCount,
                           label: 'All Test',
-                          onTap: () => _switchTab(2),
+                          onTap: () => _switchTab(tabAllTests),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -789,7 +767,7 @@ class _TestPageSectionsState extends State<TestPageSections> {
                           color: const Color(0xFFFB923C),
                           value: userTestsAttempted,
                           label: 'Tests Attempted',
-                          onTap: () => _switchTab(5),
+                          onTap: () => _switchTab(tabMyTests),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -799,7 +777,7 @@ class _TestPageSectionsState extends State<TestPageSections> {
                           color: const Color(0xFFA78BFA),
                           value: userAvgAccuracy,
                           label: 'Avg. Accuracy',
-                          onTap: () => _switchTab(5),
+                          onTap: () => _switchTab(tabMyTests),
                         ),
                       ),
                     ],
@@ -855,8 +833,8 @@ class _TestPageSectionsState extends State<TestPageSections> {
                 child: _buildQuickActionTile(
                   icon: Icons.bar_chart_rounded,
                   color: const Color(0xFFA78BFA),
-                  label: 'Performance',
-                  onTap: () => _switchTab(5),
+                  label: 'My Tests',
+                  onTap: () => _switchTab(tabMyTests),
                 ),
               ),
             ],
@@ -1111,7 +1089,7 @@ class _TestPageSectionsState extends State<TestPageSections> {
               ],
             ),
             GestureDetector(
-              onTap: () => _switchTab(2),
+              onTap: () => _switchTab(tabAllTests),
               child: const Text(
                 'View All',
                 style: TextStyle(color: Color(0xFFFFA000), fontSize: 13, fontWeight: FontWeight.bold),
@@ -1267,8 +1245,8 @@ class _TestPageSectionsState extends State<TestPageSections> {
             ),
             GestureDetector(
               onTap: () {
+                _switchTab(tabAllTests);
                 setState(() {
-                  _activeTabIndex = 1;
                   _allSeriesFilter = 'Individual Tests';
                 });
               },
@@ -1567,7 +1545,7 @@ class _TestPageSectionsState extends State<TestPageSections> {
             itemCount: subFilters.length,
             itemBuilder: (ctx, idx) {
               final f = subFilters[idx];
-              final isSel = _allSeriesFilter == f || (_allSeriesFilter == 'All' && f == 'All');
+              final isSel = _mySeriesFilter == f;
               return Padding(
                 padding: const EdgeInsets.only(right: 8.0),
                 child: ChoiceChip(
@@ -1577,7 +1555,7 @@ class _TestPageSectionsState extends State<TestPageSections> {
                   backgroundColor: const Color(0xFF0F172A),
                   side: BorderSide(color: isSel ? const Color(0xFFFFA000) : Colors.white12),
                   onSelected: (val) {
-                    if (val) setState(() => _allSeriesFilter = f);
+                    if (val) setState(() => _mySeriesFilter = f);
                   },
                 ),
               );
@@ -1586,7 +1564,7 @@ class _TestPageSectionsState extends State<TestPageSections> {
         ),
         const SizedBox(height: 8),
         Expanded(
-          child: _allSeriesFilter == 'Individual Tests'
+          child: _mySeriesFilter == 'Individual Tests'
               ? _buildIndividualTestsList()
               : StreamBuilder<List<TestCategory>>(
             stream: TestService().getCategoriesStream(),
@@ -1608,6 +1586,41 @@ class _TestPageSectionsState extends State<TestPageSections> {
                     mySeries = List<TestCategory>.from(allSeries);
                   } else {
                     mySeries = [];
+                  }
+
+                  if (mySeries.isEmpty) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.assignment_turned_in_outlined, size: 48, color: Colors.white38),
+                            const SizedBox(height: 12),
+                            const Text(
+                              'No Test Series Enrolled Yet',
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                            ),
+                            const SizedBox(height: 6),
+                            const Text(
+                              'Explore mock tests and test series to start practicing.',
+                              style: TextStyle(color: Colors.white60, fontSize: 12),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: () => _switchTab(tabAllTests),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFFFA000),
+                                foregroundColor: Colors.black,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                              child: const Text('Browse All Tests', style: TextStyle(fontWeight: FontWeight.bold)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
                   }
 
                   // Sort items
@@ -1645,11 +1658,12 @@ class _TestPageSectionsState extends State<TestPageSections> {
 
                       return _buildMySeriesBigCard(
                         title: cat.title,
+                        iconUrl: cat.iconUrl,
                         badgeType: badgeType,
                         badgeColor: badgeColor,
                         subBadgeText: subBadgeText,
                         subBadgeColor: subBadgeColor,
-                        description: cat.description.isNotEmpty ? cat.description : 'Comprehensive preparation with verified exam pattern questions and instant AI analysis.',
+                        description: cat.description,
                         pills: [cat.testsCount, ...cat.features.take(2)],
                         progress: 0.0,
                         progressFraction: '0 / ${cat.testsCount}',
@@ -1675,20 +1689,51 @@ class _TestPageSectionsState extends State<TestPageSections> {
     );
   }
 
-  Widget _buildIndividualTestsList() {
+  Widget _buildIndividualTestsList({String filter = 'All', String searchQuery = ''}) {
     return StreamBuilder<List<TestItem>>(
       stream: TestService().getLatestTestsStream(),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
           return const Center(child: CircularProgressIndicator(color: Color(0xFFFFA000)));
         }
 
-        final tests = snapshot.data ?? [];
+        var tests = snapshot.data ?? [];
+
+        // Category filter
+        final f = filter.toLowerCase();
+        if (f.contains('chapter')) {
+          tests = tests.where((t) =>
+            t.description.toLowerCase().contains('chapter') ||
+            t.title.toLowerCase().contains('chapter')
+          ).toList();
+        } else if (f.contains('unit')) {
+          tests = tests.where((t) =>
+            t.description.toLowerCase().contains('unit') ||
+            t.title.toLowerCase().contains('unit')
+          ).toList();
+        } else if (f.contains('mock') || f.contains('full')) {
+          tests = tests.where((t) =>
+            t.description.toLowerCase().contains('mock') ||
+            t.description.toLowerCase().contains('full') ||
+            t.title.toLowerCase().contains('mock') ||
+            t.title.toLowerCase().contains('full')
+          ).toList();
+        }
+
+        // Search query filter
+        if (searchQuery.trim().isNotEmpty) {
+          final q = searchQuery.trim().toLowerCase();
+          tests = tests.where((t) =>
+            t.title.toLowerCase().contains(q) ||
+            t.description.toLowerCase().contains(q)
+          ).toList();
+        }
+
         if (tests.isEmpty) {
           return SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
             child: SizedBox(
-              height: MediaQuery.of(context).size.height * 0.5,
+              height: MediaQuery.of(context).size.height * 0.45,
               child: Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24.0),
@@ -1697,17 +1742,32 @@ class _TestPageSectionsState extends State<TestPageSections> {
                     children: [
                       const Icon(Icons.assignment_outlined, size: 48, color: Colors.white38),
                       const SizedBox(height: 12),
-                      const Text(
-                        'No individual tests uploaded yet by admin.\nTests added by admin will appear here immediately.',
-                        style: TextStyle(color: Colors.white70, fontSize: 13),
+                      Text(
+                        searchQuery.isNotEmpty
+                            ? 'No tests match "$searchQuery"'
+                            : (filter != 'All'
+                                ? 'No tests found in "$filter"'
+                                : 'No tests uploaded yet by admin.'),
+                        style: const TextStyle(color: Colors.white70, fontSize: 13),
                         textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: 14),
-                      ElevatedButton(
-                        onPressed: () => setState(() => _allSeriesFilter = 'All'),
-                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFFA000)),
-                        child: const Text('View All Test Series', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                      ),
+                      if (filter != 'All' || searchQuery.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              _allSeriesFilter = 'All';
+                              _allTestsSearchQuery = '';
+                            });
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFFFA000),
+                            foregroundColor: Colors.black,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          child: const Text('Show All Tests', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -1722,69 +1782,98 @@ class _TestPageSectionsState extends State<TestPageSections> {
           itemCount: tests.length,
           itemBuilder: (ctx, idx) {
             final test = tests[idx];
+            final descLower = test.description.toLowerCase();
+            final titleLower = test.title.toLowerCase();
+            final isChapter = descLower.contains('chapter') || titleLower.contains('chapter');
+            final isUnit = descLower.contains('unit') || titleLower.contains('unit');
+            final badgeColor = isChapter
+                ? const Color(0xFF38BDF8)
+                : (isUnit ? const Color(0xFFA78BFA) : const Color(0xFFFFA000));
+            final badgeText = test.description.isNotEmpty
+                ? test.description
+                : (isChapter ? 'chapter_wise' : (isUnit ? 'unit_wise' : 'mock_test'));
+
             return Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(16),
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
                 color: const Color(0xFF0F172A),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: Colors.white12),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFA000).withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          test.description.isNotEmpty ? test.description : 'Mock Test',
-                          style: const TextStyle(color: Color(0xFFFFA000), fontSize: 10, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      Text(
-                        '${test.totalMarks} Marks',
-                        style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    test.title,
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${test.totalQuestions} Questions • ${test.durationMinutes} Minutes',
-                    style: const TextStyle(color: Colors.white60, fontSize: 12),
-                  ),
-                  const SizedBox(height: 14),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        AppNavigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => QuizScreen(
-                              testId: test.id,
-                              testName: test.title,
-                            ),
-                          ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFFA000),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                      ),
-                      child: const Text('Start Test Now', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: badgeColor.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
                     ),
+                    child: Icon(Icons.assignment_outlined, color: badgeColor, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: badgeColor.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                badgeText,
+                                style: TextStyle(color: badgeColor, fontSize: 9.5, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              '${test.totalMarks} Marks',
+                              style: const TextStyle(color: Colors.white54, fontSize: 10.5),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          test.title,
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.5),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${test.totalQuestions} Questions • ${test.durationMinutes} Mins',
+                          style: const TextStyle(color: Colors.white60, fontSize: 11),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  ElevatedButton(
+                    onPressed: () {
+                      AppNavigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => QuizScreen(
+                            testId: test.id,
+                            testName: test.title,
+                          ),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFFA000),
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: const Text('Start', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5)),
                   ),
                 ],
               ),
@@ -1797,6 +1886,7 @@ class _TestPageSectionsState extends State<TestPageSections> {
 
   Widget _buildMySeriesBigCard({
     required String title,
+    String? iconUrl,
     required String badgeType,
     required Color badgeColor,
     required String subBadgeText,
@@ -1823,7 +1913,7 @@ class _TestPageSectionsState extends State<TestPageSections> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Shield emblem
-              _buildEmblemBadge(badgeType, badgeColor),
+              _buildEmblemBadge(badgeType, badgeColor, iconUrl),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
@@ -1932,7 +2022,21 @@ class _TestPageSectionsState extends State<TestPageSections> {
     );
   }
 
-  Widget _buildEmblemBadge(String type, Color color) {
+  Widget _buildEmblemBadge(String type, Color color, [String? iconUrl]) {
+    if (iconUrl != null && iconUrl.trim().isNotEmpty) {
+      return SafeAppImage(
+        imageUrl: iconUrl.trim(),
+        width: 68,
+        height: 78,
+        fit: BoxFit.cover,
+        borderRadius: BorderRadius.circular(10),
+        errorWidget: _buildDefaultEmblem(type, color),
+      );
+    }
+    return _buildDefaultEmblem(type, color);
+  }
+
+  Widget _buildDefaultEmblem(String type, Color color) {
     return Container(
       width: 68,
       height: 78,
@@ -1984,206 +2088,166 @@ class _TestPageSectionsState extends State<TestPageSections> {
   }
 
   // ===========================================================================
-  // PAGE 3: INCLUDED WITH BATCH TAB (test_p3.png)
+  // PAGE 3: INCLUDED WITH BATCH TAB
   // ===========================================================================
 
   Widget _buildPage3IncludedWithBatch() {
-    return SingleChildScrollView(
-      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Section header with gift icon
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Icon(Icons.card_giftcard_rounded, color: Color(0xFFFFA000), size: 24),
-              const SizedBox(width: 10),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Included with Your Batch',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                    SizedBox(height: 2),
-                    Text(
-                      'These test series are included with your JEE Main 2027 Selection Batch.',
-                      style: TextStyle(color: Colors.white60, fontSize: 11.5),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              // Value and Access tags
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFA000).withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: const Color(0xFFFFA000).withValues(alpha: 0.3)),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.currency_rupee_rounded, color: Color(0xFFFFA000), size: 12),
-                        Text('999 Total Value', style: TextStyle(color: Color(0xFFFFA000), fontSize: 10, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.check_circle_rounded, color: Colors.green, size: 12),
-                        SizedBox(width: 4),
-                        Text('Unlocked All Access', style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: FirestoreService().getUserPurchasesStream(),
+      builder: (context, purchaseSnapshot) {
+        if (purchaseSnapshot.connectionState == ConnectionState.waiting && !purchaseSnapshot.hasData) {
+          return const Center(child: CircularProgressIndicator(color: Color(0xFFFFA000)));
+        }
 
-          // Big Included Card matching PDF
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFF0F172A),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFFFA000).withValues(alpha: 0.5)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildEmblemBadge('GOLD', const Color(0xFFFFD700)),
-                    const SizedBox(width: 14),
-                    Expanded(
+        final purchases = purchaseSnapshot.data ?? [];
+        final batchPurchases = purchases.where((p) {
+          final t = (p['type'] ?? '').toString().toLowerCase();
+          return t.contains('batch') || p['courseId'] != null;
+        }).toList();
+
+        return StreamBuilder<List<TestCategory>>(
+          stream: TestService().getCategoriesStream(),
+          builder: (context, catSnapshot) {
+            final allSeries = catSnapshot.data ?? [];
+            final includedSeries = allSeries.where((cat) {
+              return cat.price == 0 ||
+                  cat.badge.toLowerCase().contains('free') ||
+                  cat.badge.toLowerCase().contains('batch');
+            }).toList();
+
+            return SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFA000).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.card_giftcard_rounded, color: Color(0xFFFFA000), size: 22),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Included with Your Batch',
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              batchPurchases.isNotEmpty
+                                  ? 'Active enrolled batches: ${batchPurchases.length}'
+                                  : 'Enroll in a batch to get auto-unlocked test series.',
+                              style: const TextStyle(color: Colors.white60, fontSize: 11.5),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+                        ),
+                        child: Text(
+                          '${includedSeries.length} Available',
+                          style: const TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  if (includedSeries.isEmpty) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(28),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F172A),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.white10),
+                      ),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          const Icon(Icons.card_giftcard_outlined, size: 48, color: Colors.white24),
+                          const SizedBox(height: 12),
                           const Text(
-                            'JEE Main 2027 Gold Test Series',
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                          ),
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.green.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.check_circle_rounded, color: Colors.green, size: 11),
-                                SizedBox(width: 4),
-                                Text(
-                                  'Included with your Selection Batch',
-                                  style: TextStyle(color: Colors.green, fontSize: 9.5, fontWeight: FontWeight.bold),
-                                ),
-                              ],
-                            ),
+                            'No Batch Tests Available',
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
                           ),
                           const SizedBox(height: 6),
                           const Text(
-                            'Complete test series with chapter, unit, subject & full-length tests. All features unlocked.',
-                            style: TextStyle(color: Colors.white60, fontSize: 11),
+                            'Test series included with enrolled batches will appear here automatically.',
+                            style: TextStyle(color: Colors.white60, fontSize: 12),
+                            textAlign: TextAlign.center,
                           ),
-                          const SizedBox(height: 10),
-                          Wrap(
-                            spacing: 6,
-                            runSpacing: 4,
-                            children: ['150+ Tests', '5000+ Questions', 'All Features', 'AIR Ranking']
-                                .map((f) => _buildPillChip(f))
-                                .toList(),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () => _switchTab(tabAllTests),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFFFA000),
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                            child: const Text('Explore All Tests', style: TextStyle(fontWeight: FontWeight.bold)),
                           ),
                         ],
                       ),
                     ),
+                  ] else ...[
+                    ...includedSeries.map((cat) => _buildStoreCard(cat)),
                   ],
-                ),
-                const SizedBox(height: 16),
-                const Divider(color: Colors.white12),
-                const SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Actual Value ₹999', style: TextStyle(color: Colors.white54, fontSize: 11, decoration: TextDecoration.lineThrough)),
-                        SizedBox(height: 2),
-                        Text('You Save ₹999 (100%)', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13)),
-                      ],
-                    ),
-                    ElevatedButton.icon(
-                      onPressed: () => _openSeriesDetail(title: 'JEE Main 2027 Gold Test Series', badge: 'GOLD'),
-                      icon: const Text('Open Test Series', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                      label: const Icon(Icons.arrow_forward_rounded, size: 16),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFFA000),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                const Row(
-                  children: [
-                    Icon(Icons.check_circle_rounded, color: Colors.green, size: 14),
-                    SizedBox(width: 4),
-                    Text('Already Unlocked', style: TextStyle(color: Colors.green, fontSize: 11, fontWeight: FontWeight.bold)),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
-  // ===========================================================================
-  // PAGE 4: ALL SERIES TAB (test_p4.png)
-  // ===========================================================================
-
   Widget _buildPage4AllSeries() {
     final filters = [
-      'All',
-      'Individual Tests',
-      'Full Length Mocks',
-      'Chapter Wise',
-      'Unit Wise',
-      'Subject Wise',
-      'PYQs',
-      'Free Tests',
-      'Combo Offers',
+      'Test Series',
+      'Chapter Tests',
+      'Unit Tests',
+      'Full Mocks',
     ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 10),
+        // Search bar
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+          child: Container(
+            height: 42,
+            decoration: BoxDecoration(
+              color: const Color(0xFF0F172A),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white12),
+            ),
+            child: TextField(
+              onChanged: (v) => setState(() => _allTestsSearchQuery = v),
+              style: const TextStyle(color: Colors.white, fontSize: 13),
+              decoration: const InputDecoration(
+                hintText: 'Search test series or tests...',
+                hintStyle: TextStyle(color: Colors.white38, fontSize: 13),
+                prefixIcon: Icon(Icons.search, color: Colors.white54, size: 18),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(vertical: 11),
+              ),
+            ),
+          ),
+        ),
 
         // Filter chips horizontal scroll
         SizedBox(
@@ -2199,239 +2263,110 @@ class _TestPageSectionsState extends State<TestPageSections> {
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4.0),
                 child: ChoiceChip(
-                  label: Text(f, style: TextStyle(color: isSel ? Colors.white : Colors.white70, fontSize: 11, fontWeight: isSel ? FontWeight.bold : FontWeight.normal)),
+                  label: Text(
+                    f,
+                    style: TextStyle(
+                      color: isSel ? Colors.black : Colors.white70,
+                      fontSize: 11,
+                      fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+                    ),
+                  ),
                   selected: isSel,
                   onSelected: (val) => setState(() => _allSeriesFilter = f),
                   backgroundColor: const Color(0xFF0F172A),
                   selectedColor: const Color(0xFFFFA000),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: isSel ? const Color(0xFFFFA000) : Colors.white12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    side: BorderSide(color: isSel ? const Color(0xFFFFA000) : Colors.white12),
+                  ),
                   showCheckmark: false,
                 ),
               );
             },
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
 
-        // Series Cards List
+        // Series Cards or Individual Tests List
         Expanded(
-          child: _allSeriesFilter == 'Individual Tests'
-              ? _buildIndividualTestsList()
-              : StreamBuilder<List<TestCategory>>(
-            stream: TestService().getCategoriesStream(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator(color: Color(0xFFFFA000)));
-              }
+          child: _allSeriesFilter == 'Test Series'
+              ? StreamBuilder<List<TestCategory>>(
+                  stream: TestService().getCategoriesStream(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+                      return const Center(child: CircularProgressIndicator(color: Color(0xFFFFA000)));
+                    }
+                    var allSeries = snapshot.data ?? [];
+                    if (_allTestsSearchQuery.trim().isNotEmpty) {
+                      final q = _allTestsSearchQuery.trim().toLowerCase();
+                      allSeries = allSeries.where((c) =>
+                        c.title.toLowerCase().contains(q) ||
+                        c.description.toLowerCase().contains(q) ||
+                        c.badge.toLowerCase().contains(q)
+                      ).toList();
+                    }
 
-              final allSeries = snapshot.data ?? [];
-              final filtered = allSeries.where((cat) {
-                if (_allSeriesFilter == 'All') return true;
-                final fLower = _allSeriesFilter.toLowerCase();
-                if (fLower == 'free tests') {
-                  return cat.price == 0 || cat.badge.toLowerCase().contains('free');
-                }
-                final text = '${cat.title} ${cat.badge} ${cat.examCategory} ${cat.features.join(" ")}'.toLowerCase();
-                if (fLower.contains('full') || fLower.contains('mock')) {
-                  return text.contains('mock') || text.contains('full');
-                }
-                if (fLower.contains('chapter')) {
-                  return text.contains('chapter') || text.contains('topic');
-                }
-                if (fLower.contains('unit')) {
-                  return text.contains('unit');
-                }
-                if (fLower.contains('subject')) {
-                  return text.contains('subject');
-                }
-                if (fLower.contains('pyq')) {
-                  return text.contains('pyq') || text.contains('previous') || text.contains('year');
-                }
-                if (fLower.contains('combo')) {
-                  return text.contains('combo') || text.contains('bundle') || text.contains('pack');
-                }
-                return text.contains(fLower);
-              }).toList();
-
-              if (_allSeriesSort == 'Price: Low to High') {
-                filtered.sort((a, b) => a.price.compareTo(b.price));
-              }
-
-              if (filtered.isEmpty) {
-                return SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                  child: SizedBox(
-                    height: MediaQuery.of(context).size.height * 0.5,
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24.0),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.assignment_late_outlined, size: 48, color: Colors.white38),
-                            const SizedBox(height: 12),
-                            Text(
-                              allSeries.isEmpty 
-                                  ? 'No test series uploaded yet by admin.'
-                                  : 'No test series match "$_allSeriesFilter".',
-                              style: const TextStyle(color: Colors.white70, fontSize: 13),
-                              textAlign: TextAlign.center,
-                            ),
-                            if (_allSeriesFilter != 'All' && allSeries.isNotEmpty) ...[
+                    if (allSeries.isEmpty) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.assignment_outlined, size: 48, color: Colors.white38),
                               const SizedBox(height: 12),
-                              ElevatedButton(
-                                onPressed: () => setState(() => _allSeriesFilter = 'All'),
-                                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFFA000)),
-                                child: const Text('Show All Test Series', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                              Text(
+                                _allTestsSearchQuery.isNotEmpty
+                                    ? 'No test series match "$_allTestsSearchQuery"'
+                                    : 'No test series published yet by admin.',
+                                style: const TextStyle(color: Colors.white60, fontSize: 13),
+                                textAlign: TextAlign.center,
                               ),
                             ],
-                          ],
+                          ),
                         ),
-                      ),
-                    ),
-                  ),
-                );
-              }
-
-              return ListView.builder(
-                physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: filtered.length + 1, // +1 for the combo banner
-                itemBuilder: (ctx, index) {
-                  if (index == filtered.length) {
-                    // Bottom Callout Banner (Combo Offers)
-                    return Container(
-                      margin: const EdgeInsets.only(top: 8, bottom: 20),
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0F172A),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.white10),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFA000).withValues(alpha: 0.15),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.card_giftcard_rounded, color: Color(0xFFFFA000), size: 22),
-                          ),
-                          const SizedBox(width: 12),
-                          const Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Looking for a complete preparation solution?',
-                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12.5),
-                                ),
-                                SizedBox(height: 2),
-                                Text(
-                                  'Our combo test series give you maximum practice with maximum savings.',
-                                  style: TextStyle(color: Colors.white60, fontSize: 10.5),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          OutlinedButton(
-                            onPressed: () {
-                              setState(() => _allSeriesFilter = 'Combo Offers');
-                              AppTheme.showSuccessSnackBar(context, 'Showing Combo Packs with up to 70% discount!');
-                            },
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Color(0xFFFFA000)),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            ),
-                            child: const Text('View Combo Offers >', style: TextStyle(color: Color(0xFFFFA000), fontSize: 10.5, fontWeight: FontWeight.bold)),
-                          ),
-                        ],
-                      ),
+                      );
+                    }
+                    return ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: allSeries.length,
+                      itemBuilder: (ctx, index) {
+                        return _buildStoreCard(allSeries[index]);
+                      },
                     );
-                  }
-
-                  final cat = filtered[index];
-                  final isGold = cat.badge.toUpperCase().contains('GOLD') || cat.title.toLowerCase().contains('gold');
-                  final isSilver = cat.badge.toUpperCase().contains('SILVER') || cat.title.toLowerCase().contains('silver');
-                  final isMock = cat.badge.toUpperCase().contains('MOCK') || cat.title.toLowerCase().contains('mock');
-
-                  final badgeColor = isGold
-                      ? const Color(0xFFFFD700)
-                      : (isSilver ? const Color(0xFFCBD5E1) : const Color(0xFF38BDF8));
-                  final badgeType = isGold ? 'GOLD' : (isSilver ? 'SILVER' : (isMock ? 'MOCK' : cat.badge.toUpperCase()));
-                  final topTag = isGold ? 'Bestseller' : (isSilver ? 'Popular' : 'Active');
-                  final topTagColor = isGold ? const Color(0xFFFFA000) : const Color(0xFF38BDF8);
-
-                  final priceStr = cat.price == 0 ? 'Free' : '₹${cat.price.toInt()}';
-                  final origPriceStr = cat.originalPrice > 0 ? '₹${cat.originalPrice.toInt()}' : (cat.price > 0 ? '₹${(cat.price * 2).toInt()}' : '');
-                  final discountStr = cat.price > 0 && cat.originalPrice > cat.price
-                      ? '${(((cat.originalPrice - cat.price) / cat.originalPrice) * 100).toInt()}% OFF'
-                      : (cat.price == 0 ? '100% FREE' : 'SPECIAL DEAL');
-
-                  return _buildStoreCard(
-                    topTag: topTag,
-                    topTagColor: topTagColor,
-                    badgeType: badgeType,
-                    badgeColor: badgeColor,
-                    title: cat.title,
-                    rating: '★ 4.9 (2.8k)',
-                    checkFeatures: cat.features.isNotEmpty
-                        ? cat.features
-                        : [
-                            'Chapter Wise Tests',
-                            'Unit Wise Tests',
-                            'Subject Wise Tests',
-                            'Full Length Mocks',
-                            'Detailed Solutions',
-                            'AI Performance Analysis',
-                          ],
-                    statPills: [cat.testsCount, 'NTA / SSC Pattern', 'AIR Ranking'],
-                    origPrice: origPriceStr,
-                    price: priceStr,
-                    discount: discountStr,
-                    onTap: () => _openSeriesDetail(
-                      id: cat.id,
-                      title: cat.title,
-                      badge: badgeType,
-                      price: cat.price.toInt().toString(),
-                      origPrice: cat.originalPrice.toInt().toString(),
-                      badgeColor: badgeColor,
-                      features: cat.features,
-                    ),
-                  );
-                },
-              );
-            },
-          ),
+                  },
+                )
+              : _buildIndividualTestsList(filter: _allSeriesFilter, searchQuery: _allTestsSearchQuery),
         ),
       ],
     );
   }
 
-  Widget _buildStoreCard({
-    required String? topTag,
-    required Color topTagColor,
-    required String badgeType,
-    required Color badgeColor,
-    required String title,
-    required String rating,
-    required List<String> checkFeatures,
-    required List<String> statPills,
-    required String origPrice,
-    required String price,
-    required String discount,
-    required VoidCallback onTap,
-  }) {
+  Widget _buildStoreCard(TestCategory cat) {
+    final isGold = cat.badge.toUpperCase().contains('GOLD') || cat.title.toLowerCase().contains('gold');
+    final isSilver = cat.badge.toUpperCase().contains('SILVER') || cat.title.toLowerCase().contains('silver');
+    final isMock = cat.badge.toUpperCase().contains('MOCK') || cat.title.toLowerCase().contains('mock');
+    final isFree = cat.price == 0 || cat.badge.toLowerCase().contains('free');
+
+    final badgeColor = isGold
+        ? const Color(0xFFFFD700)
+        : (isSilver ? const Color(0xFFCBD5E1) : (isMock ? const Color(0xFFA78BFA) : (isFree ? const Color(0xFF34D399) : const Color(0xFF38BDF8))));
+    final badgeType = isGold ? 'GOLD' : (isSilver ? 'SILVER' : (isMock ? 'MOCK' : (isFree ? 'FREE' : cat.badge.toUpperCase())));
+
+    final priceStr = isFree ? 'FREE' : '₹${cat.price.toInt()}';
+    final origPriceStr = cat.originalPrice > cat.price ? '₹${cat.originalPrice.toInt()}' : '';
+    final discountStr = cat.price > 0 && cat.originalPrice > cat.price
+        ? '${(((cat.originalPrice - cat.price) / cat.originalPrice) * 100).toInt()}% OFF'
+        : (isFree ? '100% FREE' : '');
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(color: Colors.white12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2439,74 +2374,71 @@ class _TestPageSectionsState extends State<TestPageSections> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  _buildEmblemBadge(badgeType, badgeColor),
-                  if (topTag != null)
-                    Positioned(
-                      top: -6,
-                      left: -6,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: topTagColor,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          topTag,
-                          style: const TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
+              _buildEmblemBadge(badgeType, badgeColor, cat.iconUrl),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: badgeColor.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
                           child: Text(
-                            title,
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                            badgeType,
+                            style: TextStyle(color: badgeColor, fontSize: 10, fontWeight: FontWeight.bold),
                           ),
                         ),
-                        Text(
-                          rating,
-                          style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 11),
-                        ),
+                        if (cat.testsCount.isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            cat.testsCount,
+                            style: const TextStyle(color: Colors.white54, fontSize: 11),
+                          ),
+                        ],
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    // Check features
-                    ...checkFeatures.map((f) => Padding(
-                          padding: const EdgeInsets.only(bottom: 3.0),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.check_circle_rounded, color: Color(0xFFFFA000), size: 12),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: Text(f, style: const TextStyle(color: Colors.white70, fontSize: 11)),
-                              ),
-                            ],
-                          ),
-                        )),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 4,
-                      children: statPills.map((p) => _buildPillChip(p)).toList(),
+                    const SizedBox(height: 6),
+                    Text(
+                      cat.title,
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
+                    if (cat.description.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        cat.description,
+                        style: const TextStyle(color: Colors.white60, fontSize: 11.5),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                    if (cat.features.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      ...cat.features.take(3).map((f) => Padding(
+                            padding: const EdgeInsets.only(bottom: 3.0),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.check_circle_rounded, color: Color(0xFFFFA000), size: 12),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(f, style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                                ),
+                              ],
+                            ),
+                          )),
+                    ],
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           const Divider(color: Colors.white12),
           const SizedBox(height: 8),
           Row(
@@ -2516,30 +2448,81 @@ class _TestPageSectionsState extends State<TestPageSections> {
                 crossAxisAlignment: CrossAxisAlignment.baseline,
                 textBaseline: TextBaseline.alphabetic,
                 children: [
-                  Text(origPrice, style: const TextStyle(color: Colors.white38, decoration: TextDecoration.lineThrough, fontSize: 13)),
-                  const SizedBox(width: 6),
-                  Text(price, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 18)),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFA000).withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(4),
+                  Text(priceStr, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 18)),
+                  if (origPriceStr.isNotEmpty) ...[
+                    const SizedBox(width: 6),
+                    Text(origPriceStr, style: const TextStyle(color: Colors.white38, decoration: TextDecoration.lineThrough, fontSize: 12)),
+                  ],
+                  if (discountStr.isNotEmpty) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFA000).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(discountStr, style: const TextStyle(color: Color(0xFFFFA000), fontWeight: FontWeight.bold, fontSize: 10)),
                     ),
-                    child: Text(discount, style: const TextStyle(color: Color(0xFFFFA000), fontWeight: FontWeight.bold, fontSize: 10)),
-                  ),
+                  ],
                 ],
               ),
-              ElevatedButton.icon(
-                onPressed: onTap,
-                icon: const Text('View Series', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                label: const Icon(Icons.arrow_forward_rounded, size: 16),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFFA000),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
+              Row(
+                children: [
+                  OutlinedButton(
+                    onPressed: () => _openSeriesDetail(
+                      id: cat.id,
+                      title: cat.title,
+                      badge: badgeType,
+                      price: cat.price.toInt().toString(),
+                      origPrice: cat.originalPrice.toInt().toString(),
+                      badgeColor: badgeColor,
+                      features: cat.features,
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.white24),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    ),
+                    child: const Text('Details', style: TextStyle(color: Colors.white70, fontSize: 11.5, fontWeight: FontWeight.bold)),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (isFree) {
+                        _openSeriesDetail(
+                          id: cat.id,
+                          title: cat.title,
+                          badge: badgeType,
+                          price: '0',
+                          origPrice: '0',
+                          badgeColor: badgeColor,
+                          features: cat.features,
+                        );
+                      } else {
+                        PaymentService().payAndUnlock(
+                          context: context,
+                          title: cat.title,
+                          price: cat.price,
+                          itemType: 'Test Series',
+                          subtitle: 'Full Mock Series with All India Percentile & Rank',
+                          onSuccess: () {
+                            if (mounted) setState(() {});
+                          },
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFFA000),
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: Text(
+                      isFree ? 'Start Free' : 'Unlock Now',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -3217,8 +3200,8 @@ class _TestPageSectionsState extends State<TestPageSections> {
                         onPressed: () {
                           setState(() {
                             _selectedExam = title;
-                            _activeTabIndex = 2; // Switch to All Test
                           });
+                          _switchTab(tabAllTests);
                           widget.onExamChanged?.call(title);
                           AppTheme.showSuccessSnackBar(context, 'Switched to $title series!');
                         },
@@ -3394,7 +3377,7 @@ class _TestPageSectionsState extends State<TestPageSections> {
                       const SizedBox(height: 20),
                       ElevatedButton(
                         onPressed: () {
-                          setState(() => _activeTabIndex = 2);
+                          _switchTab(tabAllTests);
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFFFA000),

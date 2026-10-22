@@ -11,9 +11,11 @@ import '../models/content_models.dart';
 import '../services/content_service.dart';
 import 'pdf_viewer_screen.dart';
 import '../widgets/notification_bell_action.dart';
+import '../widgets/resource_page_sections.dart';
 
 class ResourcesScreen extends StatefulWidget {
-  const ResourcesScreen({super.key});
+  final int initialTab;
+  const ResourcesScreen({super.key, this.initialTab = 0});
 
   @override
   State<ResourcesScreen> createState() => _ResourcesScreenState();
@@ -23,7 +25,6 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
   final PaymentService _paymentService = PaymentService();
   String? _pendingResourceTitle;
   double? _pendingResourcePrice;
-  int _activeTabIndex = 0;
   String _selectedCategoryFilter = 'All';
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
@@ -108,9 +109,25 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
               // Top App Bar matching Home, Batches, Tests & PDF Header
               _buildTopAppBar(),
 
-              // Unified Resource Center for both dark and light modes (same functions)
+              // Resource Page Sections containing: My Resources, Included with Batch, Explore Resources, Recommended, Other Exams, Community
               Expanded(
-                child: _buildResourceCenter(isDark),
+                child: ResourcePageSections(
+                  initialTab: widget.initialTab,
+                  onUnlockRequested: (title, price) {
+                    _pendingResourceTitle = title;
+                    _pendingResourcePrice = price;
+                    _paymentService.payAndUnlock(
+                      context: context,
+                      title: title,
+                      price: price,
+                      itemType: 'Resource',
+                      subtitle: 'Instant PDF download and access',
+                      onSuccess: () {
+                        if (mounted) setState(() {});
+                      },
+                    );
+                  },
+                ),
               ),
             ],
           ),
@@ -413,21 +430,27 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
     );
   }
 
-  // Standard Header matching PDF: Shield Badge + EXAMINANTT RESOURCE CENTER + Bell (3) + Search
+  // Standard Header matching PDF: Shield Badge + EXAMINANTT RESOURCE CENTER + Bell + Back Button
   Widget _buildTopAppBar() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final scaffoldBg = isDark ? Colors.transparent : Colors.white;
+    final scaffoldBg = isDark ? const Color(0xFF071326) : Colors.white;
     final textColor = isDark ? Colors.white : AppTheme.darkSlate;
-    final borderColor = isDark ? Colors.white10 : Colors.grey.shade200;
+    final canPop = Navigator.canPop(context);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: scaffoldBg,
-        border: Border(bottom: BorderSide(color: borderColor)),
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      color: scaffoldBg,
       child: Row(
         children: [
+          if (canPop) ...[
+            IconButton(
+              icon: Icon(Icons.arrow_back, color: textColor),
+              onPressed: () => Navigator.maybePop(context),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            ),
+            const SizedBox(width: 4),
+          ],
           // Logo Badge
           Container(
             padding: const EdgeInsets.all(6),
@@ -436,9 +459,9 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
               borderRadius: BorderRadius.circular(10),
               border: Border.all(color: const Color(0xFFFFA000).withValues(alpha: 0.3)),
             ),
-            child: const Icon(Icons.shield_rounded, color: Color(0xFFFFA000), size: 22),
+            child: const Icon(Icons.shield_rounded, color: Color(0xFFFFA000), size: 20),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -446,24 +469,18 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
               children: [
                 Text(
                   'EXAMINANTT',
-                  style: TextStyle(color: textColor, fontWeight: FontWeight.w900, fontSize: 15, letterSpacing: 0.8),
+                  style: TextStyle(color: textColor, fontWeight: FontWeight.w900, fontSize: 14, letterSpacing: 0.8),
                   overflow: TextOverflow.ellipsis,
                 ),
                 const Text(
                   'RESOURCE CENTER',
-                  style: TextStyle(color: Color(0xFFFFA000), fontWeight: FontWeight.w800, fontSize: 11, letterSpacing: 0.5),
+                  style: TextStyle(color: Color(0xFFFFA000), fontWeight: FontWeight.w800, fontSize: 10.5, letterSpacing: 0.5),
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
           NotificationBellAction(color: textColor),
-          IconButton(
-            icon: Icon(Icons.search_rounded, color: textColor),
-            onPressed: () {
-              AppTheme.showSuccessSnackBar(context, 'Search notes, question papers & formulas...');
-            },
-          ),
         ],
       ),
     );

@@ -2,6 +2,7 @@ import 'package:examinantt_app/utils/app_navigator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../models/content_models.dart';
+import '../services/firestore_service.dart';
 import '../utils/app_theme.dart';
 import 'pdf_viewer_screen.dart';
 import 'quiz_screen.dart';
@@ -92,11 +93,28 @@ class _PyqsScreenState extends State<PyqsScreen> {
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: const Row(
+        leadingWidth: 42,
+        titleSpacing: 6,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: textColor),
+          onPressed: () => Navigator.maybePop(context),
+        ),
+        title: Row(
           children: [
-            Icon(Icons.history_edu_rounded, color: Color(0xFF38BDF8), size: 20),
-            SizedBox(width: 8),
-            Text(
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: (isDark ? const Color(0xFF0070F3) : AppTheme.primaryColor).withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.history_edu_rounded,
+                color: isDark ? const Color(0xFF38BDF8) : AppTheme.primaryColor,
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Text(
               'Previous Year Papers (PYQs)',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
             ),
@@ -139,50 +157,64 @@ class _PyqsScreenState extends State<PyqsScreen> {
                 ),
                 const SizedBox(height: 10),
 
-                // Exam Filter Horizontal Chips matching examinantt.com
+                // Dynamic Exam Filter Horizontal Chips from Firestore
                 SizedBox(
-                  height: 30,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    children: [
-                      'All',
-                      'JEE Main',
-                      'NEET UG',
-                      'CUET UG',
-                      'SSC CGL',
-                      'UPSI',
-                      'Defence',
-                      'State Exams',
-                      'Teaching',
-                      'Boards',
-                    ].map((exam) {
-                      final isSel = _selectedExamFilter == exam;
-                      return GestureDetector(
-                        onTap: () => setState(() => _selectedExamFilter = exam),
-                        child: Container(
-                          margin: const EdgeInsets.only(right: 6),
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: isSel ? const Color(0xFF0070F3) : (isDark ? const Color(0xFF0D2244) : Colors.grey.shade200),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: isSel ? const Color(0xFF38BDF8) : (isDark ? const Color(0xFF1B3864) : Colors.grey.shade300),
-                            ),
-                          ),
-                          child: Center(
-                            child: Text(
-                              exam,
-                              style: TextStyle(
-                                color: isSel ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
-                                fontSize: 11,
-                                fontWeight: isSel ? FontWeight.w800 : FontWeight.w600,
+                  height: 32,
+                  child: StreamBuilder<List<String>>(
+                    stream: FirestoreService().getExamsStream(),
+                    builder: (context, examSnap) {
+                      final dbExams = examSnap.data ?? [];
+                      final examList = <String>['All'];
+                      if (dbExams.isNotEmpty) {
+                        examList.addAll(dbExams);
+                      } else {
+                        examList.addAll([
+                          'JEE Main',
+                          'NEET UG',
+                          'CUET UG',
+                          'SSC CGL',
+                          'UPSI',
+                          'Defence',
+                          'State Exams',
+                          'Teaching',
+                          'Boards',
+                        ]);
+                      }
+
+                      return ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: examList.length,
+                        itemBuilder: (context, index) {
+                          final exam = examList[index];
+                          final isSel = _selectedExamFilter == exam;
+                          return GestureDetector(
+                            onTap: () => setState(() => _selectedExamFilter = exam),
+                            child: Container(
+                              margin: const EdgeInsets.only(right: 6),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: isSel ? const Color(0xFF0070F3) : (isDark ? const Color(0xFF0D2244) : Colors.grey.shade200),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: isSel ? const Color(0xFF38BDF8) : (isDark ? const Color(0xFF1B3864) : Colors.grey.shade300),
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  exam,
+                                  style: TextStyle(
+                                    color: isSel ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                                    fontSize: 11,
+                                    fontWeight: isSel ? FontWeight.w800 : FontWeight.w600,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                        ),
+                          );
+                        },
                       );
-                    }).toList(),
+                    },
                   ),
                 ),
               ],
@@ -207,17 +239,22 @@ class _PyqsScreenState extends State<PyqsScreen> {
                 }
                 final allPapers = snapshot.data ?? [];
                 final filteredPapers = allPapers.where((paper) {
-                  final exam = (paper['exam'] as String?) ?? '';
+                  final exam = ((paper['exam'] as String?) ?? '').toLowerCase().trim();
+                  final title = ((paper['title'] as String?) ?? '').toLowerCase().trim();
+                  final sel = _selectedExamFilter.toLowerCase().trim();
                   final matchesExam = _selectedExamFilter == 'All' ||
-                      exam.toLowerCase() == _selectedExamFilter.toLowerCase();
-                  final title = (paper['title'] as String?) ?? '';
-                  final shift = (paper['shift'] as String?) ?? '';
-                  final year = (paper['year'] as String?) ?? '';
-                  final matchesQuery = _searchQuery.isEmpty ||
-                      title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                      shift.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                      exam.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                      year.toLowerCase().contains(_searchQuery.toLowerCase());
+                      exam == sel ||
+                      exam.contains(sel) ||
+                      sel.contains(exam) ||
+                      title.contains(sel);
+                  final shift = ((paper['shift'] as String?) ?? '').toLowerCase();
+                  final year = ((paper['year'] as String?) ?? '').toLowerCase();
+                  final q = _searchQuery.toLowerCase().trim();
+                  final matchesQuery = q.isEmpty ||
+                      title.contains(q) ||
+                      shift.contains(q) ||
+                      exam.contains(q) ||
+                      year.contains(q);
                   return matchesExam && matchesQuery;
                 }).toList();
 

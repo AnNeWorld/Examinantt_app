@@ -17,6 +17,7 @@ import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../screens/batch_details_screen.dart';
 import 'create_edit_batch_sheet.dart';
+import 'safe_app_image.dart';
 
 /// Complete Batches Page Implementation from "batch page.pdf"
 /// Contains all 8 comprehensive sections with full fidelity and interactive features
@@ -625,48 +626,74 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
     );
   }
 
-  void _showAllExamsModal(List<Map<String, dynamic>> exams) {
+  void _showAllExamsModal([List<Map<String, dynamic>>? fallbackExams]) {
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF071326),
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      isScrollControlled: true,
       builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Select Target Exam', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                  IconButton(icon: const Icon(Icons.close, color: Colors.white70), onPressed: () => Navigator.pop(context)),
-                ],
-              ),
-              const Divider(color: Color(0xFF1E3A68)),
-              ...exams.map((e) {
-                final isSelected = e['name'] == _selectedExam;
-                return ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: (e['color'] as Color).withValues(alpha: 0.2),
-                    child: Text(e['abbr'] as String, style: TextStyle(color: e['color'] as Color, fontSize: 11, fontWeight: FontWeight.bold)),
+        return SafeArea(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.75,
+            ),
+            child: StreamBuilder<List<String>>(
+              stream: FirestoreService().getExamsStream(),
+              builder: (context, snap) {
+                final dbExams = snap.data ?? [];
+                final list = <String>[];
+                if (dbExams.isNotEmpty) {
+                  list.addAll(dbExams);
+                } else if (fallbackExams != null) {
+                  list.addAll(fallbackExams.map((e) => e['name'] as String));
+                } else {
+                  list.addAll(['JEE Main 2027', 'NEET UG 2027', 'CUET UG 2027', 'GATE 2027', 'SSC CGL 2027', 'Defence']);
+                }
+
+                return SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Select Target Exam', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                            IconButton(icon: const Icon(Icons.close, color: Colors.white70), onPressed: () => Navigator.pop(context)),
+                          ],
+                        ),
+                      ),
+                      const Divider(color: Color(0xFF1E3A68), height: 1),
+                      ...list.map((examName) {
+                        final isSelected = examName.toLowerCase() == _selectedExam.toLowerCase();
+                        final abbr = examName.length > 4 ? examName.substring(0, 3).toUpperCase() : examName;
+                        return ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: const Color(0xFF0070F3).withValues(alpha: 0.2),
+                            child: Text(abbr, style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 10, fontWeight: FontWeight.bold)),
+                          ),
+                          title: Text(
+                            examName,
+                            style: TextStyle(color: isSelected ? const Color(0xFF38BDF8) : Colors.white, fontWeight: isSelected ? FontWeight.w900 : FontWeight.normal),
+                          ),
+                          trailing: isSelected ? const Icon(Icons.check_circle, color: Color(0xFF38BDF8)) : null,
+                          onTap: () {
+                            setState(() => _selectedExam = examName);
+                            Provider.of<UserProvider>(context, listen: false).updateTargetExam(_selectedExam);
+                            Navigator.pop(context);
+                            _showSnack('Active target exam updated to $_selectedExam!');
+                          },
+                        );
+                      }),
+                      const SizedBox(height: 16),
+                    ],
                   ),
-                  title: Text(
-                    e['name'] as String,
-                    style: TextStyle(color: isSelected ? const Color(0xFF38BDF8) : Colors.white, fontWeight: isSelected ? FontWeight.w900 : FontWeight.normal),
-                  ),
-                  subtitle: Text(e['sub'] as String, style: const TextStyle(color: Colors.white54, fontSize: 10)),
-                  trailing: isSelected ? const Icon(Icons.check_circle, color: Color(0xFF38BDF8)) : null,
-                  onTap: () {
-                    setState(() => _selectedExam = e['name'] as String);
-                    Provider.of<UserProvider>(context, listen: false).updateTargetExam(_selectedExam);
-                    Navigator.pop(context);
-                    _showSnack('Active target exam updated to $_selectedExam!');
-                  },
                 );
-              }),
-            ],
+              },
+            ),
           ),
         );
       },
@@ -770,21 +797,31 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Container(
-                                  width: 44,
-                                  height: 44,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: const Color(0xFF0070F3).withValues(alpha: 0.2),
-                                    border: Border.all(color: const Color(0xFF0070F3)),
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      batch.examCategory.length > 3 ? batch.examCategory.substring(0, 3).toUpperCase() : 'BATCH',
-                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 10),
-                                    ),
-                                  ),
-                                ),
+                                batch.imageUrl.isNotEmpty
+                                    ? ClipRRect(
+                                        borderRadius: BorderRadius.circular(22),
+                                        child: SafeAppImage(
+                                          imageUrl: batch.imageUrl,
+                                          width: 44,
+                                          height: 44,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      )
+                                    : Container(
+                                        width: 44,
+                                        height: 44,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: const Color(0xFF0070F3).withValues(alpha: 0.2),
+                                          border: Border.all(color: const Color(0xFF0070F3)),
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            batch.examCategory.length > 3 ? batch.examCategory.substring(0, 3).toUpperCase() : 'BATCH',
+                                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 10),
+                                          ),
+                                        ),
+                                      ),
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Column(
@@ -1331,6 +1368,20 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
                                 ],
                               ),
                               const SizedBox(height: 6),
+
+                              // Batch Banner Image (from admin portal / website)
+                              if (course.imageUrl.isNotEmpty) ...[
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: SafeAppImage(
+                                    imageUrl: course.imageUrl,
+                                    height: 120,
+                                    width: double.infinity,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                              ],
 
                               // Title
                               Text(
@@ -1906,16 +1957,26 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(8)),
-            child: DropdownButton<String>(
-              value: _wizardExam,
-              isExpanded: true,
-              dropdownColor: const Color(0xFF071326),
-              underline: const SizedBox(),
-              items: ['JEE Main 2027', 'NEET UG 2027', 'CUET UG 2027', 'GATE 2027', 'SSC CGL 2027', 'Defence']
-                  .map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(color: Colors.white, fontSize: 11))))
-                  .toList(),
-              onChanged: (val) {
-                if (val != null) setState(() => _wizardExam = val);
+            child: StreamBuilder<List<String>>(
+              stream: FirestoreService().getExamsStream(),
+              builder: (context, snap) {
+                final dbExams = snap.data ?? [];
+                final items = dbExams.isNotEmpty
+                    ? dbExams
+                    : ['JEE Main 2027', 'NEET UG 2027', 'CUET UG 2027', 'GATE 2027', 'SSC CGL 2027', 'Defence'];
+                final currentVal = items.contains(_wizardExam) ? _wizardExam : items.first;
+                return DropdownButton<String>(
+                  value: currentVal,
+                  isExpanded: true,
+                  dropdownColor: const Color(0xFF071326),
+                  underline: const SizedBox(),
+                  items: items
+                      .map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(color: Colors.white, fontSize: 11))))
+                      .toList(),
+                  onChanged: (val) {
+                    if (val != null) setState(() => _wizardExam = val);
+                  },
+                );
               },
             ),
           ),

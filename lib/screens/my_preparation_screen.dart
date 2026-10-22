@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
@@ -175,8 +176,23 @@ class _GoalsTabState extends State<GoalsTab> {
     );
   }
 
-  void _changePrimaryExam() {
-    final allExams = ['JEE Main 2027', 'JEE Advanced 2027', 'NEET 2027', 'CUET UG 2027', 'GATE 2027', 'CAT 2027', 'CLAT 2027'];
+  Future<void> _changePrimaryExam() async {
+    List<String> allExams;
+    try {
+      final snap = await FirebaseFirestore.instance.collection('exams').get();
+      allExams = snap.docs.map((d) {
+        final data = d.data();
+        return (data['name'] ?? data['title'] ?? data['examName'] ?? d.id).toString().trim();
+      }).where((s) => s.isNotEmpty).toList();
+      allExams.sort();
+    } catch (_) {
+      allExams = [];
+    }
+    if (allExams.isEmpty) {
+      allExams = ['JEE Main 2027', 'JEE Advanced 2027', 'NEET 2027', 'CUET UG 2027', 'GATE 2027', 'CAT 2027', 'CLAT 2027', 'SSC CGL 2027'];
+    }
+    if (!mounted) return;
+
     _showOptionsBottomSheet(
       title: 'Select Primary Exam',
       options: allExams,
@@ -191,11 +207,27 @@ class _GoalsTabState extends State<GoalsTab> {
     );
   }
 
-  void _addExam() {
-    final availableExams = ['NEET 2027', 'CAT 2027', 'CLAT 2027', 'JEE Advanced 2027']
+  Future<void> _addExam() async {
+    List<String> allExams;
+    try {
+      final snap = await FirebaseFirestore.instance.collection('exams').get();
+      allExams = snap.docs.map((d) {
+        final data = d.data();
+        return (data['name'] ?? data['title'] ?? data['examName'] ?? d.id).toString().trim();
+      }).where((s) => s.isNotEmpty).toList();
+      allExams.sort();
+    } catch (_) {
+      allExams = [];
+    }
+    if (allExams.isEmpty) {
+      allExams = ['NEET 2027', 'CAT 2027', 'CLAT 2027', 'JEE Advanced 2027', 'GATE 2027', 'SSC CGL 2027'];
+    }
+
+    final availableExams = allExams
         .where((exam) => exam != primaryExam && !otherExams.any((e) => e['title'] == exam))
         .toList();
 
+    if (!mounted) return;
     if (availableExams.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('All exams are already added!')),
