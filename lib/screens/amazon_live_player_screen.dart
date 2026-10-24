@@ -64,11 +64,13 @@ class _AmazonLivePlayerScreenState extends State<AmazonLivePlayerScreen>
     _accessSession = widget.accessSession;
     _checkMeetingLinks();
 
-    // If accessSession wasn't passed, request join access from backend
-    if (_accessSession == null) {
-      _requestJoinSession();
-    } else {
-      _initChat();
+    if (!widget.liveClass.isJitsi && widget.liveClass.roomName.isEmpty) {
+      // If accessSession wasn't passed, request join access from backend
+      if (_accessSession == null) {
+        _requestJoinSession();
+      } else {
+        _initChat();
+      }
     }
   }
 
@@ -657,14 +659,7 @@ class _AmazonLivePlayerScreenState extends State<AmazonLivePlayerScreen>
                   }
 
                   final rawUrl = widget.liveClass.videoUrl.trim();
-                  String finalUrl = rawUrl;
-                  if (finalUrl.contains('jit.si') || finalUrl.contains('8x8')) {
-                    finalUrl = finalUrl.contains('#')
-                        ? '$finalUrl&config.disableDeepLinking=true&config.prejoinPageEnabled=false'
-                        : '$finalUrl#config.disableDeepLinking=true&config.prejoinPageEnabled=false';
-                  }
-
-                  final uri = Uri.tryParse(finalUrl);
+                  final uri = Uri.tryParse(rawUrl);
                   if (uri != null && await canLaunchUrl(uri)) {
                     await launchUrl(uri, mode: LaunchMode.externalApplication);
                   }

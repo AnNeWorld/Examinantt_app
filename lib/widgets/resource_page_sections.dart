@@ -203,20 +203,37 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
   }
 
   // ---------------------------------------------------------------------------
+  // THEME GETTERS
+  // ---------------------------------------------------------------------------
+  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
+  Color get _cardBg => _isDark ? const Color(0xFF0F172A) : Colors.white;
+  Color get _subCardBg => _isDark ? const Color(0xFF071326) : const Color(0xFFF8FAFC);
+  Color get _titleColor => _isDark ? Colors.white : AppTheme.darkSlate;
+  Color get _subColor => _isDark ? Colors.white70 : const Color(0xFF64748B);
+  Color get _mutedColor => _isDark ? Colors.white54 : Colors.grey.shade500;
+  Color get _borderColor => _isDark ? Colors.white12 : Colors.grey.shade200;
+  Color get _dialogBg => _isDark ? const Color(0xFF0F172A) : Colors.white;
+
+  // ---------------------------------------------------------------------------
   // INTERACTIVE DIALOGS
   // ---------------------------------------------------------------------------
 
   void _showChangeExamDialog() {
+    final dialogBg = _dialogBg;
+    final titleColor = _titleColor;
+    final subColor = _subColor;
+    final isDark = _isDark;
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF0F172A),
+        backgroundColor: dialogBg,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.school, color: Color(0xFFFFA000), size: 20),
-            SizedBox(width: 8),
-            Text('Select Target Exam', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+            const Icon(Icons.school, color: Color(0xFFFFA000), size: 20),
+            const SizedBox(width: 8),
+            Text('Select Target Exam', style: TextStyle(color: titleColor, fontSize: 16, fontWeight: FontWeight.bold)),
           ],
         ),
         content: SizedBox(
@@ -236,12 +253,12 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                       leading: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: isSel ? const Color(0xFFFFA000).withValues(alpha: 0.2) : Colors.white10,
+                          color: isSel ? const Color(0xFFFFA000).withValues(alpha: 0.2) : (isDark ? Colors.white10 : Colors.grey.shade100),
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(isSel ? Icons.check_circle : Icons.school_outlined, color: isSel ? const Color(0xFFFFA000) : Colors.white70, size: 18),
+                        child: Icon(isSel ? Icons.check_circle : Icons.school_outlined, color: isSel ? const Color(0xFFFFA000) : subColor, size: 18),
                       ),
-                      title: Text(exam, style: TextStyle(color: isSel ? const Color(0xFFFFA000) : Colors.white, fontWeight: isSel ? FontWeight.bold : FontWeight.normal)),
+                      title: Text(exam, style: TextStyle(color: isSel ? const Color(0xFFFFA000) : titleColor, fontWeight: isSel ? FontWeight.bold : FontWeight.normal)),
                       trailing: isSel
                           ? Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -269,16 +286,17 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
   }
 
   void _showHowResourcesWorkDialog() {
+    final isDark = _isDark;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF0F172A),
+        backgroundColor: _dialogBg,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.help_outline_rounded, color: Color(0xFFFFA000)),
-            SizedBox(width: 10),
-            Text('How Resources Work?', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+            const Icon(Icons.help_outline_rounded, color: Color(0xFFFFA000)),
+            const SizedBox(width: 10),
+            Text('How Resources Work?', style: TextStyle(color: isDark ? Colors.white : AppTheme.darkSlate, fontSize: 16, fontWeight: FontWeight.bold)),
           ],
         ),
         content: const Column(
@@ -313,12 +331,16 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
     required double price,
     ResourceItem? resourceItem,
   }) {
+    final titleColor = _titleColor;
+    final subColor = _subColor;
+    final mutedColor = _mutedColor;
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF0F172A),
+        backgroundColor: _dialogBg,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+        title: Text(title, style: TextStyle(color: titleColor, fontWeight: FontWeight.bold, fontSize: 16)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -332,19 +354,19 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
               child: Text(badge, style: const TextStyle(color: Color(0xFFFFA000), fontSize: 10, fontWeight: FontWeight.bold)),
             ),
             const SizedBox(height: 8),
-            Text('Category: $category', style: const TextStyle(color: Colors.white70, fontSize: 12)),
+            Text('Category: $category', style: TextStyle(color: subColor, fontSize: 12)),
             const SizedBox(height: 4),
-            Text('Specifications: $meta', style: const TextStyle(color: Colors.white70, fontSize: 12)),
+            Text('Specifications: $meta', style: TextStyle(color: subColor, fontSize: 12)),
             const SizedBox(height: 12),
-            const Text(
+            Text(
               'High-yield revision notes curated by top IITian faculties. Includes short tricks, formulas, solved examples and past 15-year questions.',
-              style: TextStyle(color: Colors.white60, fontSize: 11.5, height: 1.4),
+              style: TextStyle(color: mutedColor, fontSize: 11.5, height: 1.4),
             ),
             const SizedBox(height: 12),
             if (price > 0)
               Row(
                 children: [
-                  const Text('Unlock Price: ', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                  Text('Unlock Price: ', style: TextStyle(color: subColor, fontSize: 12)),
                   Text('₹${price.toStringAsFixed(0)}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 16)),
                 ],
               ),
@@ -353,7 +375,7 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Close', style: TextStyle(color: Colors.white54)),
+            child: Text('Close', style: TextStyle(color: mutedColor)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -433,7 +455,7 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                             Expanded(
                               child: RefreshIndicator(
                                 color: const Color(0xFFFFA000),
-                                backgroundColor: const Color(0xFF0F172A),
+                                backgroundColor: _cardBg,
                                 onRefresh: () async {
                                   await Future.delayed(const Duration(milliseconds: 650));
                                   if (mounted) setState(() {});
@@ -571,8 +593,10 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
             child: Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF0F2648), Color(0xFF09172B)],
+                gradient: LinearGradient(
+                  colors: _isDark
+                      ? const [Color(0xFF0F2648), Color(0xFF09172B)]
+                      : const [Color(0xFFEFF6FF), Color(0xFFDBEAFE)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -607,9 +631,9 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                           spacing: 6,
                           runSpacing: 2,
                           children: [
-                            const Text(
+                            Text(
                               'Student & Faculty Community',
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                              style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 13),
                             ),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
@@ -622,9 +646,9 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                           ],
                         ),
                         const SizedBox(height: 3),
-                        const Text(
+                        Text(
                           'Chat with peers, ask doubts & get verified faculty answers.',
-                          style: TextStyle(color: Colors.white70, fontSize: 10.5),
+                          style: TextStyle(color: _subColor, fontSize: 10.5),
                         ),
                       ],
                     ),
@@ -662,9 +686,16 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                 child: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A),
+                    color: _cardBg,
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.white12),
+                    border: Border.all(color: _borderColor),
+                    boxShadow: _isDark ? null : [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -674,7 +705,7 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                       Text(
                         item['title'] as String,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: _titleColor, fontSize: 10.5, fontWeight: FontWeight.bold),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -691,13 +722,13 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Row(
+                Row(
                   children: [
-                    Icon(Icons.bolt_rounded, color: Color(0xFFFFA000), size: 18),
-                    SizedBox(width: 6),
+                    const Icon(Icons.bolt_rounded, color: Color(0xFFFFA000), size: 18),
+                    const SizedBox(width: 6),
                     Text(
                       'Live Real-Time Notes ⚡',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                      style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 14),
                     ),
                   ],
                 ),
@@ -836,12 +867,12 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4.0),
                 child: ChoiceChip(
-                  label: Text(f, style: TextStyle(color: isSel ? Colors.black : Colors.white70, fontSize: 11, fontWeight: isSel ? FontWeight.bold : FontWeight.normal)),
+                  label: Text(f, style: TextStyle(color: isSel ? Colors.black : _subColor, fontSize: 11, fontWeight: isSel ? FontWeight.bold : FontWeight.normal)),
                   selected: isSel,
                   onSelected: (val) => setState(() => _myResourcesFilter = f),
-                  backgroundColor: const Color(0xFF0F172A),
+                  backgroundColor: _cardBg,
                   selectedColor: const Color(0xFFFFA000),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: isSel ? const Color(0xFFFFA000) : Colors.white12)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: isSel ? const Color(0xFFFFA000) : _borderColor)),
                   showCheckmark: false,
                 ),
               );
@@ -865,20 +896,20 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                           children: [
                             Icon(
                               _myResourcesFilter == 'Bookmarks' ? Icons.bookmark_border_rounded : Icons.folder_open_rounded,
-                              color: Colors.white24,
+                              color: _isDark ? Colors.white24 : Colors.grey.shade400,
                               size: 48,
                             ),
                             const SizedBox(height: 12),
                             Text(
                               _myResourcesFilter == 'Bookmarks' ? 'No Bookmarks Yet' : 'No items in $_myResourcesFilter',
-                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                              style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 15),
                             ),
                             const SizedBox(height: 6),
                             Text(
                               _myResourcesFilter == 'Bookmarks'
                                   ? 'Tap the bookmark icon on any resource or note to save it here in real-time!'
                                   : 'Explore our rich library of notes, PYQs and formula sheets.',
-                              style: const TextStyle(color: Colors.white54, fontSize: 11),
+                              style: TextStyle(color: _subColor, fontSize: 11),
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 16),
@@ -962,9 +993,16 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF0F172A),
+        color: _cardBg,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(color: _borderColor),
+        boxShadow: _isDark ? null : [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -995,7 +1033,7 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                     Expanded(
                       child: Text(
                         meta,
-                        style: const TextStyle(color: Colors.white54, fontSize: 10),
+                        style: TextStyle(color: _mutedColor, fontSize: 10),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -1003,8 +1041,8 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
-                Text(subtitle, style: const TextStyle(color: Colors.white70, fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(title, style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(subtitle, style: TextStyle(color: _subColor, fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 6),
                 Row(
                   children: [
@@ -1013,7 +1051,7 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                         borderRadius: BorderRadius.circular(2),
                         child: LinearProgressIndicator(
                           value: progressVal,
-                          backgroundColor: Colors.white10,
+                          backgroundColor: _isDark ? Colors.white10 : Colors.grey.shade200,
                           valueColor: AlwaysStoppedAnimation<Color>(progressColor),
                           minHeight: 4,
                         ),
@@ -1023,7 +1061,7 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                     if (isCompleted)
                       const Icon(Icons.check_circle_rounded, color: Color(0xFFFFA000), size: 13),
                     const SizedBox(width: 4),
-                    Text(progressText, style: const TextStyle(color: Colors.white60, fontSize: 9.5)),
+                    Text(progressText, style: TextStyle(color: _mutedColor, fontSize: 9.5)),
                   ],
                 ),
               ],
@@ -1033,7 +1071,7 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
           Column(
             children: [
               IconButton(
-                icon: Icon(isItemBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded, color: isItemBookmarked ? const Color(0xFFFFA000) : Colors.white38, size: 20),
+                icon: Icon(isItemBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded, color: isItemBookmarked ? const Color(0xFFFFA000) : (_isDark ? Colors.white38 : Colors.grey.shade400), size: 20),
                 onPressed: () {
                   if (onBookmarkToggle != null) {
                     onBookmarkToggle();
@@ -1095,13 +1133,13 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                 child: const Icon(Icons.workspace_premium_rounded, color: Colors.black, size: 22),
               ),
               const SizedBox(width: 12),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Included With Your Batch', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                    SizedBox(height: 2),
-                    Text('Unlock premium resources included in your enrolled batches ✨', style: TextStyle(color: Colors.white60, fontSize: 11.5)),
+                    Text('Included With Your Batch', style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 16)),
+                    const SizedBox(height: 2),
+                    Text('Unlock premium resources included in your enrolled batches ✨', style: TextStyle(color: _mutedColor, fontSize: 11.5)),
                   ],
                 ),
               ),
@@ -1123,22 +1161,29 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
               width: double.infinity,
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: const Color(0xFF0F172A),
+                color: _cardBg,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white10),
+                border: Border.all(color: _borderColor),
+                boxShadow: _isDark ? null : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Column(
                 children: [
                   const Icon(Icons.card_giftcard_rounded, size: 44, color: Color(0xFFFFA000)),
                   const SizedBox(height: 12),
-                  const Text(
+                  Text(
                     'No Batch Resources Available',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                    style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 15),
                   ),
                   const SizedBox(height: 6),
-                  const Text(
+                  Text(
                     'You do not have any resources linked to your batches yet. Explore all study resources or create one.',
-                    style: TextStyle(color: Colors.white54, fontSize: 11.5),
+                    style: TextStyle(color: _subColor, fontSize: 11.5),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
@@ -1168,9 +1213,16 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                   margin: const EdgeInsets.only(bottom: 10),
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A),
+                    color: _cardBg,
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.white10),
+                    border: Border.all(color: _borderColor),
+                    boxShadow: _isDark ? null : [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: Row(
                     children: [
@@ -1189,14 +1241,14 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                           children: [
                             Text(
                               item.title,
-                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                              style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 13),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 2),
                             Text(
                               '${item.subject.isNotEmpty ? item.subject : item.exam} • ${item.fileSize}',
-                              style: const TextStyle(color: Colors.white60, fontSize: 10.5),
+                              style: TextStyle(color: _subColor, fontSize: 10.5),
                             ),
                           ],
                         ),
@@ -1277,12 +1329,12 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4.0),
                 child: ChoiceChip(
-                  label: Text(c, style: TextStyle(color: isSel ? Colors.black : Colors.white70, fontSize: 11, fontWeight: isSel ? FontWeight.bold : FontWeight.normal)),
+                  label: Text(c, style: TextStyle(color: isSel ? Colors.black : _subColor, fontSize: 11, fontWeight: isSel ? FontWeight.bold : FontWeight.normal)),
                   selected: isSel,
                   onSelected: (val) => setState(() => _exploreCategoryFilter = c),
-                  backgroundColor: const Color(0xFF0F172A),
+                  backgroundColor: _cardBg,
                   selectedColor: const Color(0xFFFFA000),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: isSel ? const Color(0xFFFFA000) : Colors.white12)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: isSel ? const Color(0xFFFFA000) : _borderColor)),
                   showCheckmark: false,
                 ),
               );
@@ -1304,9 +1356,9 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.search_off_rounded, color: Colors.white24, size: 48),
+                            Icon(Icons.search_off_rounded, color: _isDark ? Colors.white24 : Colors.grey.shade400, size: 48),
                             const SizedBox(height: 12),
-                            Text('No resources found in "$_exploreCategoryFilter"', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                            Text('No resources found in "$_exploreCategoryFilter"', style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 14)),
                             const SizedBox(height: 8),
                             ElevatedButton(
                               onPressed: () => setState(() => _exploreCategoryFilter = 'All'),
@@ -1360,9 +1412,16 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF0F172A),
+                          color: _cardBg,
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: Colors.white10),
+                          border: Border.all(color: _borderColor),
+                          boxShadow: _isDark ? null : [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.04),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
                         child: Row(
                           children: [
@@ -1396,12 +1455,12 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                                     ],
                                   ),
                                   const SizedBox(height: 4),
-                                  Text(item.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  Text(item.title, style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
                                   Text(
                                     item.subtitle.isNotEmpty
                                         ? item.subtitle
                                         : '${item.subject.isNotEmpty ? item.subject : item.exam} • ${item.fileType.isNotEmpty ? item.fileType : item.type}',
-                                    style: const TextStyle(color: Colors.white54, fontSize: 10.5),
+                                    style: TextStyle(color: _subColor, fontSize: 10.5),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -1413,7 +1472,7 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 IconButton(
-                                  icon: Icon(isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded, color: isBookmarked ? const Color(0xFFFFA000) : Colors.white38, size: 20),
+                                  icon: Icon(isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded, color: isBookmarked ? const Color(0xFFFFA000) : (_isDark ? Colors.white38 : Colors.grey.shade400), size: 20),
                                   onPressed: () => _toggleBookmark(item.id, item.title),
                                   padding: EdgeInsets.zero,
                                   constraints: const BoxConstraints(),
@@ -1489,12 +1548,12 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
         // Top Back Header
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          color: const Color(0xFF0F172A),
+          color: _cardBg,
           child: Row(
             children: [
               if (_isViewingNotesDeepDive)
                 IconButton(
-                  icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+                  icon: Icon(Icons.arrow_back_rounded, color: _titleColor),
                   onPressed: _closeNotesDeepDive,
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
@@ -1506,11 +1565,11 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                 child: const Icon(Icons.menu_book_rounded, color: Color(0xFFA78BFA), size: 18),
               ),
               const SizedBox(width: 10),
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Notes ✨', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
-                  Text('Chapter-wise notes for complete revision', style: TextStyle(color: Colors.white60, fontSize: 10.5)),
+                  Text('Notes ✨', style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 15)),
+                  Text('Chapter-wise notes for complete revision', style: TextStyle(color: _subColor, fontSize: 10.5)),
                 ],
               ),
             ],
@@ -1526,19 +1585,19 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                 child: Container(
                   height: 40,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A),
+                    color: _cardBg,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white12),
+                    border: Border.all(color: _borderColor),
                   ),
                   child: TextField(
                     onChanged: (val) => setState(() => _notesSearchQuery = val.toLowerCase().trim()),
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
-                    decoration: const InputDecoration(
+                    style: TextStyle(color: _titleColor, fontSize: 12),
+                    decoration: InputDecoration(
                       hintText: 'Search chapter notes, formulas, topics...',
-                      hintStyle: TextStyle(color: Colors.white38, fontSize: 11),
-                      prefixIcon: Icon(Icons.search, color: Color(0xFFFFA000), size: 18),
+                      hintStyle: TextStyle(color: _mutedColor, fontSize: 11),
+                      prefixIcon: const Icon(Icons.search, color: Color(0xFFFFA000), size: 18),
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(vertical: 10),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 10),
                     ),
                   ),
                 ),
@@ -1551,7 +1610,7 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                   height: 40,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A),
+                    color: _cardBg,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: const Color(0xFFFFA000).withValues(alpha: 0.4)),
                   ),
@@ -1579,12 +1638,12 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                 return Padding(
                   padding: const EdgeInsets.only(right: 6.0),
                   child: ChoiceChip(
-                    label: Text(sub, style: TextStyle(color: isSel ? Colors.black : Colors.white70, fontSize: 11, fontWeight: isSel ? FontWeight.bold : FontWeight.normal)),
+                    label: Text(sub, style: TextStyle(color: isSel ? Colors.black : _subColor, fontSize: 11, fontWeight: isSel ? FontWeight.bold : FontWeight.normal)),
                     selected: isSel,
                     onSelected: (val) => setState(() => _notesSubjectFilter = sub),
-                    backgroundColor: const Color(0xFF0F172A),
+                    backgroundColor: _cardBg,
                     selectedColor: const Color(0xFFFFA000),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: isSel ? const Color(0xFFFFA000) : Colors.white12)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: isSel ? const Color(0xFFFFA000) : _borderColor)),
                     showCheckmark: false,
                   ),
                 );
@@ -1608,12 +1667,12 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                       return Padding(
                         padding: const EdgeInsets.only(right: 6.0),
                         child: FilterChip(
-                          label: Text(type, style: TextStyle(color: isSel ? const Color(0xFFFFA000) : Colors.white60, fontSize: 10)),
+                          label: Text(type, style: TextStyle(color: isSel ? const Color(0xFFFFA000) : _subColor, fontSize: 10)),
                           selected: isSel,
                           onSelected: (val) => setState(() => _notesAccessFilter = type),
-                          backgroundColor: const Color(0xFF0F172A),
+                          backgroundColor: _cardBg,
                           selectedColor: const Color(0xFFFFA000).withValues(alpha: 0.15),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: BorderSide(color: isSel ? const Color(0xFFFFA000) : Colors.white10)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: BorderSide(color: isSel ? const Color(0xFFFFA000) : _borderColor)),
                           showCheckmark: false,
                         ),
                       );
@@ -1623,11 +1682,11 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
               ),
               DropdownButton<String>(
                 value: _notesSortOption,
-                dropdownColor: const Color(0xFF0F172A),
+                dropdownColor: _cardBg,
                 underline: const SizedBox(),
                 isDense: true,
-                icon: const Icon(Icons.arrow_drop_down, color: Colors.white70, size: 16),
-                style: const TextStyle(color: Colors.white70, fontSize: 10.5),
+                icon: Icon(Icons.arrow_drop_down, color: _subColor, size: 16),
+                style: TextStyle(color: _subColor, fontSize: 10.5),
                 items: ['Sort by: Recommended', 'Sort by: Chapter Number', 'Sort by: Recently Updated'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
                 onChanged: (v) {
                   if (v != null) setState(() => _notesSortOption = v);
@@ -1677,10 +1736,10 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                   physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
                   child: SizedBox(
                     height: MediaQuery.of(context).size.height * 0.5,
-                    child: const Center(
+                    child: Center(
                       child: Text(
                         'No chapter notes found matching your search',
-                        style: TextStyle(color: Colors.white54, fontSize: 13),
+                        style: TextStyle(color: _subColor, fontSize: 13),
                       ),
                     ),
                   ),
@@ -1717,9 +1776,16 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0F172A),
+                      color: _cardBg,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.white10),
+                      border: Border.all(color: _borderColor),
+                      boxShadow: _isDark ? null : [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.04),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1732,8 +1798,8 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                               width: 28,
                               height: 28,
                               alignment: Alignment.center,
-                              decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(6)),
-                              child: Text(chapterNumStr, style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.bold, fontSize: 12)),
+                              decoration: BoxDecoration(color: _isDark ? Colors.white10 : Colors.grey.shade100, borderRadius: BorderRadius.circular(6)),
+                              child: Text(chapterNumStr, style: TextStyle(color: _subColor, fontWeight: FontWeight.bold, fontSize: 12)),
                             ),
                             const SizedBox(width: 8),
                             // PDF icon
@@ -1747,16 +1813,16 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(n.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                                  Text(n.title, style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 14)),
                                   const SizedBox(height: 2),
-                                  Text(n.chapter.isNotEmpty ? n.chapter : '${n.subject} • Chapter $chapterNumStr', style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                                  Text(n.chapter.isNotEmpty ? n.chapter : '${n.subject} • Chapter $chapterNumStr', style: TextStyle(color: _subColor, fontSize: 11)),
                                   const SizedBox(height: 4),
-                                  Text('${n.fileType.isNotEmpty ? n.fileType : 'PDF'} • ${n.fileSize.isNotEmpty ? n.fileSize : '18 Pages'} • Updated 2026', style: const TextStyle(color: Colors.white54, fontSize: 9.5)),
+                                  Text('${n.fileType.isNotEmpty ? n.fileType : 'PDF'} • ${n.fileSize.isNotEmpty ? n.fileSize : '18 Pages'} • Updated 2026', style: TextStyle(color: _mutedColor, fontSize: 9.5)),
                                 ],
                               ),
                             ),
                             IconButton(
-                              icon: Icon(isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded, color: isBookmarked ? const Color(0xFFFFA000) : Colors.white38, size: 20),
+                              icon: Icon(isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded, color: isBookmarked ? const Color(0xFFFFA000) : (_isDark ? Colors.white38 : Colors.grey.shade400), size: 20),
                               onPressed: () => _toggleBookmark(id, n.title),
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
@@ -1764,7 +1830,7 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                           ],
                         ),
                         const SizedBox(height: 10),
-                        const Divider(color: Colors.white10, height: 1),
+                        Divider(color: _borderColor, height: 1),
                         const SizedBox(height: 8),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1791,13 +1857,13 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                                   ),
                                 ],
                                 const SizedBox(width: 8),
-                                Text(viewed, style: const TextStyle(color: Colors.white54, fontSize: 10)),
+                                Text(viewed, style: TextStyle(color: _mutedColor, fontSize: 10)),
                               ],
                             ),
                             Row(
                               children: [
                                 IconButton(
-                                  icon: const Icon(Icons.edit_outlined, size: 16, color: Colors.white70),
+                                  icon: Icon(Icons.edit_outlined, size: 16, color: _subColor),
                                   tooltip: 'Edit & Assign Batches',
                                   padding: EdgeInsets.zero,
                                   constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
@@ -1805,9 +1871,9 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                                 ),
                                 const SizedBox(width: 4),
                                 if (price > 0) ...[
-                                  const Text('₹199', style: TextStyle(color: Colors.white38, decoration: TextDecoration.lineThrough, fontSize: 11)),
+                                  Text('₹199', style: TextStyle(color: _mutedColor, decoration: TextDecoration.lineThrough, fontSize: 11)),
                                   const SizedBox(width: 4),
-                                  Text('₹${price.toStringAsFixed(0)}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                                  Text('₹${price.toStringAsFixed(0)}', style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 14)),
                                   const SizedBox(width: 8),
                                 ],
                                 ElevatedButton(
@@ -1844,9 +1910,14 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
   }
 
   void _showFilterModalSheet() {
+    final dialogBg = _dialogBg;
+    final titleColor = _titleColor;
+    final subColor = _subColor;
+    final isDark = _isDark;
+
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: dialogBg,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) => SafeArea(
@@ -1859,8 +1930,8 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Filter Notes', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 17)),
-                    IconButton(icon: const Icon(Icons.close, color: Colors.white54), onPressed: () => Navigator.pop(ctx)),
+                    Text('Filter Notes', style: TextStyle(color: titleColor, fontWeight: FontWeight.bold, fontSize: 17)),
+                    IconButton(icon: Icon(Icons.close, color: subColor), onPressed: () => Navigator.pop(ctx)),
                   ],
                 ),
                 const SizedBox(height: 10),
@@ -1872,7 +1943,7 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                     final key = t.split(' ')[0];
                     final isSel = _sidebarAccessFilters.contains(key);
                     return FilterChip(
-                      label: Text(t, style: TextStyle(color: isSel ? Colors.black : Colors.white70, fontSize: 10.5)),
+                      label: Text(t, style: TextStyle(color: isSel ? Colors.black : subColor, fontSize: 10.5)),
                       selected: isSel,
                       onSelected: (v) {
                         setModalState(() {
@@ -1881,7 +1952,7 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                           });
                         });
                       },
-                      backgroundColor: Colors.white10,
+                      backgroundColor: isDark ? Colors.white10 : Colors.grey.shade100,
                       selectedColor: const Color(0xFFFFA000),
                     );
                   }).toList(),
@@ -1895,7 +1966,7 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                     final key = t.split(' ')[0];
                     final isSel = _sidebarFileTypeFilters.contains(key);
                     return FilterChip(
-                      label: Text(t, style: TextStyle(color: isSel ? Colors.black : Colors.white70, fontSize: 10.5)),
+                      label: Text(t, style: TextStyle(color: isSel ? Colors.black : subColor, fontSize: 10.5)),
                       selected: isSel,
                       onSelected: (v) {
                         setModalState(() {
@@ -1904,20 +1975,20 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                           });
                         });
                       },
-                      backgroundColor: Colors.white10,
+                      backgroundColor: isDark ? Colors.white10 : Colors.grey.shade100,
                       selectedColor: const Color(0xFFFFA000),
                     );
                   }).toList(),
                 ),
                 const SizedBox(height: 16),
                 SwitchListTile(
-                  title: const Text('Downloaded Only', style: TextStyle(color: Colors.white, fontSize: 12.5)),
+                  title: Text('Downloaded Only', style: TextStyle(color: titleColor, fontSize: 12.5)),
                   value: _sidebarDownloadedOnly,
                   activeThumbColor: const Color(0xFFFFA000),
                   onChanged: (v) => setModalState(() => setState(() => _sidebarDownloadedOnly = v)),
                 ),
                 SwitchListTile(
-                  title: const Text('Bookmarked Only', style: TextStyle(color: Colors.white, fontSize: 12.5)),
+                  title: Text('Bookmarked Only', style: TextStyle(color: titleColor, fontSize: 12.5)),
                   value: _sidebarBookmarkedOnly,
                   activeThumbColor: const Color(0xFFFFA000),
                   onChanged: (v) => setModalState(() => setState(() => _sidebarBookmarkedOnly = v)),
@@ -2016,9 +2087,16 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0F172A),
+                  color: _cardBg,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.white10),
+                  border: Border.all(color: _borderColor),
+                  boxShadow: _isDark ? null : [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Row(
                   children: [
@@ -2041,7 +2119,7 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                             spacing: 6,
                             runSpacing: 2,
                             children: [
-                              Text(name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                              Text(name, style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 14)),
                               if (e['badge'] != null)
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
@@ -2051,15 +2129,15 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                             ],
                           ),
                           const SizedBox(height: 2),
-                          Text(e['sub'] as String, style: const TextStyle(color: Colors.white60, fontSize: 10.5), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          Text(e['sub'] as String, style: TextStyle(color: _subColor, fontSize: 10.5), maxLines: 1, overflow: TextOverflow.ellipsis),
                           const SizedBox(height: 6),
                           Wrap(
                             spacing: 4,
                             runSpacing: 3,
                             children: pills.map((p) => Container(
                               padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(4)),
-                              child: Text(p, style: const TextStyle(color: Colors.white70, fontSize: 9)),
+                              decoration: BoxDecoration(color: _isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.shade100, borderRadius: BorderRadius.circular(4)),
+                              child: Text(p, style: TextStyle(color: _subColor, fontSize: 9)),
                             )).toList(),
                           ),
                         ],
@@ -2155,9 +2233,16 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: const Color(0xFF0F172A),
+                color: _cardBg,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.white10),
+                border: Border.all(color: _borderColor),
+                boxShadow: _isDark ? null : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Row(
                 children: [
@@ -2192,19 +2277,19 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                           ],
                         ),
                         const SizedBox(height: 4),
-                        Text(item.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        Text(item.title, style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
                         Text(
                           item.subtitle.isNotEmpty
                               ? item.subtitle
                               : (item.chapter.isNotEmpty ? item.chapter : 'Curated for fast score boost'),
-                          style: const TextStyle(color: Colors.white60, fontSize: 10.5),
+                          style: TextStyle(color: _subColor, fontSize: 10.5),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 4),
                         Text(
                           '${item.subject.isNotEmpty ? item.subject : item.exam} • ${item.fileType.isNotEmpty ? item.fileType : item.type}',
-                          style: const TextStyle(color: Colors.white54, fontSize: 10),
+                          style: TextStyle(color: _mutedColor, fontSize: 10),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -2239,8 +2324,10 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0C2142), Color(0xFF071426)],
+              gradient: LinearGradient(
+                colors: _isDark
+                    ? const [Color(0xFF0C2142), Color(0xFF071426)]
+                    : const [Color(0xFFEFF6FF), Color(0xFFDBEAFE)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -2258,12 +2345,12 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
                       child: const Icon(Icons.track_changes_rounded, color: Colors.black, size: 20),
                     ),
                     const SizedBox(width: 10),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Your preparation, our priority.', style: TextStyle(color: Color(0xFFFFA000), fontWeight: FontWeight.bold, fontSize: 13.5)),
-                          Text('We recommend the right resources at the right time to help you achieve your best.', style: TextStyle(color: Colors.white70, fontSize: 10.5)),
+                          const Text('Your preparation, our priority.', style: TextStyle(color: Color(0xFFFFA000), fontWeight: FontWeight.bold, fontSize: 13.5)),
+                          Text('We recommend the right resources at the right time to help you achieve your best.', style: TextStyle(color: _subColor, fontSize: 10.5)),
                         ],
                       ),
                     ),
@@ -2296,9 +2383,9 @@ class _ResourcePageSectionsState extends State<ResourcePageSections> with Single
           children: [
             Icon(icon, color: color, size: 20),
             const SizedBox(height: 4),
-            Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 9.5), textAlign: TextAlign.center, maxLines: 2),
+            Text(title, style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 9.5), textAlign: TextAlign.center, maxLines: 2),
             const SizedBox(height: 2),
-            Text(desc, style: const TextStyle(color: Colors.white54, fontSize: 8), textAlign: TextAlign.center, maxLines: 2),
+            Text(desc, style: TextStyle(color: _mutedColor, fontSize: 8), textAlign: TextAlign.center, maxLines: 2),
           ],
         ),
       ),
@@ -2313,6 +2400,7 @@ class _Bullet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2322,8 +2410,8 @@ class _Bullet extends StatelessWidget {
           child: RichText(
             text: TextSpan(
               children: [
-                TextSpan(text: '$title: ', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
-                TextSpan(text: desc, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                TextSpan(text: '$title: ', style: TextStyle(color: isDark ? Colors.white : AppTheme.darkSlate, fontWeight: FontWeight.bold, fontSize: 12)),
+                TextSpan(text: desc, style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF64748B), fontSize: 12)),
               ],
             ),
           ),

@@ -7,6 +7,7 @@ import '../utils/app_logger.dart';
 class TestService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   static List<TestCategory>? _cachedCategories;
+  static List<TestCategory> get cachedCategories => _cachedCategories ?? [];
 
   Future<List<TestCategory>> getCourses({bool forceRefresh = false}) async {
     if (!forceRefresh && _cachedCategories != null && _cachedCategories!.isNotEmpty) {

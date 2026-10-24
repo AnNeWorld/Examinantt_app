@@ -213,6 +213,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
                   child: StreamBuilder<List<Map<String, dynamic>>>(
                     stream: FirestoreService().getUserPurchasesStream(explicitUid: user?.uid),
+                    initialData: FirestoreService.cachedPurchases,
                     builder: (context, purchaseSnap) {
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -246,10 +247,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
 
   void _showChangeExamDialog(String currentExam) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final sheetBg = isDark ? const Color(0xFF0F172A) : Colors.white;
+    final titleColor = isDark ? Colors.white : AppTheme.darkSlate;
+    final subColor = isDark ? Colors.white70 : const Color(0xFF64748B);
+    final handleColor = isDark ? Colors.white24 : Colors.grey.shade300;
+    final unselectedChipBg = isDark ? Colors.white10 : const Color(0xFFF1F5F9);
+    final unselectedChipText = isDark ? Colors.white : AppTheme.darkSlate;
+    final unselectedIconColor = isDark ? Colors.white70 : const Color(0xFF64748B);
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: sheetBg,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -270,24 +280,24 @@ class _HomeScreenState extends State<HomeScreen> {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.white24,
+                      color: handleColor,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text(
+                Text(
                   'Select Target Exam',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: titleColor,
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   'Choose your target competitive exam to personalize your preparation.',
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                  style: TextStyle(color: subColor, fontSize: 12),
                 ),
                 const SizedBox(height: 16),
                 StreamBuilder<List<String>>(
@@ -304,19 +314,19 @@ class _HomeScreenState extends State<HomeScreen> {
                           leading: Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: isSel ? AppColors.accent.withValues(alpha: 0.2) : Colors.white10,
+                              color: isSel ? AppColors.accent.withValues(alpha: 0.2) : unselectedChipBg,
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
                               isSel ? Icons.check_circle : Icons.school_outlined,
-                              color: isSel ? AppColors.accent : Colors.white70,
+                              color: isSel ? AppColors.accent : unselectedIconColor,
                               size: 18,
                             ),
                           ),
                           title: Text(
                             exam,
                             style: TextStyle(
-                              color: isSel ? AppColors.accent : Colors.white,
+                              color: isSel ? AppColors.accent : unselectedChipText,
                               fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
                             ),
                           ),
@@ -366,6 +376,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildHeroSlider() {
     return StreamBuilder<List<Map<String, dynamic>>>(
       stream: FirestoreService().getBannersStream(),
+      initialData: FirestoreService.cachedBanners.isNotEmpty ? FirestoreService.cachedBanners : _fallbackBanners,
       builder: (context, snapshot) {
         List<Map<String, dynamic>> banners = snapshot.data ?? [];
         if (banners.isEmpty && snapshot.connectionState == ConnectionState.waiting) {
@@ -510,6 +521,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 6),
           StreamBuilder<List<CourseModel>>(
             stream: FirestoreService().getBatchesStream(),
+            initialData: FirestoreService.cachedBatches,
             builder: (context, snapshot) {
               final batches = snapshot.data ?? [];
               final matchingBatches = batches.where((b) {

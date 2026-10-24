@@ -264,15 +264,16 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
     required Widget child,
     Color? borderColor,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF071326),
+        color: isDark ? const Color(0xFF071326) : Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: borderColor ?? const Color(0xFF162D50), width: 1.2),
+        border: Border.all(color: borderColor ?? (isDark ? const Color(0xFF162D50) : Colors.grey.shade200), width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.35),
+            color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -285,13 +286,19 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
           // Ribbon Header
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF0D2342), Color(0xFF071326)],
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-              ),
-              border: Border(bottom: BorderSide(color: Color(0xFF142B4D), width: 1)),
+            decoration: BoxDecoration(
+              gradient: isDark
+                  ? const LinearGradient(
+                      colors: [Color(0xFF0D2342), Color(0xFF071326)],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    )
+                  : const LinearGradient(
+                      colors: [Color(0xFFEFF6FF), Color(0xFFDBEAFE)],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ),
+              border: Border(bottom: BorderSide(color: isDark ? const Color(0xFF142B4D) : const Color(0xFFBFDBFE), width: 1)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -726,11 +733,13 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
       subtitle: 'Your active batches and learning progress',
       child: StreamBuilder<List<Map<String, dynamic>>>(
         stream: FirestoreService().getUserPurchasesStream(),
+        initialData: FirestoreService.cachedPurchases,
         builder: (context, purchasesSnap) {
           return StreamBuilder<List<CourseModel>>(
             stream: FirestoreService().getBatchesStream(),
+            initialData: FirestoreService.cachedBatches,
             builder: (context, batchesSnap) {
-              if (purchasesSnap.connectionState == ConnectionState.waiting && !purchasesSnap.hasData) {
+              if (purchasesSnap.connectionState == ConnectionState.waiting && !purchasesSnap.hasData && FirestoreService.cachedPurchases.isEmpty) {
                 return const Center(
                   child: Padding(
                     padding: EdgeInsets.all(24.0),
@@ -739,8 +748,8 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
                 );
               }
 
-              final purchases = purchasesSnap.data ?? [];
-              final allBatches = batchesSnap.data ?? [];
+              final purchases = purchasesSnap.data ?? FirestoreService.cachedPurchases;
+              final allBatches = batchesSnap.data ?? FirestoreService.cachedBatches;
               final enrolledBatches = allBatches
                   .where((b) => _isCourseEnrolled(b, purchases))
                   .toList();
@@ -921,8 +930,9 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
       subtitle: 'Handpicked for your goal',
       child: StreamBuilder<List<CourseModel>>(
         stream: FirestoreService().getBatchesStream(),
+        initialData: FirestoreService.cachedBatches,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+          if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData && FirestoreService.cachedBatches.isEmpty) {
             return const Center(
               child: Padding(
                 padding: EdgeInsets.all(24.0),
@@ -931,7 +941,7 @@ class _BatchPageSectionsState extends State<BatchPageSections> {
             );
           }
 
-          final batches = snapshot.data ?? [];
+          final batches = snapshot.data ?? FirestoreService.cachedBatches;
           if (batches.isEmpty) {
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: 20),

@@ -226,15 +226,16 @@ class _TestSeriesScreenState extends State<TestSeriesScreen> {
             // Real-time Test Series Stream
             StreamBuilder<List<TestCategory>>(
               stream: _categoriesStream,
+              initialData: TestService.cachedCategories,
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+                if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData && TestService.cachedCategories.isEmpty) {
                   return const Padding(
                     padding: EdgeInsets.symmetric(vertical: 40),
                     child: Center(child: CircularProgressIndicator()),
                   );
                 }
 
-                var list = snapshot.data ?? [];
+                var list = snapshot.data ?? TestService.cachedCategories;
                 if (_searchQuery.isNotEmpty) {
                   list = list.where((c) => c.title.toLowerCase().contains(_searchQuery)).toList();
                 }

@@ -434,23 +434,11 @@ class PaymentPlatformIO implements PaymentPlatformDelegate {
       <div class="platform-btn-left">
         <div class="platform-btn-icon" style="background: rgba(0,112,243,0.15); color: #38BDF8;">💳</div>
         <div>
-          <div class="platform-btn-name">Cards / NetBanking / QR</div>
+          <div class="platform-btn-name">Cards / NetBanking / UPI / QR</div>
           <div class="platform-sub">Razorpay official modal</div>
         </div>
       </div>
       <div class="platform-tag" style="background: rgba(0,112,243,0.15); color: #38BDF8;">ALL</div>
-    </div>
-
-    <!-- Direct 1-Click Unlock -->
-    <div class="platform-btn" onclick="payWithPlatform('InstantUnlock')" style="border-color: #10B981; background: rgba(16, 185, 129, 0.08);">
-      <div class="platform-btn-left">
-        <div class="platform-btn-icon" style="background: rgba(16, 185, 129, 0.2); color: #10B981;">⚡</div>
-        <div>
-          <div class="platform-btn-name" style="color: #10B981;">Direct Instant Unlock</div>
-          <div class="platform-sub">Zero waiting • Turant verified</div>
-        </div>
-      </div>
-      <div class="platform-tag" style="background: #10B981; color: black;">1-CLICK</div>
     </div>
   </div>
 
@@ -471,7 +459,7 @@ class PaymentPlatformIO implements PaymentPlatformDelegate {
         <div class="platform-btn-icon" style="color: #4285F4;">🔵</div>
         <div>
           <div class="platform-btn-name">Google Pay (GPay)</div>
-          <div class="platform-sub">Click to pay & unlock</div>
+          <div class="platform-sub">Click to pay via Razorpay</div>
         </div>
       </div>
       <span style="color: #10B981; font-weight: 800; font-size: 13px;">➔</span>
@@ -483,7 +471,7 @@ class PaymentPlatformIO implements PaymentPlatformDelegate {
         <div class="platform-btn-icon" style="color: #9D4EDD;">🟣</div>
         <div>
           <div class="platform-btn-name">PhonePe</div>
-          <div class="platform-sub">Click to pay & unlock</div>
+          <div class="platform-sub">Click to pay via Razorpay</div>
         </div>
       </div>
       <span style="color: #10B981; font-weight: 800; font-size: 13px;">➔</span>
@@ -495,19 +483,7 @@ class PaymentPlatformIO implements PaymentPlatformDelegate {
         <div class="platform-btn-icon" style="color: #00B9F1;">🟦</div>
         <div>
           <div class="platform-btn-name">Paytm UPI</div>
-          <div class="platform-sub">Click to pay & unlock</div>
-        </div>
-      </div>
-      <span style="color: #10B981; font-weight: 800; font-size: 13px;">➔</span>
-    </div>
-
-    <!-- Instant Unlock in Sheet -->
-    <div class="platform-btn" onclick="payWithPlatform('InstantUnlock')" style="border-color: #10B981; background: rgba(16, 185, 129, 0.1);">
-      <div class="platform-btn-left">
-        <div class="platform-btn-icon" style="color: #10B981;">⚡</div>
-        <div>
-          <div class="platform-btn-name" style="color: #10B981;">Direct Unlock (0 Error)</div>
-          <div class="platform-sub">Turant access activate karein</div>
+          <div class="platform-sub">Click to pay via Razorpay</div>
         </div>
       </div>
       <span style="color: #10B981; font-weight: 800; font-size: 13px;">➔</span>
@@ -542,11 +518,16 @@ class PaymentPlatformIO implements PaymentPlatformDelegate {
       },
       theme: { color: '#0070F3' },
       handler: function (response) {
-        window.location.href = 'http://127.0.0.1:$port/success?payment_id=' + (response.razorpay_payment_id || ('pay_' + Date.now()));
+        if (response && response.razorpay_payment_id) {
+          window.location.href = 'http://127.0.0.1:$port/success?payment_id=' + response.razorpay_payment_id;
+        } else {
+          window.location.href = 'http://127.0.0.1:$port/cancel';
+        }
       },
       modal: {
         ondismiss: function() {
-          console.log('Razorpay modal closed');
+          console.log('Razorpay modal closed/cancelled');
+          window.location.href = 'http://127.0.0.1:$port/cancel';
         }
       }
     };
@@ -561,34 +542,16 @@ class PaymentPlatformIO implements PaymentPlatformDelegate {
       document.getElementById('platformSheet').style.display = 'none';
     }
 
-    // Called when the user clicks the black "Continue" button:
-    // Directly launches Google Pay / PhonePe / UPI intent and immediately completes payment!
     function onContinueClicked() {
-      payWithPlatform('GooglePay');
+      openRazorpay();
     }
 
-    // Direct platform execution for GPay, PhonePe, Paytm, or Instant
     function payWithPlatform(platform) {
-      // 1. Trigger UPI deep link for devices that have UPI handlers
-      var amountInRs = ($amountInPaise / 100);
-      var upiUrl = 'upi://pay?pa=examinantt@razorpay&pn=Examinantt&am=' + amountInRs + '&cu=INR&tn=ExaminanttPayment';
-      var appUrl = upiUrl;
-      if (platform === 'GooglePay') {
-        appUrl = 'tez://upi/pay?pa=examinantt@razorpay&pn=Examinantt&am=' + amountInRs + '&cu=INR';
-      } else if (platform === 'PhonePe') {
-        appUrl = 'phonepe://pay?pa=examinantt@razorpay&pn=Examinantt&am=' + amountInRs + '&cu=INR';
-      } else if (platform === 'Paytm') {
-        appUrl = 'paytmmp://pay?pa=examinantt@razorpay&pn=Examinantt&am=' + amountInRs + '&cu=INR';
+      closePlatformSheet();
+      if (platform === 'GooglePay' || platform === 'PhonePe' || platform === 'Paytm') {
+        options.prefill.method = 'upi';
       }
-
-      try {
-        window.location.href = appUrl;
-      } catch (e) {}
-
-      // 2. Redirect to local HTTP server /success with the payment confirmation immediately!
-      setTimeout(function() {
-        window.location.href = 'http://127.0.0.1:$port/success?payment_id=pay_' + platform.toLowerCase() + '_' + Date.now();
-      }, 100);
+      openRazorpay();
     }
 
     function openRazorpay() {
@@ -597,11 +560,12 @@ class PaymentPlatformIO implements PaymentPlatformDelegate {
         var rzp = new Razorpay(options);
         rzp.on('payment.failed', function(resp) {
           console.warn('Razorpay failed/cancelled:', resp);
+          window.location.href = 'http://127.0.0.1:$port/cancel';
         });
         rzp.open();
       } catch (e) {
         console.error('Error launching Razorpay:', e);
-        payWithPlatform('InstantUnlock');
+        window.location.href = 'http://127.0.0.1:$port/cancel';
       }
     }
   </script>

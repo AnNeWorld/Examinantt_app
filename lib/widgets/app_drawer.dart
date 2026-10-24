@@ -400,7 +400,7 @@ class AppDrawer extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Examinantt App • v1.2.5 • Education Redefined',
+                    'Examinantt App • v1.2.7 • Education Redefined',
                     style: TextStyle(
                       color: secondaryTextColor,
                       fontSize: 10,

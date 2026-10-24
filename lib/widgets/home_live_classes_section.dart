@@ -39,38 +39,47 @@ class _HomeLiveClassesSectionState extends State<HomeLiveClassesSection> {
     return const Color(0xFFFF7A00);
   }
 
+  bool _isJoining = false;
+
   void _openClassVideo(BuildContext context, LiveClass c) async {
-    // If it's a direct Google Meet or Zoom link, offer direct launch or player
-    if (c.isGoogleMeet || c.isZoom) {
-      final uri = Uri.tryParse(c.videoUrl);
-      if (uri != null && await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (_isJoining) return;
+    _isJoining = true;
+
+    try {
+      // If it's a direct Google Meet or Zoom link, offer direct launch or player
+      if (c.isGoogleMeet || c.isZoom) {
+        final uri = Uri.tryParse(c.videoUrl);
+        if (uri != null && await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+          return;
+        }
+      }
+
+      if (!context.mounted) return;
+
+      if (c.isJitsi) {
+        await AppNavigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => JitsiLiveMeetingScreen(
+              liveClass: c,
+              sessionId: c.id,
+              roomName: c.roomName,
+            ),
+          ),
+        );
         return;
       }
-    }
 
-    if (!context.mounted) return;
-
-    if (c.isJitsi) {
       AppNavigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => JitsiLiveMeetingScreen(
-            liveClass: c,
-            sessionId: c.id,
-            roomName: c.roomName,
-          ),
+          builder: (_) => AmazonLivePlayerScreen(liveClass: c),
         ),
       );
-      return;
+    } finally {
+      _isJoining = false;
     }
-
-    AppNavigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => AmazonLivePlayerScreen(liveClass: c),
-      ),
-    );
   }
 
   @override

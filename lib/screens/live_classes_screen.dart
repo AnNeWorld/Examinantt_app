@@ -105,27 +105,33 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
     Set<String> purchasedBatchIds = const {},
     Set<String> purchasedItemIds = const {},
   }) async {
-    // 1. If it's a Jitsi Live Class (examinantt.com Virtual Classroom),
-    // launch immediately with 0ms latency - no blocking authorization dialog or timeouts!
-    if (c.isJitsi) {
-      await AppNavigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => JitsiLiveMeetingScreen(
-            liveClass: c,
-            sessionId: c.id,
-            roomName: c.roomName,
-          ),
-        ),
-      );
-      return;
-    }
-
     if (_joiningClassId != null) return;
 
     setState(() {
       _joiningClassId = c.id;
     });
+
+    if (c.isJitsi) {
+      try {
+        await AppNavigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => JitsiLiveMeetingScreen(
+              liveClass: c,
+              sessionId: c.id,
+              roomName: c.roomName,
+            ),
+          ),
+        );
+      } finally {
+        if (mounted) {
+          setState(() {
+            _joiningClassId = null;
+          });
+        }
+      }
+      return;
+    }
 
     showDialog(
       context: context,
@@ -539,8 +545,9 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
       ),
       body: StreamBuilder<List<Map<String, dynamic>>>(
         stream: _firestoreService.getUserPurchasesStream(),
+        initialData: FirestoreService.cachedPurchases,
         builder: (context, purchasesSnap) {
-          final purchases = purchasesSnap.data ?? [];
+          final purchases = purchasesSnap.data ?? FirestoreService.cachedPurchases;
           final purchasedItemIds = purchases
               .map((p) => (p['itemId'] ?? p['id'] ?? '').toString())
               .toSet();
@@ -551,13 +558,14 @@ class _LiveClassesScreenState extends State<LiveClassesScreen>
 
           return StreamBuilder<List<LiveClass>>(
             stream: _contentService.getLiveClasses(),
+            initialData: ContentService.cachedLiveClasses,
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+              if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData && ContentService.cachedLiveClasses.isEmpty) {
                 return const Center(
                   child: CircularProgressIndicator(color: Color(0xFFFF7A00)),
                 );
               }
-              final List<LiveClass> allClasses = snapshot.data ?? [];
+              final List<LiveClass> allClasses = snapshot.data ?? ContentService.cachedLiveClasses;
 
               // Compute dynamic subject chips
               final Set<String> dynamicSubjects = {'All'};

@@ -84,6 +84,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         final cleanMsg = PaymentService.cleanErrorMessage(res);
         setState(() {
           _isLoading = false;
+          _isSuccess = false;
           _errorMessage = cleanMsg;
         });
         AppTheme.showErrorSnackBar(context, cleanMsg);
@@ -154,6 +155,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         final cleanMsg = PaymentService.cleanErrorMessage(res);
         setState(() {
           _isLoading = false;
+          _isSuccess = false;
           _errorMessage = cleanMsg;
         });
         AppTheme.showErrorSnackBar(context, cleanMsg);
@@ -987,25 +989,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   child: SizedBox(
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: _isLoading
-                          ? () => _handleSuccessfulPayment('PAY_DIRECT_${DateTime.now().millisecondsSinceEpoch}')
-                          : () => _payNow(),
+                      onPressed: _isLoading ? null : () => _payNow(),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _isLoading ? const Color(0xFF10B981) : const Color(0xFF0070F3),
+                        backgroundColor: const Color(0xFF0070F3),
+                        disabledBackgroundColor: const Color(0xFF0070F3).withValues(alpha: 0.6),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         elevation: 4,
                       ),
                       child: _isLoading
-                          ? const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.bolt_rounded, color: Colors.white, size: 20),
-                                SizedBox(width: 8),
-                                Text(
-                                  '⚡ Tap to Unlock Instantly',
-                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13.5),
-                                ),
-                              ],
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
                             )
                           : Row(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -1027,31 +1025,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ),
               ],
             ),
-            if (_isLoading) ...[
-              const SizedBox(height: 8),
-              InkWell(
-                onTap: () => _handleSuccessfulPayment('MANUAL_CONFIRM_${DateTime.now().millisecondsSinceEpoch}'),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.bolt_rounded, color: Color(0xFF10B981), size: 15),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Payment ho gaya? Yahan tap karke turant unlock karein ➔',
-                        style: TextStyle(
-                          color: const Color(0xFF10B981).withValues(alpha: 0.95),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
           ],
         ),
       ),

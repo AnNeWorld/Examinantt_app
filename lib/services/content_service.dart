@@ -7,6 +7,7 @@ class ContentService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   static List<LiveClass>? _cachedLiveClasses;
+  static List<LiveClass> get cachedLiveClasses => _cachedLiveClasses ?? [];
   static List<ResourceItem>? _cachedResources;
 
   // Live Classes Real-Time Stream (Direct from Firestore live_classes collection)

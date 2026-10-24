@@ -224,15 +224,16 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
             // Stream of Study Material & PDFs
             StreamBuilder<List<ResourceItem>>(
               stream: _resourcesStream,
+              initialData: FirestoreService.cachedResources,
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+                if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData && FirestoreService.cachedResources.isEmpty) {
                   return const Padding(
                     padding: EdgeInsets.symmetric(vertical: 40),
                     child: Center(child: CircularProgressIndicator()),
                   );
                 }
 
-                var items = snapshot.data ?? [];
+                var items = snapshot.data ?? FirestoreService.cachedResources;
                 if (_searchQuery.isNotEmpty) {
                   items = items.where((r) =>
                     r.title.toLowerCase().contains(_searchQuery) ||

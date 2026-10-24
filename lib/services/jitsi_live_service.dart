@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:jitsi_meet_flutter_sdk/jitsi_meet_flutter_sdk.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../models/jitsi_live_models.dart';
 import '../utils/app_logger.dart';
 
@@ -328,31 +327,12 @@ class JitsiLiveService {
       configOverrides: configOverrides,
     );
 
-    final safeDisplayName = Uri.encodeComponent(studentName.trim().isNotEmpty ? studentName.trim() : 'Student');
-    final directMeetingUrl = '$serverUrl/${tokenInfo.roomName}#config.disableDeepLinking=true&config.prejoinPageEnabled=false&userInfo.displayName=$safeDisplayName';
+    AppLogger.s('Launching in-app Jitsi Conference in room: ${tokenInfo.roomName} on $serverUrl', tag: 'JITSI_SDK');
 
-    AppLogger.s('Launching Jitsi Meeting in room: ${tokenInfo.roomName} on $serverUrl (zero-download mode)', tag: 'JITSI_SDK');
-    if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
-      try {
-        final meetingUri = Uri.parse(directMeetingUrl);
-        if (await canLaunchUrl(meetingUri)) {
-          AppLogger.i('Launching conference on desktop (zero-download mode): $meetingUri', tag: 'JITSI_SDK');
-          await launchUrl(meetingUri, mode: LaunchMode.externalApplication);
-          return;
-        }
-      } catch (e) {
-        AppLogger.w('Desktop browser launch fallback failed: $e', tag: 'JITSI_SDK');
-      }
-    }
-
-    try {
-      await _jitsiMeet.join(options, listener);
-    } catch (e) {
-      AppLogger.w('Native Jitsi SDK join error ($e), activating direct zero-download session', tag: 'JITSI_SDK');
-      final meetingUri = Uri.parse(directMeetingUrl);
-      if (await canLaunchUrl(meetingUri)) {
-        await launchUrl(meetingUri, mode: LaunchMode.externalApplication);
-      }
+    // Call the embedded Jitsi Flutter SDK in-process - NEVER redirect to external apps or browser
+    final response = await _jitsiMeet.join(options, listener);
+    if (!response.isSuccess) {
+      throw Exception(response.message ?? 'Failed to connect to Jitsi conference');
     }
   }
 

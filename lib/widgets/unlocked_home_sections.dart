@@ -125,15 +125,16 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
     required Widget child,
     Color? borderColor,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF071326),
+        color: isDark ? const Color(0xFF071326) : Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: borderColor ?? const Color(0xFF162D50), width: 1.2),
+        border: Border.all(color: borderColor ?? (isDark ? const Color(0xFF162D50) : Colors.grey.shade200), width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.35),
+            color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -147,16 +148,25 @@ class _UnlockedHomeSectionsState extends State<UnlockedHomeSections> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  const Color(0xFF0D2342),
-                  const Color(0xFF071326),
-                ],
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-              ),
-              border: const Border(
-                bottom: BorderSide(color: Color(0xFF142B4D), width: 1),
+              gradient: isDark
+                  ? const LinearGradient(
+                      colors: [
+                        Color(0xFF0D2342),
+                        Color(0xFF071326),
+                      ],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    )
+                  : const LinearGradient(
+                      colors: [
+                        Color(0xFFEFF6FF),
+                        Color(0xFFDBEAFE),
+                      ],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ),
+              border: Border(
+                bottom: BorderSide(color: isDark ? const Color(0xFF142B4D) : const Color(0xFFBFDBFE), width: 1),
               ),
             ),
             child: Row(

@@ -359,7 +359,7 @@ class FirestoreService {
         await _db.collection('users').doc(uid).collection('purchases').doc(id).set(purchaseData, SetOptions(merge: true));
       }
 
-      // 2. Persist locally to SharedPreferences so access NEVER expires or gets lost
+      // 2. Persist locally to SharedPreferences and in-memory cache so access NEVER expires or gets lost
       try {
         final prefs = await SharedPreferences.getInstance();
         final currentPurchased = prefs.getStringList('purchased_batch_ids') ?? [];
@@ -370,6 +370,8 @@ class FirestoreService {
           title.toLowerCase().trim(),
         };
         await prefs.setStringList('purchased_batch_ids', updatedSet.toList());
+        _memoryPurchasedIds ??= {};
+        _memoryPurchasedIds!.addAll(updatedSet);
       } catch (e) {
         debugPrint("Error saving purchase to SharedPreferences: $e");
       }
@@ -397,11 +399,17 @@ class FirestoreService {
     }
   }
 
-  /// Synchronously or quickly get locally cached purchased batch IDs
+  static Set<String>? _memoryPurchasedIds;
+
+  /// Synchronously or instantly get locally cached purchased batch IDs from memory / disk
   static Future<Set<String>> getCachedPurchasedIds() async {
+    if (_memoryPurchasedIds != null && _memoryPurchasedIds!.isNotEmpty) {
+      return _memoryPurchasedIds!;
+    }
     try {
       final prefs = await SharedPreferences.getInstance();
-      return (prefs.getStringList('purchased_batch_ids') ?? []).toSet();
+      _memoryPurchasedIds = (prefs.getStringList('purchased_batch_ids') ?? []).toSet();
+      return _memoryPurchasedIds!;
     } catch (_) {
       return {};
     }
@@ -476,7 +484,11 @@ class FirestoreService {
     }
   }
 
+  static bool _awsLiveClassesSeeded = false;
+
   Future<void> ensureRealAwsLiveClassesExist() async {
+    if (_awsLiveClassesSeeded) return;
+    _awsLiveClassesSeeded = true;
     try {
       final snap = await _db.collection('live_classes').limit(1).get();
       // If docs exist, check if optics doc has batchId, if not, update it
@@ -699,7 +711,13 @@ class FirestoreService {
     }
   }
 
+  static List<Map<String, dynamic>> _cachedPurchases = [];
+  static List<Map<String, dynamic>> get cachedPurchases => _cachedPurchases;
+
   Stream<List<Map<String, dynamic>>> getUserPurchasesStream({String? explicitUid}) async* {
+    if (_cachedPurchases.isNotEmpty) {
+      yield _cachedPurchases;
+    }
     final uid = explicitUid ?? effectiveUid ?? await getResolvedUid();
     AppLogger.firestore("users/$uid/purchases", "Listening to user purchases stream");
     yield* _db.collection('users').doc(uid).collection('purchases').snapshots().map((snapshot) {
@@ -736,11 +754,12 @@ class FirestoreService {
         };
       }).toList();
       list.sort((a, b) => (b['_pDate'] as DateTime).compareTo(a['_pDate'] as DateTime));
+      _cachedPurchases = list;
       AppLogger.s("Loaded ${list.length} purchases for $uid", tag: "PURCHASES");
       return list;
     }).handleError((error) {
       AppLogger.e("Error loading user purchases", error: error, tag: "PURCHASES");
-      return <Map<String, dynamic>>[];
+      return _cachedPurchases;
     });
   }
 
@@ -857,10 +876,41 @@ class FirestoreService {
   // REAL-TIME RESOURCES SYSTEM
   // ===========================================================================
 
-  Stream<List<ResourceItem>> getResourcesStream({String? exam, String? subject, String? type}) {
+  static List<ResourceItem> _cachedResources = [];
+  static List<ResourceItem> get cachedResources => _cachedResources;
+
+  Stream<List<ResourceItem>> getResourcesStream({String? exam, String? subject, String? type}) async* {
+    if (_cachedResources.isNotEmpty) {
+      var initialList = _cachedResources;
+      if (exam != null && exam.isNotEmpty && exam != 'All') {
+        initialList = initialList.where((r) {
+          final rExam = r.exam.toLowerCase();
+          final rCat = r.category.toLowerCase();
+          final target = exam.toLowerCase();
+          return rExam == 'all' ||
+              rExam.isEmpty ||
+              rExam == target ||
+              rCat == 'general' ||
+              rCat.contains(target) ||
+              target.contains(rCat);
+        }).toList();
+      }
+      if (subject != null && subject.isNotEmpty && subject != 'All') {
+        initialList = initialList.where((r) {
+          final s = subject.toLowerCase();
+          final rSub = r.subject.toLowerCase();
+          final rCat = r.category.toLowerCase();
+          return rSub == s ||
+              rCat == s ||
+              rCat.contains(s) ||
+              s.contains(rCat);
+        }).toList();
+      }
+      yield initialList;
+    }
     AppLogger.firestore("resources", "Listening to real-time resources collection from Firestore");
 
-    return _db.collection('resources').snapshots().map((snapshot) {
+    yield* _db.collection('resources').snapshots().map((snapshot) {
       if (snapshot.docs.isEmpty) {
         return <ResourceItem>[];
       }
@@ -876,6 +926,7 @@ class FirestoreService {
             : b.date;
         return bTime.compareTo(aTime);
       });
+      _cachedResources = list;
 
       if (exam != null && exam.isNotEmpty && exam != 'All') {
         list = list.where((r) {
@@ -1054,6 +1105,9 @@ class FirestoreService {
   // REAL-TIME BATCHES & RESOURCES RELATIONSHIP SYSTEM
   // ===========================================================================
 
+  static List<CourseModel> _cachedBatches = [];
+  static List<CourseModel> get cachedBatches => _cachedBatches;
+
   Stream<List<CourseModel>> getBatchesStream() {
     AppLogger.firestore("batches", "Listening to real-time batches & courses dual stream from Firestore");
     late StreamController<List<CourseModel>> controller;
@@ -1069,13 +1123,17 @@ class FirestoreService {
           uniqueBatches[batch.id] = batch;
         }
       }
+      _cachedBatches = uniqueBatches.values.toList();
       if (!controller.isClosed) {
-        controller.add(uniqueBatches.values.toList());
+        controller.add(_cachedBatches);
       }
     }
 
     controller = StreamController<List<CourseModel>>.broadcast(
       onListen: () {
+        if (_cachedBatches.isNotEmpty && !controller.isClosed) {
+          controller.add(_cachedBatches);
+        }
         subBatches = _db.collection('batches').snapshots().listen((snap) {
           batchesList = snap.docs
               .where((doc) {
@@ -1370,9 +1428,15 @@ class FirestoreService {
 
   // --- Dynamic Banners Stream ---
 
+  static List<Map<String, dynamic>> _cachedBanners = [];
+  static List<Map<String, dynamic>> get cachedBanners => _cachedBanners;
+
   /// Stream banner images dynamically from Firestore collection 'banners'
-  Stream<List<Map<String, dynamic>>> getBannersStream() {
-    return _db.collection('banners').snapshots().map((snapshot) {
+  Stream<List<Map<String, dynamic>>> getBannersStream() async* {
+    if (_cachedBanners.isNotEmpty) {
+      yield _cachedBanners;
+    }
+    yield* _db.collection('banners').snapshots().map((snapshot) {
       final list = snapshot.docs
           .map((doc) {
             final data = Map<String, dynamic>.from(doc.data());
@@ -1394,6 +1458,7 @@ class FirestoreService {
         return orderA.compareTo(orderB);
       });
 
+      _cachedBanners = list;
       return list;
     });
   }

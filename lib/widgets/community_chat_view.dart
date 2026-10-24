@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import '../models/community_message_model.dart';
 import '../services/firestore_service.dart';
+import '../utils/app_theme.dart';
 
 class CommunityChatView extends StatefulWidget {
   final bool isEmbedded;
@@ -691,9 +692,10 @@ class _CommunityChatViewState extends State<CommunityChatView> {
 
   void _showReactionPicker(CommunityMessage message) {
     final emojis = ['👍', '❤️', '💡', '🔥', '👏', '🎯'];
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
       ),
@@ -703,9 +705,13 @@ class _CommunityChatViewState extends State<CommunityChatView> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
+              Text(
                 'React to Message',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                style: TextStyle(
+                  color: isDark ? Colors.white : AppTheme.darkSlate,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
               ),
               const SizedBox(height: 16),
               Row(

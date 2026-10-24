@@ -39,11 +39,17 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen>
   final Set<String> _reminders = <String>{};
   bool _forceOverviewView = false; // Enrolled students can toggle to see overview
   Set<String> _cachedPurchasedIds = <String>{};
+  late final Stream<List<CourseModel>> _batchesStream;
+  late final Stream<List<Map<String, dynamic>>> _purchasesStream;
+  late final Stream<List<LiveClass>> _liveClassesStream;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 5, vsync: this);
+    _batchesStream = FirestoreService().getBatchesStream();
+    _purchasesStream = FirestoreService().getUserPurchasesStream();
+    _liveClassesStream = _contentService.getLiveClasses();
     _loadCachedPurchases();
     _paymentService.initialize(
       onSuccess: (res) async {
@@ -146,26 +152,35 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen>
     return false;
   }
 
-  void _openLivePlayer(LiveClass c) {
-    if (c.isJitsi) {
-      AppNavigator.push(
+  bool _isJoiningLive = false;
+
+  void _openLivePlayer(LiveClass c) async {
+    if (_isJoiningLive) return;
+    _isJoiningLive = true;
+
+    try {
+      if (c.isJitsi) {
+        await AppNavigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => JitsiLiveMeetingScreen(
+              liveClass: c,
+              sessionId: c.id,
+              roomName: c.roomName,
+            ),
+          ),
+        );
+        return;
+      }
+      await AppNavigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => JitsiLiveMeetingScreen(
-            liveClass: c,
-            sessionId: c.id,
-            roomName: c.roomName,
-          ),
+          builder: (context) => AmazonLivePlayerScreen(liveClass: c),
         ),
       );
-      return;
+    } finally {
+      _isJoiningLive = false;
     }
-    AppNavigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AmazonLivePlayerScreen(liveClass: c),
-      ),
-    );
   }
 
   void _openVideoPlayer(LiveClass c) {
@@ -386,24 +401,27 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen>
     final borderColor = isDark ? const Color(0xFF152E54) : Colors.grey.shade200;
 
     return StreamBuilder<List<CourseModel>>(
-      stream: FirestoreService().getBatchesStream(),
+      stream: _batchesStream,
+      initialData: FirestoreService.cachedBatches.isNotEmpty ? FirestoreService.cachedBatches : [widget.batch],
       builder: (context, snapshot) {
-        final batches = snapshot.data ?? [];
+        final batches = snapshot.data ?? [widget.batch];
         final currentBatch = batches.firstWhere(
           (b) => b.id == widget.batch.id,
           orElse: () => widget.batch,
         );
 
         return StreamBuilder<List<Map<String, dynamic>>>(
-          stream: FirestoreService().getUserPurchasesStream(),
+          stream: _purchasesStream,
+          initialData: FirestoreService.cachedPurchases,
           builder: (context, purchaseSnap) {
-            final purchases = purchaseSnap.data ?? [];
+            final purchases = purchaseSnap.data ?? FirestoreService.cachedPurchases;
             final isPurchased = _isUserEnrolled(purchases, currentBatch);
 
             return StreamBuilder<List<LiveClass>>(
-              stream: _contentService.getLiveClasses(),
+              stream: _liveClassesStream,
+              initialData: ContentService.cachedLiveClasses,
               builder: (context, classSnap) {
-                final allClasses = classSnap.data ?? [];
+                final allClasses = classSnap.data ?? ContentService.cachedLiveClasses;
                 final batchClasses = allClasses.where((c) => _matchesBatch(c, currentBatch)).toList();
 
                 // Recorded classes check (marked recorded, completed status, or having video/recording URL)
@@ -1478,17 +1496,6 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen>
               ],
             ),
           ),
-          OutlinedButton(
-            onPressed: () => setState(() => _forceOverviewView = true),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFF38BDF8),
-              side: const BorderSide(color: Color(0xFF38BDF8)),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              minimumSize: Size.zero,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-            ),
-            child: const Text('Overview', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-          ),
         ],
       ),
     );
@@ -1965,6 +1972,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen>
   ) {
     return StreamBuilder<List<ResourceItem>>(
       stream: FirestoreService().getResourcesStream(),
+      initialData: FirestoreService.cachedResources,
       builder: (context, snapshot) {
         final allResources = snapshot.data ?? [];
         final batchResources = allResources.where((r) {
@@ -2266,6 +2274,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen>
   ) {
     return StreamBuilder<List<ResourceItem>>(
       stream: FirestoreService().getResourcesStream(),
+      initialData: FirestoreService.cachedResources,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
@@ -2433,6 +2442,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen>
   ) {
     return StreamBuilder<List<TestCategory>>(
       stream: _testService.getCategoriesStream(),
+      initialData: TestService.cachedCategories,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());

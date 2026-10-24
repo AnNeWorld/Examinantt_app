@@ -19,8 +19,8 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "com.examinantt.studentapp"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    compileSdk = maxOf(flutter.compileSdkVersion, 35)
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -37,9 +37,22 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = maxOf(flutter.minSdkVersion, 26)
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = maxOf(flutter.targetSdkVersion, 35)
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        ndk {
+            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86_64")
+        }
+    }
+
+    packaging {
+        jniLibs {
+            useLegacyPackaging = false
+        }
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
     }
 
     signingConfigs {
@@ -54,6 +67,10 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("release")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 }
@@ -66,4 +83,9 @@ configurations.all {
     // Resolve duplicate class conflict between video_player_android (media3-exoplayer-rtsp)
     // and react-native-video (bundled in jitsi-meet-sdk).
     exclude(group = "androidx.media3", module = "media3-exoplayer-rtsp")
+
+    // Force 16 KB page-aligned modern Amazon IVS Player SDK (replaces 4 KB legacy 1.29.0)
+    resolutionStrategy {
+        force("com.amazonaws:ivs-player:1.42.0")
+    }
 }

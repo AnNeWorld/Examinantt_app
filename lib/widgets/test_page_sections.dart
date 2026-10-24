@@ -155,6 +155,15 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
     });
   }
 
+  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
+  Color get _cardBg => _isDark ? const Color(0xFF0F172A) : Colors.white;
+  Color get _subCardBg => _isDark ? const Color(0xFF071326) : const Color(0xFFF8FAFC);
+  Color get _titleColor => _isDark ? Colors.white : AppTheme.darkSlate;
+  Color get _subColor => _isDark ? Colors.white70 : const Color(0xFF64748B);
+  Color get _mutedColor => _isDark ? Colors.white54 : Colors.grey.shade500;
+  Color get _borderColor => _isDark ? Colors.white12 : Colors.grey.shade200;
+  Color get _dialogBg => _isDark ? const Color(0xFF0F172A) : Colors.white;
+
   // ---------------------------------------------------------------------------
   // INTERACTIVE DIALOGS & BOTTOM SHEETS
   // ---------------------------------------------------------------------------
@@ -163,13 +172,13 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF0F172A),
+        backgroundColor: _dialogBg,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.school, color: AppColors.accent, size: 20),
-            SizedBox(width: 8),
-            Text('Select Target Exam', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+            const Icon(Icons.school, color: AppColors.accent, size: 20),
+            const SizedBox(width: 8),
+            Text('Select Target Exam', style: TextStyle(color: _titleColor, fontSize: 16, fontWeight: FontWeight.bold)),
           ],
         ),
         content: SizedBox(
@@ -189,19 +198,19 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                       leading: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: isSel ? AppColors.accent.withValues(alpha: 0.2) : Colors.white10,
+                          color: isSel ? AppColors.accent.withValues(alpha: 0.2) : (_isDark ? Colors.white10 : Colors.grey.shade100),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           isSel ? Icons.check_circle : Icons.school_outlined,
-                          color: isSel ? AppColors.accent : Colors.white70,
+                          color: isSel ? AppColors.accent : (_isDark ? Colors.white70 : AppTheme.darkSlate),
                           size: 18,
                         ),
                       ),
                       title: Text(
                         exam,
                         style: TextStyle(
-                          color: isSel ? AppColors.accent : Colors.white,
+                          color: isSel ? AppColors.accent : _titleColor,
                           fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
                         ),
                       ),
@@ -237,16 +246,16 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF0F172A),
+        backgroundColor: _dialogBg,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.account_tree_outlined, color: AppColors.accent),
-            SizedBox(width: 10),
+            const Icon(Icons.account_tree_outlined, color: AppColors.accent),
+            const SizedBox(width: 10),
             Expanded(
               child: Text(
                 'Test Structure Breakdown',
-                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                style: TextStyle(color: _titleColor, fontSize: 16, fontWeight: FontWeight.bold),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -258,11 +267,11 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildStructureRow('Chapter Tests', '243 Tests', 'Topic-wise concept mastery (25-30 Qs, 30-35 mins)'),
-              const Divider(color: Colors.white12, height: 16),
+              Divider(color: _borderColor, height: 16),
               _buildStructureRow('Unit Tests', '65 Tests', 'Combined multi-chapter review (45 Qs, 60 mins)'),
-              const Divider(color: Colors.white12, height: 16),
+              Divider(color: _borderColor, height: 16),
               _buildStructureRow('Subject Tests', '15 Tests', 'Full physics/chemistry/maths papers (75 Qs, 90 mins)'),
-              const Divider(color: Colors.white12, height: 16),
+              Divider(color: _borderColor, height: 16),
               _buildStructureRow('Full Length Mocks', '20 Tests', 'Simulated real NTA CBT format (300 Marks, 3 Hours)'),
             ],
           ),
@@ -288,7 +297,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
             Expanded(
               child: Text(
                 title,
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 13),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -301,7 +310,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
           ],
         ),
         const SizedBox(height: 2),
-        Text(desc, style: const TextStyle(color: Colors.white60, fontSize: 11)),
+        Text(desc, style: TextStyle(color: _subColor, fontSize: 11)),
       ],
     );
   }
@@ -309,7 +318,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
   void _showWhySequenceBottomSheet() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: _dialogBg,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => SafeArea(
         child: Padding(
@@ -322,21 +331,24 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                 child: Container(
                   width: 40,
                   height: 4,
-                  decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)),
+                  decoration: BoxDecoration(
+                    color: _isDark ? Colors.white24 : Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.star_rounded, color: Colors.amber, size: 28),
-                  SizedBox(width: 10),
-                  Text('Why Sequence Unlocking?', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+                  const Icon(Icons.star_rounded, color: Colors.amber, size: 28),
+                  const SizedBox(width: 10),
+                  Text('Why Sequence Unlocking?', style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 18)),
                 ],
               ),
               const SizedBox(height: 12),
-              const Text(
+              Text(
                 'Our scientific pedagogical algorithm ensures you build fundamental concepts before tackling complex application problems.',
-                style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+                style: TextStyle(color: _subColor, fontSize: 13, height: 1.4),
               ),
               const SizedBox(height: 14),
               _buildBulletPoint('Foundational concepts unlock corresponding advanced problems.'),
@@ -370,7 +382,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
         children: [
           const Icon(Icons.check_circle_rounded, color: Colors.green, size: 16),
           const SizedBox(width: 8),
-          Expanded(child: Text(text, style: const TextStyle(color: Colors.white70, fontSize: 12))),
+          Expanded(child: Text(text, style: TextStyle(color: _subColor, fontSize: 12))),
         ],
       ),
     );
@@ -380,26 +392,26 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF0F172A),
+        backgroundColor: _dialogBg,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Start $testName', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 17)),
+        title: Text('Start $testName', style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 17)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('• Duration: $duration', style: const TextStyle(color: Colors.white70, fontSize: 13)),
+            Text('• Duration: $duration', style: TextStyle(color: _subColor, fontSize: 13)),
             const SizedBox(height: 4),
-            Text('• Questions: $questions', style: const TextStyle(color: Colors.white70, fontSize: 13)),
+            Text('• Questions: $questions', style: TextStyle(color: _subColor, fontSize: 13)),
             const SizedBox(height: 4),
-            const Text('• Marking: +4 for Correct, -1 for Incorrect', style: TextStyle(color: Colors.white70, fontSize: 13)),
+            Text('• Marking: +4 for Correct, -1 for Incorrect', style: TextStyle(color: _subColor, fontSize: 13)),
             const SizedBox(height: 4),
-            const Text('• Anti-cheat & timer auto-submit enabled', style: TextStyle(color: Colors.white70, fontSize: 13)),
+            Text('• Anti-cheat & timer auto-submit enabled', style: TextStyle(color: _subColor, fontSize: 13)),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+            child: Text('Cancel', style: TextStyle(color: _mutedColor)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -426,13 +438,13 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF0F172A),
+        backgroundColor: _dialogBg,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
             const Icon(Icons.emoji_events_rounded, color: Colors.amber),
             const SizedBox(width: 8),
-            Expanded(child: Text('$testName Result', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16))),
+            Expanded(child: Text('$testName Result', style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 16))),
           ],
         ),
         content: Column(
@@ -450,15 +462,15 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                 children: [
                   Column(
                     children: [
-                      const Text('Your Score', style: TextStyle(color: Colors.white60, fontSize: 11)),
+                      Text('Your Score', style: TextStyle(color: _subColor, fontSize: 11)),
                       const SizedBox(height: 4),
                       Text(score, style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 18)),
                     ],
                   ),
-                  Container(height: 30, width: 1, color: Colors.white12),
+                  Container(height: 30, width: 1, color: _borderColor),
                   Column(
                     children: [
-                      const Text('Accuracy', style: TextStyle(color: Colors.white60, fontSize: 11)),
+                      Text('Accuracy', style: TextStyle(color: _subColor, fontSize: 11)),
                       const SizedBox(height: 4),
                       Text(accuracy, style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 18)),
                     ],
@@ -467,13 +479,13 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
               ),
             ),
             const SizedBox(height: 12),
-            const Text('Great job! You scored higher than 84% of candidates in this topic.', style: TextStyle(color: Colors.white70, fontSize: 12), textAlign: TextAlign.center),
+            Text('Great job! You scored higher than 84% of candidates in this topic.', style: TextStyle(color: _subColor, fontSize: 12), textAlign: TextAlign.center),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Close', style: TextStyle(color: Colors.white54)),
+            child: Text('Close', style: TextStyle(color: _mutedColor)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -492,17 +504,17 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF0F172A),
+        backgroundColor: _dialogBg,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Reattempt $testName?', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-        content: const Text(
+        title: Text('Reattempt $testName?', style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 16)),
+        content: Text(
           'Your previous attempt score will be saved in your test history. The timer will start immediately.',
-          style: TextStyle(color: Colors.white70, fontSize: 13),
+          style: TextStyle(color: _subColor, fontSize: 13),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+            child: Text('Cancel', style: TextStyle(color: _mutedColor)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -529,16 +541,16 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF0F172A),
+        backgroundColor: _dialogBg,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.lock_rounded, color: Colors.orange),
-            SizedBox(width: 8),
+            const Icon(Icons.lock_rounded, color: Colors.orange),
+            const SizedBox(width: 8),
             Expanded(
               child: Text(
                 'Test Locked',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 16),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -546,7 +558,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
         ),
         content: Text(
           '$unlockRequirement to unlock this test. Sequential practice ensures high conceptual mastery.',
-          style: const TextStyle(color: Colors.white70, fontSize: 13),
+          style: TextStyle(color: _subColor, fontSize: 13),
         ),
         actions: [
           ElevatedButton(
@@ -586,7 +598,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
         Expanded(
           child: RefreshIndicator(
             color: const Color(0xFFFFA000),
-            backgroundColor: const Color(0xFF0F172A),
+            backgroundColor: _cardBg,
             onRefresh: () async {
               await Future.delayed(const Duration(milliseconds: 650));
               if (mounted) setState(() {});
@@ -616,14 +628,14 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                 padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
                 child: Row(
                   children: [
-                    const Text(
+                    Text(
                       'Preparing for ',
-                      style: TextStyle(color: Colors.white60, fontSize: 13),
+                      style: TextStyle(color: _subColor, fontSize: 13),
                     ),
                     Flexible(
                       child: Text(
                         _selectedExam,
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                        style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 14),
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
                       ),
@@ -638,13 +650,13 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
           const SizedBox(width: 8),
           OutlinedButton.icon(
             onPressed: _showChangeExamDialog,
-            icon: const Icon(Icons.swap_horiz_rounded, color: Colors.white70, size: 14),
-            label: const Text(
+            icon: Icon(Icons.swap_horiz_rounded, color: _subColor, size: 14),
+            label: Text(
               'Change Exam',
-              style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+              style: TextStyle(color: _titleColor, fontSize: 11, fontWeight: FontWeight.bold),
             ),
             style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Colors.white24),
+              side: BorderSide(color: _borderColor),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             ),
@@ -713,9 +725,9 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Subtitle text from PDF
-          const Text(
+          Text(
             'Smart Practice. Better Analysis. Higher Scores.',
-            style: TextStyle(color: Colors.white60, fontSize: 12, fontStyle: FontStyle.italic),
+            style: TextStyle(color: _subColor, fontSize: 12, fontStyle: FontStyle.italic),
           ),
           const SizedBox(height: 16),
 
@@ -874,9 +886,18 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
         decoration: BoxDecoration(
-          color: const Color(0xFF0F172A),
+          color: _cardBg,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white10),
+          border: Border.all(color: _borderColor),
+          boxShadow: _isDark
+              ? null
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
         ),
         child: Column(
           children: [
@@ -884,12 +905,12 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
             const SizedBox(height: 6),
             Text(
               value,
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16),
+              style: TextStyle(color: _titleColor, fontWeight: FontWeight.w900, fontSize: 16),
             ),
             const SizedBox(height: 2),
             Text(
               label,
-              style: const TextStyle(color: Colors.white60, fontSize: 9.5),
+              style: TextStyle(color: _subColor, fontSize: 9.5),
               textAlign: TextAlign.center,
               maxLines: 2,
             ),
@@ -911,9 +932,18 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 6),
         decoration: BoxDecoration(
-          color: const Color(0xFF0F172A),
+          color: _cardBg,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: color.withValues(alpha: 0.25)),
+          boxShadow: _isDark
+              ? null
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
         ),
         child: Column(
           children: [
@@ -921,7 +951,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
             const SizedBox(height: 8),
             Text(
               label,
-              style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600),
+              style: TextStyle(color: _titleColor, fontSize: 11, fontWeight: FontWeight.w600),
               textAlign: TextAlign.center,
               maxLines: 2,
             ),
@@ -953,13 +983,24 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0A2244), Color(0xFF071426)],
+            gradient: LinearGradient(
+              colors: _isDark
+                  ? const [Color(0xFF0A2244), Color(0xFF071426)]
+                  : const [Color(0xFFEFF6FF), Color(0xFFDBEAFE)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: const Color(0xFFFFA000).withValues(alpha: 0.4)),
+            boxShadow: _isDark
+                ? null
+                : [
+                    BoxShadow(
+                      color: const Color(0xFFFFA000).withValues(alpha: 0.08),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -983,7 +1024,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                      style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 15),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1013,7 +1054,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                     const SizedBox(height: 5),
                     Text(
                       testsCount,
-                      style: const TextStyle(color: Colors.white70, fontSize: 10),
+                      style: TextStyle(color: _subColor, fontSize: 10),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1024,7 +1065,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                       runSpacing: 2,
                       children: [
                         Text(priceStr, style: const TextStyle(color: Color(0xFFFFA000), fontSize: 10.5, fontWeight: FontWeight.bold)),
-                        const Text('•', style: TextStyle(color: Colors.white38, fontSize: 10.5)),
+                        Text('•', style: TextStyle(color: _mutedColor, fontSize: 10.5)),
                         const Text('Available Now', style: TextStyle(color: Color(0xFF34D399), fontSize: 10.5, fontWeight: FontWeight.bold)),
                       ],
                     ),
@@ -1078,13 +1119,13 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Row(
+            Row(
               children: [
-                Icon(Icons.workspace_premium_rounded, color: Color(0xFFFFA000), size: 20),
-                SizedBox(width: 8),
+                const Icon(Icons.workspace_premium_rounded, color: Color(0xFFFFA000), size: 20),
+                const SizedBox(width: 8),
                 Text(
                   'Live Test Series',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                  style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 16),
                 ),
               ],
             ),
@@ -1112,18 +1153,18 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
               return Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0F172A),
+                  color: _cardBg,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white10),
+                  border: Border.all(color: _borderColor),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.info_outline, color: Colors.white38, size: 20),
-                    SizedBox(width: 10),
+                    Icon(Icons.info_outline, color: _mutedColor, size: 20),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         'Test series added by admin will appear here automatically.',
-                        style: TextStyle(color: Colors.white60, fontSize: 12),
+                        style: TextStyle(color: _subColor, fontSize: 12),
                       ),
                     ),
                   ],
@@ -1149,9 +1190,18 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                     margin: const EdgeInsets.only(right: 12),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0F172A),
+                      color: _cardBg,
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: badgeColor.withValues(alpha: 0.3)),
+                      boxShadow: _isDark
+                          ? null
+                          : [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.04),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                     ),
                     child: InkWell(
                       onTap: () => _openSeriesDetail(
@@ -1194,19 +1244,19 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                           const SizedBox(height: 8),
                           Text(
                             cat.title,
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                            style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 13),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                           const Spacer(),
                           Row(
                             children: [
-                              const Icon(Icons.assignment_outlined, color: Colors.white38, size: 14),
+                              Icon(Icons.assignment_outlined, color: _mutedColor, size: 14),
                               const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
                                   cat.testsCount,
-                                  style: const TextStyle(color: Colors.white60, fontSize: 11),
+                                  style: TextStyle(color: _subColor, fontSize: 11),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
@@ -1233,13 +1283,13 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Row(
+            Row(
               children: [
-                Icon(Icons.quiz_outlined, color: Color(0xFF38BDF8), size: 20),
-                SizedBox(width: 8),
+                const Icon(Icons.quiz_outlined, color: Color(0xFF38BDF8), size: 20),
+                const SizedBox(width: 8),
                 Text(
                   'Live Tests & Mocks',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                  style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 16),
                 ),
               ],
             ),
@@ -1278,9 +1328,18 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                   margin: const EdgeInsets.only(bottom: 10),
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A),
+                    color: _cardBg,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white10),
+                    border: Border.all(color: _borderColor),
+                    boxShadow: _isDark
+                        ? null
+                        : [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.03),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
                   ),
                   child: Row(
                     children: [
@@ -1300,14 +1359,14 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                           children: [
                             Text(
                               t.title,
-                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.5),
+                              style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 13.5),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 3),
                             Text(
                               '${t.totalQuestions} Questions • ${t.durationMinutes} Mins • ${t.totalMarks} Marks',
-                              style: const TextStyle(color: Colors.white60, fontSize: 11),
+                              style: TextStyle(color: _subColor, fontSize: 11),
                             ),
                           ],
                         ),
@@ -1354,9 +1413,9 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
+            Text(
               'Recent Activity',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+              style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 16),
             ),
             GestureDetector(
               onTap: () {
@@ -1380,24 +1439,24 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                 padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0F172A),
+                  color: _cardBg,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white12),
+                  border: Border.all(color: _borderColor),
                 ),
-                child: const Column(
+                child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.assignment_turned_in_outlined, size: 36, color: Colors.white30),
-                    SizedBox(height: 8),
+                    Icon(Icons.assignment_turned_in_outlined, size: 36, color: _mutedColor),
+                    const SizedBox(height: 8),
                     Text(
                       'No recent test attempts found',
-                      style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600),
+                      style: TextStyle(color: _titleColor, fontSize: 13, fontWeight: FontWeight.w600),
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
                       'Attempt tests above to view your real-time analytics and scorecards.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.white38, fontSize: 11),
+                      style: TextStyle(color: _subColor, fontSize: 11),
                     ),
                   ],
                 ),
@@ -1444,9 +1503,18 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: const Color(0xFF0F172A),
+          color: _cardBg,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white10),
+          border: Border.all(color: _borderColor),
+          boxShadow: _isDark
+              ? null
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
         ),
         child: Row(
           children: [
@@ -1463,9 +1531,9 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.5)),
+                  Text(title, style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 13.5)),
                   const SizedBox(height: 2),
-                  Text(subtitle, style: const TextStyle(color: Colors.white60, fontSize: 11)),
+                  Text(subtitle, style: TextStyle(color: _subColor, fontSize: 11)),
                 ],
               ),
             ),
@@ -1474,11 +1542,11 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
               children: [
                 Text(score, style: TextStyle(color: scoreColor, fontWeight: FontWeight.w900, fontSize: 14.5)),
                 const SizedBox(height: 2),
-                Text(accuracy, style: const TextStyle(color: Colors.white60, fontSize: 10.5)),
+                Text(accuracy, style: TextStyle(color: _subColor, fontSize: 10.5)),
               ],
             ),
             const SizedBox(width: 8),
-            const Icon(Icons.chevron_right_rounded, color: Colors.white38, size: 18),
+            Icon(Icons.chevron_right_rounded, color: _mutedColor, size: 18),
           ],
         ),
       ),
@@ -1500,113 +1568,113 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('My Tests & Test Series', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 17)),
-                    SizedBox(height: 2),
-                    Text('All tests and series you have access to', style: TextStyle(color: Colors.white60, fontSize: 11.5)),
-                  ],
-                ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('My Tests & Test Series', style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 17)),
+                  const SizedBox(height: 2),
+                  Text('All tests and series you have access to', style: TextStyle(color: _subColor, fontSize: 11.5)),
+                ],
               ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0F172A),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.white12),
-                ),
-                child: DropdownButton<String>(
-                  value: _mySeriesSort,
-                  dropdownColor: const Color(0xFF0F172A),
-                  underline: const SizedBox(),
-                  isDense: true,
-                  icon: const Icon(Icons.arrow_drop_down, color: Colors.white70, size: 18),
-                  style: const TextStyle(color: Colors.white70, fontSize: 11.5),
-                  items: ['Recent', 'Progress', 'Alphabetical'].map((val) {
-                    return DropdownMenuItem<String>(value: val, child: Text('Sort by: $val'));
-                  }).toList(),
-                  onChanged: (v) {
-                    if (v != null) setState(() => _mySeriesSort = v);
-                  },
-                ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: _cardBg,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: _borderColor),
               ),
-            ],
-          ),
+              child: DropdownButton<String>(
+                value: _mySeriesSort,
+                dropdownColor: _dialogBg,
+                underline: const SizedBox(),
+                isDense: true,
+                icon: Icon(Icons.arrow_drop_down, color: _subColor, size: 18),
+                style: TextStyle(color: _titleColor, fontSize: 11.5),
+                items: ['Recent', 'Progress', 'Alphabetical'].map((val) {
+                  return DropdownMenuItem<String>(value: val, child: Text('Sort by: $val'));
+                }).toList(),
+                onChanged: (v) {
+                  if (v != null) setState(() => _mySeriesSort = v);
+                },
+              ),
+            ),
+          ],
         ),
-        // Filter tabs: All, Test Series, Individual Tests
-        SizedBox(
-          height: 36,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            itemCount: subFilters.length,
-            itemBuilder: (ctx, idx) {
-              final f = subFilters[idx];
-              final isSel = _mySeriesFilter == f;
-              return Padding(
-                padding: const EdgeInsets.only(right: 8.0),
-                child: ChoiceChip(
-                  label: Text(f, style: TextStyle(fontSize: 12, fontWeight: isSel ? FontWeight.bold : FontWeight.normal, color: isSel ? Colors.black : Colors.white70)),
-                  selected: isSel,
-                  selectedColor: const Color(0xFFFFA000),
-                  backgroundColor: const Color(0xFF0F172A),
-                  side: BorderSide(color: isSel ? const Color(0xFFFFA000) : Colors.white12),
-                  onSelected: (val) {
-                    if (val) setState(() => _mySeriesFilter = f);
-                  },
-                ),
-              );
-            },
-          ),
+      ),
+      // Filter tabs: All, Test Series, Individual Tests
+      SizedBox(
+        height: 36,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          itemCount: subFilters.length,
+          itemBuilder: (ctx, idx) {
+            final f = subFilters[idx];
+            final isSel = _mySeriesFilter == f;
+            return Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: ChoiceChip(
+                label: Text(f, style: TextStyle(fontSize: 12, fontWeight: isSel ? FontWeight.bold : FontWeight.normal, color: isSel ? Colors.black : _titleColor)),
+                selected: isSel,
+                selectedColor: const Color(0xFFFFA000),
+                backgroundColor: _cardBg,
+                side: BorderSide(color: isSel ? const Color(0xFFFFA000) : _borderColor),
+                onSelected: (val) {
+                  if (val) setState(() => _mySeriesFilter = f);
+                },
+              ),
+            );
+          },
         ),
-        const SizedBox(height: 8),
-        Expanded(
-          child: _mySeriesFilter == 'Individual Tests'
-              ? _buildIndividualTestsList()
-              : StreamBuilder<List<TestCategory>>(
-            stream: TestService().getCategoriesStream(),
-            builder: (context, catSnapshot) {
-              if (catSnapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator(color: Color(0xFFFFA000)));
-              }
+      ),
+      const SizedBox(height: 8),
+      Expanded(
+        child: _mySeriesFilter == 'Individual Tests'
+            ? _buildIndividualTestsList()
+            : StreamBuilder<List<TestCategory>>(
+          stream: TestService().getCategoriesStream(),
+          builder: (context, catSnapshot) {
+            if (catSnapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator(color: Color(0xFFFFA000)));
+            }
 
-              final allSeries = catSnapshot.data ?? [];
-              return StreamBuilder<List<Map<String, dynamic>>>(
-                stream: FirestoreService().getUserPurchasesStream(),
-                builder: (context, purchaseSnapshot) {
-                  final purchases = purchaseSnapshot.data ?? [];
-                  final purchasedIds = purchases.map((p) => (p['id'] ?? p['seriesId'] ?? p['courseId'] ?? '').toString()).toSet();
-                  final purchasedTitles = purchases.map((p) => (p['title'] ?? '').toString().toLowerCase()).toSet();
+            final allSeries = catSnapshot.data ?? [];
+            return StreamBuilder<List<Map<String, dynamic>>>(
+              stream: FirestoreService().getUserPurchasesStream(),
+              builder: (context, purchaseSnapshot) {
+                final purchases = purchaseSnapshot.data ?? [];
+                final purchasedIds = purchases.map((p) => (p['id'] ?? p['seriesId'] ?? p['courseId'] ?? '').toString()).toSet();
+                final purchasedTitles = purchases.map((p) => (p['title'] ?? '').toString().toLowerCase()).toSet();
 
-                  List<TestCategory> mySeries = [];
-                  if (allSeries.isNotEmpty) {
-                    mySeries = List<TestCategory>.from(allSeries);
-                  } else {
-                    mySeries = [];
-                  }
+                List<TestCategory> mySeries = [];
+                if (allSeries.isNotEmpty) {
+                  mySeries = List<TestCategory>.from(allSeries);
+                } else {
+                  mySeries = [];
+                }
 
-                  if (mySeries.isEmpty) {
-                    return Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24.0),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.assignment_turned_in_outlined, size: 48, color: Colors.white38),
-                            const SizedBox(height: 12),
-                            const Text(
-                              'No Test Series Enrolled Yet',
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
-                            ),
-                            const SizedBox(height: 6),
-                            const Text(
-                              'Explore mock tests and test series to start practicing.',
-                              style: TextStyle(color: Colors.white60, fontSize: 12),
-                              textAlign: TextAlign.center,
-                            ),
+                if (mySeries.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.assignment_turned_in_outlined, size: 48, color: _mutedColor),
+                          const SizedBox(height: 12),
+                          Text(
+                            'No Test Series Enrolled Yet',
+                            style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 15),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Explore mock tests and test series to start practicing.',
+                            style: TextStyle(color: _subColor, fontSize: 12),
+                            textAlign: TextAlign.center,
+                          ),
                             const SizedBox(height: 16),
                             ElevatedButton(
                               onPressed: () => _switchTab(tabAllTests),
@@ -1797,9 +1865,18 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
               margin: const EdgeInsets.only(bottom: 10),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
-                color: const Color(0xFF0F172A),
+                color: _cardBg,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.white12),
+                border: Border.all(color: _borderColor),
+                boxShadow: _isDark
+                    ? null
+                    : [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.03),
+                          blurRadius: 4,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
               ),
               child: Row(
                 children: [
@@ -1833,21 +1910,21 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                             const SizedBox(width: 6),
                             Text(
                               '${test.totalMarks} Marks',
-                              style: const TextStyle(color: Colors.white54, fontSize: 10.5),
+                              style: TextStyle(color: _mutedColor, fontSize: 10.5),
                             ),
                           ],
                         ),
                         const SizedBox(height: 4),
                         Text(
                           test.title,
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.5),
+                          style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 13.5),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 2),
                         Text(
                           '${test.totalQuestions} Questions • ${test.durationMinutes} Mins',
-                          style: const TextStyle(color: Colors.white60, fontSize: 11),
+                          style: TextStyle(color: _subColor, fontSize: 11),
                         ),
                       ],
                     ),
@@ -1902,9 +1979,18 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF0F172A),
+        color: _cardBg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(color: _borderColor),
+        boxShadow: _isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1921,7 +2007,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                      style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 15),
                     ),
                     const SizedBox(height: 4),
                     Container(
@@ -1945,7 +2031,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                     const SizedBox(height: 6),
                     Text(
                       description,
-                      style: const TextStyle(color: Colors.white60, fontSize: 11),
+                      style: TextStyle(color: _subColor, fontSize: 11),
                       maxLines: 2,
                     ),
                     const SizedBox(height: 8),
@@ -1961,7 +2047,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
               // Circular progress indicator ring matching PDF
               Column(
                 children: [
-                  const Icon(Icons.more_vert_rounded, color: Colors.white38, size: 20),
+                  Icon(Icons.more_vert_rounded, color: _mutedColor, size: 20),
                   const SizedBox(height: 4),
                   SizedBox(
                     width: 54,
@@ -1972,7 +2058,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                         CircularProgressIndicator(
                           value: progress,
                           strokeWidth: 4.5,
-                          backgroundColor: Colors.white12,
+                          backgroundColor: _borderColor,
                           color: progressColor,
                         ),
                         Column(
@@ -1980,16 +2066,16 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                           children: [
                             Text(
                               '${(progress * 100).toInt()}%',
-                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                              style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 12),
                             ),
-                            const Text('Completed', style: TextStyle(color: Colors.white54, fontSize: 7)),
+                            Text('Completed', style: TextStyle(color: _mutedColor, fontSize: 7)),
                           ],
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(progressFraction, style: const TextStyle(color: Colors.white60, fontSize: 9)),
+                  Text(progressFraction, style: TextStyle(color: _subColor, fontSize: 9)),
                 ],
               ),
             ],
@@ -2080,10 +2166,10 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
+        color: _isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.shade100,
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Text(text, style: const TextStyle(color: Colors.white70, fontSize: 9.5)),
+      child: Text(text, style: TextStyle(color: _subColor, fontSize: 9.5)),
     );
   }
 
@@ -2136,16 +2222,16 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               'Included with Your Batch',
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                              style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 16),
                             ),
                             const SizedBox(height: 2),
                             Text(
                               batchPurchases.isNotEmpty
                                   ? 'Active enrolled batches: ${batchPurchases.length}'
                                   : 'Enroll in a batch to get auto-unlocked test series.',
-                              style: const TextStyle(color: Colors.white60, fontSize: 11.5),
+                              style: TextStyle(color: _subColor, fontSize: 11.5),
                             ),
                           ],
                         ),
@@ -2171,22 +2257,22 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                       width: double.infinity,
                       padding: const EdgeInsets.all(28),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF0F172A),
+                        color: _cardBg,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.white10),
+                        border: Border.all(color: _borderColor),
                       ),
                       child: Column(
                         children: [
-                          const Icon(Icons.card_giftcard_outlined, size: 48, color: Colors.white24),
+                          Icon(Icons.card_giftcard_outlined, size: 48, color: _mutedColor),
                           const SizedBox(height: 12),
-                          const Text(
+                          Text(
                             'No Batch Tests Available',
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                            style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 15),
                           ),
                           const SizedBox(height: 6),
-                          const Text(
+                          Text(
                             'Test series included with enrolled batches will appear here automatically.',
-                            style: TextStyle(color: Colors.white60, fontSize: 12),
+                            style: TextStyle(color: _subColor, fontSize: 12),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 16),
@@ -2231,19 +2317,19 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
           child: Container(
             height: 42,
             decoration: BoxDecoration(
-              color: const Color(0xFF0F172A),
+              color: _cardBg,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white12),
+              border: Border.all(color: _borderColor),
             ),
             child: TextField(
               onChanged: (v) => setState(() => _allTestsSearchQuery = v),
-              style: const TextStyle(color: Colors.white, fontSize: 13),
-              decoration: const InputDecoration(
+              style: TextStyle(color: _titleColor, fontSize: 13),
+              decoration: InputDecoration(
                 hintText: 'Search test series or tests...',
-                hintStyle: TextStyle(color: Colors.white38, fontSize: 13),
-                prefixIcon: Icon(Icons.search, color: Colors.white54, size: 18),
+                hintStyle: TextStyle(color: _mutedColor, fontSize: 13),
+                prefixIcon: Icon(Icons.search, color: _subColor, size: 18),
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(vertical: 11),
+                contentPadding: const EdgeInsets.symmetric(vertical: 11),
               ),
             ),
           ),
@@ -2266,18 +2352,18 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                   label: Text(
                     f,
                     style: TextStyle(
-                      color: isSel ? Colors.black : Colors.white70,
+                      color: isSel ? Colors.black : _titleColor,
                       fontSize: 11,
                       fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
                     ),
                   ),
                   selected: isSel,
                   onSelected: (val) => setState(() => _allSeriesFilter = f),
-                  backgroundColor: const Color(0xFF0F172A),
+                  backgroundColor: _cardBg,
                   selectedColor: const Color(0xFFFFA000),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
-                    side: BorderSide(color: isSel ? const Color(0xFFFFA000) : Colors.white12),
+                    side: BorderSide(color: isSel ? const Color(0xFFFFA000) : _borderColor),
                   ),
                   showCheckmark: false,
                 ),
@@ -2313,13 +2399,13 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.assignment_outlined, size: 48, color: Colors.white38),
+                              Icon(Icons.assignment_outlined, size: 48, color: _mutedColor),
                               const SizedBox(height: 12),
                               Text(
                                 _allTestsSearchQuery.isNotEmpty
                                     ? 'No test series match "$_allTestsSearchQuery"'
                                     : 'No test series published yet by admin.',
-                                style: const TextStyle(color: Colors.white60, fontSize: 13),
+                                style: TextStyle(color: _subColor, fontSize: 13),
                                 textAlign: TextAlign.center,
                               ),
                             ],
@@ -2364,9 +2450,18 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF0F172A),
+        color: _cardBg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white12),
+        border: Border.all(color: _borderColor),
+        boxShadow: _isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2397,7 +2492,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                           const SizedBox(width: 8),
                           Text(
                             cat.testsCount,
-                            style: const TextStyle(color: Colors.white54, fontSize: 11),
+                            style: TextStyle(color: _mutedColor, fontSize: 11),
                           ),
                         ],
                       ],
@@ -2405,7 +2500,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                     const SizedBox(height: 6),
                     Text(
                       cat.title,
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                      style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 15),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -2413,7 +2508,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                       const SizedBox(height: 4),
                       Text(
                         cat.description,
-                        style: const TextStyle(color: Colors.white60, fontSize: 11.5),
+                        style: TextStyle(color: _subColor, fontSize: 11.5),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -2427,7 +2522,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                                 const Icon(Icons.check_circle_rounded, color: Color(0xFFFFA000), size: 12),
                                 const SizedBox(width: 6),
                                 Expanded(
-                                  child: Text(f, style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                                  child: Text(f, style: TextStyle(color: _subColor, fontSize: 11)),
                                 ),
                               ],
                             ),
@@ -2439,7 +2534,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
             ],
           ),
           const SizedBox(height: 12),
-          const Divider(color: Colors.white12),
+          Divider(color: _borderColor),
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -2448,10 +2543,10 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                 crossAxisAlignment: CrossAxisAlignment.baseline,
                 textBaseline: TextBaseline.alphabetic,
                 children: [
-                  Text(priceStr, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 18)),
+                  Text(priceStr, style: TextStyle(color: _titleColor, fontWeight: FontWeight.w900, fontSize: 18)),
                   if (origPriceStr.isNotEmpty) ...[
                     const SizedBox(width: 6),
-                    Text(origPriceStr, style: const TextStyle(color: Colors.white38, decoration: TextDecoration.lineThrough, fontSize: 12)),
+                    Text(origPriceStr, style: TextStyle(color: _mutedColor, decoration: TextDecoration.lineThrough, fontSize: 12)),
                   ],
                   if (discountStr.isNotEmpty) ...[
                     const SizedBox(width: 8),
@@ -2479,11 +2574,11 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                       features: cat.features,
                     ),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.white24),
+                      side: BorderSide(color: _borderColor),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     ),
-                    child: const Text('Details', style: TextStyle(color: Colors.white70, fontSize: 11.5, fontWeight: FontWeight.bold)),
+                    child: Text('Details', style: TextStyle(color: _titleColor, fontSize: 11.5, fontWeight: FontWeight.bold)),
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton(
@@ -2550,14 +2645,14 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
         // Top Series Header (Back Arrow + Gold Emblem + Title + Progress)
         Container(
           padding: const EdgeInsets.all(14),
-          color: const Color(0xFF0F172A),
+          color: _subCardBg,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+                    icon: Icon(Icons.arrow_back_rounded, color: _titleColor),
                     onPressed: _closeSeriesDetail,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
@@ -2579,7 +2674,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                       children: [
                         Text(
                           _currentSeriesTitle,
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14.5),
+                          style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 14.5),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -2599,17 +2694,17 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                     children: [
                       const Text('74% Completed', style: TextStyle(color: Color(0xFFFFA000), fontWeight: FontWeight.bold, fontSize: 11)),
                       const SizedBox(height: 2),
-                      const Text('112 / 150 Tests', style: TextStyle(color: Colors.white60, fontSize: 9.5)),
+                      Text('112 / 150 Tests', style: TextStyle(color: _subColor, fontSize: 9.5)),
                       const SizedBox(height: 4),
                       SizedBox(
                         width: 70,
                         height: 4,
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(2),
-                          child: const LinearProgressIndicator(
+                          child: LinearProgressIndicator(
                             value: 0.74,
-                            backgroundColor: Colors.white12,
-                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFA000)),
+                            backgroundColor: _borderColor,
+                            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFFA000)),
                           ),
                         ),
                       ),
@@ -2624,7 +2719,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
         // Sub-tabs row: Overview, Tests (Active), Analysis, Leaderboard, Solutions
         Container(
           height: 40,
-          color: const Color(0xFF0F172A),
+          color: _cardBg,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: subTabs.asMap().entries.map((entry) {
@@ -2653,7 +2748,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                   child: Text(
                     name,
                     style: TextStyle(
-                      color: isSel ? const Color(0xFFFFA000) : Colors.white60,
+                      color: isSel ? const Color(0xFFFFA000) : _subColor,
                       fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
                       fontSize: 12.5,
                     ),
@@ -2674,20 +2769,20 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Column(
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Tests List', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 17)),
-                        SizedBox(height: 2),
-                        Text('Choose a category and start practicing', style: TextStyle(color: Colors.white60, fontSize: 11.5)),
+                        Text('Tests List', style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 17)),
+                        const SizedBox(height: 2),
+                        Text('Choose a category and start practicing', style: TextStyle(color: _subColor, fontSize: 11.5)),
                       ],
                     ),
                     OutlinedButton.icon(
                       onPressed: _showTestStructureDialog,
-                      icon: const Icon(Icons.account_tree_outlined, color: Colors.white70, size: 14),
-                      label: const Text('View Test Structure', style: TextStyle(color: Colors.white, fontSize: 11)),
+                      icon: Icon(Icons.account_tree_outlined, color: _subColor, size: 14),
+                      label: Text('View Test Structure', style: TextStyle(color: _titleColor, fontSize: 11)),
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Colors.white24),
+                        side: BorderSide(color: _borderColor),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       ),
@@ -2710,10 +2805,10 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                           margin: EdgeInsets.only(right: idx < 3 ? 8 : 0),
                           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
                           decoration: BoxDecoration(
-                            color: isSel ? const Color(0xFFFFA000).withValues(alpha: 0.15) : const Color(0xFF0F172A),
+                            color: isSel ? const Color(0xFFFFA000).withValues(alpha: 0.15) : _cardBg,
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: isSel ? const Color(0xFFFFA000) : Colors.white10,
+                              color: isSel ? const Color(0xFFFFA000) : _borderColor,
                               width: isSel ? 1.5 : 1.0,
                             ),
                           ),
@@ -2722,7 +2817,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                               Text(
                                 item['title']!,
                                 style: TextStyle(
-                                  color: isSel ? const Color(0xFFFFA000) : Colors.white,
+                                  color: isSel ? const Color(0xFFFFA000) : _titleColor,
                                   fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
                                   fontSize: 10.5,
                                 ),
@@ -2732,7 +2827,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                               Text(
                                 item['count']!,
                                 style: TextStyle(
-                                  color: isSel ? const Color(0xFFFFA000) : Colors.white60,
+                                  color: isSel ? const Color(0xFFFFA000) : _subColor,
                                   fontSize: 9,
                                 ),
                               ),
@@ -2794,11 +2889,11 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                       return Container(
                         padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
                         alignment: Alignment.center,
-                        child: const Column(
+                        child: Column(
                           children: [
-                            Icon(Icons.quiz_outlined, size: 40, color: Colors.white24),
-                            SizedBox(height: 10),
-                            Text('No tests published in this series yet.', style: TextStyle(color: Colors.white60, fontSize: 13)),
+                            Icon(Icons.quiz_outlined, size: 40, color: _mutedColor),
+                            const SizedBox(height: 10),
+                            Text('No tests published in this series yet.', style: TextStyle(color: _subColor, fontSize: 13)),
                           ],
                         ),
                       );
@@ -2818,7 +2913,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                           difficultyColor: const Color(0xFFFFA000),
                           meta: '${test.totalQuestions} Questions  •  ${test.durationMinutes} Minutes',
                           statusText: 'Not Attempted',
-                          statusColor: Colors.white60,
+                          statusColor: _subColor,
                           actionButton: ElevatedButton(
                             onPressed: () => _showStartTestDialog(test.title, '${test.totalQuestions} Questions', '${test.durationMinutes} Minutes'),
                             style: ElevatedButton.styleFrom(
@@ -2848,9 +2943,9 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A),
+                    color: _cardBg,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white10),
+                    border: Border.all(color: _borderColor),
                   ),
                   child: Row(
                     children: [
@@ -2863,18 +2958,18 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                         child: const Icon(Icons.star_rounded, color: Color(0xFFFFA000), size: 22),
                       ),
                       const SizedBox(width: 12),
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               'Complete tests in sequence to unlock the next tests.',
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                              style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 12),
                             ),
-                            SizedBox(height: 2),
+                            const SizedBox(height: 2),
                             Text(
                               'This helps you follow the right learning path.',
-                              style: TextStyle(color: Colors.white60, fontSize: 10.5),
+                              style: TextStyle(color: _subColor, fontSize: 10.5),
                             ),
                           ],
                         ),
@@ -2914,24 +3009,24 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFF0F172A),
+        color: _cardBg,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white12),
+        border: Border.all(color: _borderColor),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 14, color: Colors.white70),
+            Icon(icon, size: 14, color: _subColor),
             const SizedBox(width: 4),
           ],
           DropdownButton<String>(
             value: items.contains(value) ? value : items.first,
-            dropdownColor: const Color(0xFF0F172A),
+            dropdownColor: _dialogBg,
             underline: const SizedBox(),
             isDense: true,
-            icon: const Icon(Icons.arrow_drop_down, color: Colors.white70, size: 16),
-            style: const TextStyle(color: Colors.white70, fontSize: 11),
+            icon: Icon(Icons.arrow_drop_down, color: _subColor, size: 16),
+            style: TextStyle(color: _titleColor, fontSize: 11),
             items: items.map((val) => DropdownMenuItem(value: val, child: Text(val))).toList(),
             onChanged: (v) {
               if (v != null) onChanged(v);
@@ -2962,9 +3057,18 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF0F172A),
+        color: _cardBg,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(color: _borderColor),
+        boxShadow: _isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 4,
+                  offset: const Offset(0, 1),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2978,12 +3082,12 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                 height: 32,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.08),
+                  color: _isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   number,
-                  style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.bold, fontSize: 13),
+                  style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 13),
                 ),
               ),
               const SizedBox(width: 10),
@@ -3004,12 +3108,12 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                      style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 14),
                     ),
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Text(type, style: const TextStyle(color: Colors.white60, fontSize: 10.5)),
+                        Text(type, style: TextStyle(color: _subColor, fontSize: 10.5)),
                         const SizedBox(width: 6),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
@@ -3025,7 +3129,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                       ],
                     ),
                     const SizedBox(height: 4),
-                    Text(meta, style: const TextStyle(color: Colors.white54, fontSize: 10)),
+                    Text(meta, style: TextStyle(color: _mutedColor, fontSize: 10)),
                   ],
                 ),
               ),
@@ -3033,7 +3137,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
               IconButton(
                 icon: Icon(
                   isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
-                  color: isBookmarked ? const Color(0xFFFFA000) : Colors.white38,
+                  color: isBookmarked ? const Color(0xFFFFA000) : _mutedColor,
                   size: 20,
                 ),
                 onPressed: () {
@@ -3053,7 +3157,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
             ],
           ),
           const SizedBox(height: 10),
-          const Divider(color: Colors.white12, height: 1),
+          Divider(color: _borderColor, height: 1),
           const SizedBox(height: 10),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -3126,13 +3230,13 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Explore Tests for Other Exams', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                    SizedBox(height: 2),
-                    Text('Prepare for various competitive exams with our comprehensive test series.', style: TextStyle(color: Colors.white60, fontSize: 11)),
+                    Text('Explore Tests for Other Exams', style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 16)),
+                    const SizedBox(height: 2),
+                    Text('Prepare for various competitive exams with our comprehensive test series.', style: TextStyle(color: _subColor, fontSize: 11)),
                   ],
                 ),
               ),
@@ -3140,11 +3244,11 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
               OutlinedButton(
                 onPressed: _showChangeExamDialog,
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.white24),
+                  side: BorderSide(color: _borderColor),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 ),
-                child: const Text('View All Exams >', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                child: Text('View All Exams >', style: TextStyle(color: _subColor, fontSize: 11)),
               ),
             ],
           ),
@@ -3162,9 +3266,9 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                   margin: const EdgeInsets.only(bottom: 12),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A),
+                    color: _cardBg,
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.white10),
+                    border: Border.all(color: _borderColor),
                   ),
                   child: Row(
                     children: [
@@ -3182,7 +3286,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                            Text(title, style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 15)),
                             const SizedBox(height: 2),
                             Text(
                               item['subtitle'] as String,
@@ -3191,7 +3295,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                             const SizedBox(height: 6),
                             Text(
                               '📄 ${item['tests']}   •   ❓ ${item['questions']}',
-                              style: const TextStyle(color: Colors.white60, fontSize: 11),
+                              style: TextStyle(color: _subColor, fontSize: 11),
                             ),
                           ],
                         ),
@@ -3229,21 +3333,21 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                 margin: const EdgeInsets.only(top: 8, bottom: 20),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0F172A),
+                  color: _cardBg,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.white10),
+                  border: Border.all(color: _borderColor),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.lightbulb_outline_rounded, color: Color(0xFFFFA000), size: 24),
-                    SizedBox(width: 12),
+                    const Icon(Icons.lightbulb_outline_rounded, color: Color(0xFFFFA000), size: 24),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('One platform, many exams, unlimited practice!', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12.5)),
-                          SizedBox(height: 2),
-                          Text('Switch exams anytime and access the best test series for your preparation.', style: TextStyle(color: Colors.white60, fontSize: 10.5)),
+                          Text('One platform, many exams, unlimited practice!', style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 12.5)),
+                          const SizedBox(height: 2),
+                          Text('Switch exams anytime and access the best test series for your preparation.', style: TextStyle(color: _subColor, fontSize: 10.5)),
                         ],
                       ),
                     ),
@@ -3305,13 +3409,13 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Your Test Performance', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 17)),
-                        SizedBox(height: 2),
-                        Text('Track your progress and improve every day.', style: TextStyle(color: Colors.white60, fontSize: 11.5)),
+                        Text('Your Test Performance', style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 17)),
+                        const SizedBox(height: 2),
+                        Text('Track your progress and improve every day.', style: TextStyle(color: _subColor, fontSize: 11.5)),
                       ],
                     ),
                   ),
@@ -3319,17 +3423,17 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0F172A),
+                      color: _cardBg,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.white12),
+                      border: Border.all(color: _borderColor),
                     ),
                     child: DropdownButton<String>(
                       value: _performanceTimeframe,
-                      dropdownColor: const Color(0xFF0F172A),
+                      dropdownColor: _dialogBg,
                       underline: const SizedBox(),
                       isDense: true,
-                      icon: const Icon(Icons.arrow_drop_down, color: Colors.white70, size: 16),
-                      style: const TextStyle(color: Colors.white70, fontSize: 11),
+                      icon: Icon(Icons.arrow_drop_down, color: _subColor, size: 16),
+                      style: TextStyle(color: _subColor, fontSize: 11),
                       items: ['Last 7 Days', 'Last 30 Days', 'Last 90 Days', 'All Time'].map((val) {
                         return DropdownMenuItem<String>(value: val, child: Text(val));
                       }).toList(),
@@ -3347,9 +3451,9 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A),
+                    color: _cardBg,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white10),
+                    border: Border.all(color: _borderColor),
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -3363,15 +3467,15 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                         child: const Icon(Icons.insights_rounded, color: Color(0xFFFFA000), size: 40),
                       ),
                       const SizedBox(height: 16),
-                      const Text(
+                      Text(
                         'No Test Performance Data Yet',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                        style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 16),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 8),
-                      const Text(
+                      Text(
                         'Attempt mock tests and chapter quizzes to unlock your real accuracy charts, subject breakdowns, and weak topic insights.',
-                        style: TextStyle(color: Colors.white60, fontSize: 12, height: 1.4),
+                        style: TextStyle(color: _subColor, fontSize: 12, height: 1.4),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 20),
@@ -3441,9 +3545,9 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A),
+                    color: _cardBg,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white10),
+                    border: Border.all(color: _borderColor),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -3451,20 +3555,21 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Row(
+                          Row(
                             children: [
-                              Text('Performance Trend', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14.5)),
-                              SizedBox(width: 6),
-                              Icon(Icons.info_outline_rounded, color: Colors.white38, size: 14),
+                              Text('Performance Trend', style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 14.5)),
+                              const SizedBox(width: 6),
+                              Icon(Icons.info_outline_rounded, color: _mutedColor, size: 14),
                             ],
                           ),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.08),
+                              color: _isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
                               borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: _borderColor),
                             ),
-                            child: Text('Last ${math.min(allResults.length, 10)} Tests', style: const TextStyle(color: Colors.white70, fontSize: 10)),
+                            child: Text('Last ${math.min(allResults.length, 10)} Tests', style: TextStyle(color: _subColor, fontSize: 10)),
                           ),
                         ],
                       ),
@@ -3477,16 +3582,17 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                             accuracyPoints: allResults.take(7).map((r) => r.accuracy).toList(),
                             scorePoints: allResults.take(7).map((r) => r.totalMarks > 0 ? (r.score / r.totalMarks * 100).toDouble() : 0.0).toList(),
                             dates: allResults.take(7).map((r) => '${r.attemptedAt.day}/${r.attemptedAt.month}').toList(),
+                            isDark: _isDark,
                           ),
                         ),
                       ),
                       const SizedBox(height: 12),
-                      const Row(
+                      Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          _ChartLegendDot(label: 'Score (%)', color: Color(0xFFFFA000)),
-                          SizedBox(width: 24),
-                          _ChartLegendDot(label: 'Accuracy (%)', color: Color(0xFF38BDF8)),
+                          _ChartLegendDot(label: 'Score (%)', color: const Color(0xFFFFA000), textColor: _subColor),
+                          const SizedBox(width: 24),
+                          _ChartLegendDot(label: 'Accuracy (%)', color: const Color(0xFF38BDF8), textColor: _subColor),
                         ],
                       ),
                     ],
@@ -3498,14 +3604,14 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A),
+                    color: _cardBg,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white10),
+                    border: Border.all(color: _borderColor),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Subject Wise Accuracy', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14.5)),
+                      Text('Subject Wise Accuracy', style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 14.5)),
                       const SizedBox(height: 16),
                       Row(
                         children: [
@@ -3521,13 +3627,14 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                                     physicsAcc: analytics.subjectAnalytics.isNotEmpty ? analytics.subjectAnalytics[0].accuracy : analytics.averageAccuracy,
                                     chemAcc: analytics.subjectAnalytics.length > 1 ? analytics.subjectAnalytics[1].accuracy : 0.0,
                                     mathAcc: analytics.subjectAnalytics.length > 2 ? analytics.subjectAnalytics[2].accuracy : 0.0,
+                                    isDark: _isDark,
                                   ),
                                 ),
                                 Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    const Text('Overall', style: TextStyle(color: Colors.white54, fontSize: 8.5)),
-                                    Text('${analytics.averageAccuracy.toStringAsFixed(1)}%', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                                    Text('Overall', style: TextStyle(color: _subColor, fontSize: 8.5)),
+                                    Text('${analytics.averageAccuracy.toStringAsFixed(1)}%', style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 14)),
                                   ],
                                 ),
                               ],
@@ -3550,11 +3657,11 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                                     AppNavigator.push(context, MaterialPageRoute(builder: (_) => const AnalyticsScreen()));
                                   },
                                   style: OutlinedButton.styleFrom(
-                                    side: const BorderSide(color: Colors.white24),
+                                    side: BorderSide(color: _borderColor),
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                   ),
-                                  child: const Text('View Detailed Analysis >', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                                  child: Text('View Detailed Analysis >', style: TextStyle(color: _subColor, fontSize: 11)),
                                 ),
                               ],
                             ),
@@ -3570,24 +3677,24 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A),
+                    color: _cardBg,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white10),
+                    border: Border.all(color: _borderColor),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Row(
+                      Row(
                         children: [
-                          Text('Preparation Insights', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14.5)),
-                          SizedBox(width: 6),
-                          Icon(Icons.info_outline_rounded, color: Colors.white38, size: 14),
+                          Text('Preparation Insights', style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 14.5)),
+                          const SizedBox(width: 6),
+                          Icon(Icons.info_outline_rounded, color: _mutedColor, size: 14),
                         ],
                       ),
                       const SizedBox(height: 14),
                       Text(
                         'Total questions attempted: ${analytics.attemptedQuestions} with ${analytics.correctAnswers} correct answers (${analytics.averageAccuracy.toStringAsFixed(1)}% accuracy).',
-                        style: const TextStyle(color: Colors.white70, fontSize: 12, height: 1.4),
+                        style: TextStyle(color: _subColor, fontSize: 12, height: 1.4),
                       ),
                       const SizedBox(height: 14),
                       SizedBox(
@@ -3613,7 +3720,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A),
+                    color: _cardBg,
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: const Color(0xFFFFA000).withValues(alpha: 0.3)),
                   ),
@@ -3632,7 +3739,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                               analytics.averageAccuracy >= 75
                                   ? 'Outstanding consistency! Keep practicing full-length tests to maintain speed and precision under timed conditions.'
                                   : 'Target your weaker subjects with chapter-wise tests to bring your average accuracy above 75%.',
-                              style: const TextStyle(color: Colors.white70, fontSize: 11.5, height: 1.35),
+                              style: TextStyle(color: _subColor, fontSize: 11.5, height: 1.35),
                             ),
                             const SizedBox(height: 10),
                             OutlinedButton(
@@ -3673,9 +3780,9 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
       margin: const EdgeInsets.only(right: 10),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF0F172A),
+        color: _cardBg,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(color: _borderColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3686,17 +3793,17 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
               Icon(icon, color: color, size: 16),
               const SizedBox(width: 6),
               Expanded(
-                child: Text(label, style: const TextStyle(color: Colors.white60, fontSize: 9.5), maxLines: 1, overflow: TextOverflow.ellipsis),
+                child: Text(label, style: TextStyle(color: _subColor, fontSize: 9.5), maxLines: 1, overflow: TextOverflow.ellipsis),
               ),
             ],
           ),
           const SizedBox(height: 6),
-          Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16)),
+          Text(value, style: TextStyle(color: _titleColor, fontWeight: FontWeight.w900, fontSize: 16)),
           const SizedBox(height: 2),
           Text(
             change,
             style: TextStyle(
-              color: change.contains('↑') ? const Color(0xFF34D399) : Colors.white60,
+              color: change.contains('↑') ? const Color(0xFF34D399) : _mutedColor,
               fontSize: 8.5,
               fontWeight: FontWeight.w600,
             ),
@@ -3715,10 +3822,10 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
           children: [
             Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
             const SizedBox(width: 8),
-            Text(name, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+            Text(name, style: TextStyle(color: _subColor, fontSize: 12)),
           ],
         ),
-        Text(acc, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+        Text(acc, style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 12)),
       ],
     );
   }
@@ -3732,7 +3839,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(topic, style: const TextStyle(color: Colors.white, fontSize: 11.5)),
+              Text(topic, style: TextStyle(color: _titleColor, fontSize: 11.5)),
               Text('${(progress * 100).toInt()}%', style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 11.5)),
             ],
           ),
@@ -3741,7 +3848,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
             borderRadius: BorderRadius.circular(3),
             child: LinearProgressIndicator(
               value: progress,
-              backgroundColor: Colors.white10,
+              backgroundColor: _isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.08),
               valueColor: AlwaysStoppedAnimation<Color>(color),
               minHeight: 5,
             ),
@@ -3755,7 +3862,8 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
 class _ChartLegendDot extends StatelessWidget {
   final String label;
   final Color color;
-  const _ChartLegendDot({required this.label, required this.color});
+  final Color? textColor;
+  const _ChartLegendDot({required this.label, required this.color, this.textColor});
 
   @override
   Widget build(BuildContext context) {
@@ -3763,7 +3871,7 @@ class _ChartLegendDot extends StatelessWidget {
       children: [
         Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
         const SizedBox(width: 6),
-        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11)),
+        Text(label, style: TextStyle(color: textColor ?? Colors.white70, fontSize: 11)),
       ],
     );
   }
@@ -3777,20 +3885,25 @@ class _TestPerformanceTrendChartPainter extends CustomPainter {
   final List<double> accuracyPoints;
   final List<double> scorePoints;
   final List<String> dates;
+  final bool isDark;
 
   const _TestPerformanceTrendChartPainter({
     required this.accuracyPoints,
     required this.scorePoints,
     required this.dates,
+    this.isDark = true,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     final gridPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.06)
+      ..color = isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.08)
       ..strokeWidth = 1.0;
 
-    final textStyle = TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 9);
+    final textStyle = TextStyle(
+      color: isDark ? Colors.white.withValues(alpha: 0.4) : const Color(0xFF0F172A).withValues(alpha: 0.5),
+      fontSize: 9,
+    );
 
     const levels = ['100%', '75%', '50%', '25%', '0%'];
     const paddingLeft = 32.0;
@@ -3882,11 +3995,13 @@ class _DonutAccuracyChartPainter extends CustomPainter {
   final double physicsAcc;
   final double chemAcc;
   final double mathAcc;
+  final bool isDark;
 
   const _DonutAccuracyChartPainter({
     this.physicsAcc = 0.0,
     this.chemAcc = 0.0,
     this.mathAcc = 0.0,
+    this.isDark = true,
   });
 
   @override
@@ -3896,7 +4011,7 @@ class _DonutAccuracyChartPainter extends CustomPainter {
     const strokeWidth = 10.0;
 
     final bgPaint = Paint()
-      ..color = Colors.white10
+      ..color = isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.08)
       ..strokeWidth = strokeWidth
       ..style = PaintingStyle.stroke;
     canvas.drawCircle(center, radius - strokeWidth / 2, bgPaint);

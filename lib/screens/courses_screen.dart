@@ -53,11 +53,15 @@ class _CoursesScreenState extends State<CoursesScreen>
   String _liveSearchQuery = '';
   final Set<String> _liveReminders = <String>{};
   String? _joiningClassId;
+  late final Stream<List<Map<String, dynamic>>> _purchasesStream;
+  late final Stream<List<CourseModel>> _batchesStream;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 5, vsync: this, initialIndex: widget.initialTab.clamp(0, 4));
+    _purchasesStream = FirestoreService().getUserPurchasesStream();
+    _batchesStream = FirestoreService().getBatchesStream();
     _loadCachedPurchases();
     
     // Seed and sync real AWS live classes from Firestore
@@ -264,20 +268,22 @@ class _CoursesScreenState extends State<CoursesScreen>
         ),
       ),
       body: StreamBuilder<List<Map<String, dynamic>>>(
-        stream: FirestoreService().getUserPurchasesStream(),
+        stream: _purchasesStream,
+        initialData: FirestoreService.cachedPurchases,
         builder: (context, purchasesSnap) {
-          final purchases = purchasesSnap.data ?? [];
+          final purchases = purchasesSnap.data ?? FirestoreService.cachedPurchases;
 
           return StreamBuilder<List<CourseModel>>(
-            stream: FirestoreService().getBatchesStream(),
+            stream: _batchesStream,
+            initialData: FirestoreService.cachedBatches,
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+              if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData && FirestoreService.cachedBatches.isEmpty) {
                 return const Center(
                   child: CircularProgressIndicator(color: AppColors.accent),
                 );
               }
 
-              final allBatches = snapshot.data ?? [];
+              final allBatches = snapshot.data ?? FirestoreService.cachedBatches;
 
               // Full Prep Batches
               final fullPrepBatches = allBatches.where((b) {
@@ -338,27 +344,33 @@ class _CoursesScreenState extends State<CoursesScreen>
     Set<String> purchasedBatchIds = const {},
     Set<String> purchasedItemIds = const {},
   }) async {
-    // 1. If it's a Jitsi Live Class (examinantt.com Virtual Classroom),
-    // launch immediately with 0ms latency - no blocking authorization dialog or timeouts!
-    if (c.isJitsi) {
-      await AppNavigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => JitsiLiveMeetingScreen(
-            liveClass: c,
-            sessionId: c.id,
-            roomName: c.roomName,
-          ),
-        ),
-      );
-      return;
-    }
-
     if (_joiningClassId != null) return;
 
     setState(() {
       _joiningClassId = c.id;
     });
+
+    if (c.isJitsi) {
+      try {
+        await AppNavigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => JitsiLiveMeetingScreen(
+              liveClass: c,
+              sessionId: c.id,
+              roomName: c.roomName,
+            ),
+          ),
+        );
+      } finally {
+        if (mounted) {
+          setState(() {
+            _joiningClassId = null;
+          });
+        }
+      }
+      return;
+    }
 
     showDialog(
       context: context,

@@ -55,6 +55,7 @@ class _JitsiLiveMeetingScreenState extends State<JitsiLiveMeetingScreen> with Ti
   String? _joinedUid;
   String? _joinedStudentName;
   Duration _sessionElapsed = Duration.zero;
+  bool _isJoinOperationInProgress = false;
 
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
@@ -75,6 +76,7 @@ class _JitsiLiveMeetingScreenState extends State<JitsiLiveMeetingScreen> with Ti
 
   @override
   void dispose() {
+    _isJoinOperationInProgress = false;
     _recordStudentAttendanceLeft();
     _firestoreSubscription?.cancel();
     _jitsiService.stopSessionPolling();
@@ -362,7 +364,7 @@ class _JitsiLiveMeetingScreenState extends State<JitsiLiveMeetingScreen> with Ti
         AppLogger.i('Polling update received: status=${updated.status}', tag: 'JITSI_SCREEN');
         _currentSession = updated;
 
-        if (updated.isLive) {
+        if (updated.isLive && !_isJoinOperationInProgress && _classroomState != JitsiClassroomState.live) {
           _jitsiService.stopSessionPolling();
           AppLogger.s('Teacher started class on website! Auto-transitioning student...', tag: 'JITSI_SCREEN');
           AppTheme.showSuccessSnackBar(context, 'Instructor is live! Joining classroom...');
@@ -377,9 +379,15 @@ class _JitsiLiveMeetingScreenState extends State<JitsiLiveMeetingScreen> with Ti
     );
   }
 
-  /// Requests authorized token and launches Jitsi Meeting
+  /// Requests authorized token and launches embedded Jitsi Meeting
   Future<void> _requestTokenAndJoin() async {
     if (!mounted) return;
+    if (_isJoinOperationInProgress) {
+      AppLogger.w('Join operation already in progress, ignoring duplicate trigger', tag: 'JITSI_SCREEN');
+      return;
+    }
+    _isJoinOperationInProgress = true;
+
     setState(() {
       _classroomState = JitsiClassroomState.requestingToken;
     });
@@ -439,7 +447,10 @@ class _JitsiLiveMeetingScreenState extends State<JitsiLiveMeetingScreen> with Ti
 
     tokenInfo = tokenToUse;
 
-    if (!mounted) return;
+    if (!mounted) {
+      _isJoinOperationInProgress = false;
+      return;
+    }
     setState(() {
       _classroomState = JitsiClassroomState.joining;
     });
@@ -450,7 +461,7 @@ class _JitsiLiveMeetingScreenState extends State<JitsiLiveMeetingScreen> with Ti
     // Start elapsed timer
     _startElapsedTimer(tokenToUse.startedAt ?? DateTime.now());
 
-    // Join via SDK immediately!
+    // Join via SDK embedded conference in-app
     try {
       await _jitsiService.joinConference(
         tokenInfo: tokenToUse,
@@ -475,21 +486,37 @@ class _JitsiLiveMeetingScreenState extends State<JitsiLiveMeetingScreen> with Ti
           },
           conferenceTerminated: (url, error) {
             AppLogger.i('Conference terminated: url=$url, error=$error', tag: 'JITSI_SDK');
+            _isJoinOperationInProgress = false;
             _elapsedTimer?.cancel();
             _recordStudentAttendanceLeft();
             if (mounted) {
-              setState(() {
-                _classroomState = JitsiClassroomState.classEnded;
-              });
+              if (Navigator.of(context).canPop()) {
+                Navigator.of(context).pop();
+                if (error != null && error.toString().isNotEmpty) {
+                  AppTheme.showWarningSnackBar(context, 'Live meeting ended: $error');
+                } else {
+                  AppTheme.showSuccessSnackBar(context, 'Live meeting ended.');
+                }
+              } else {
+                setState(() {
+                  _classroomState = JitsiClassroomState.classEnded;
+                });
+              }
             }
           },
           readyToClose: () {
             AppLogger.i('Jitsi readyToClose event received', tag: 'JITSI_SDK');
+            _isJoinOperationInProgress = false;
             _recordStudentAttendanceLeft();
-            if (mounted && _classroomState == JitsiClassroomState.live) {
-              setState(() {
-                _classroomState = JitsiClassroomState.leftLocally;
-              });
+            if (mounted) {
+              if (Navigator.of(context).canPop()) {
+                Navigator.of(context).pop();
+                AppTheme.showSuccessSnackBar(context, 'You left the live meeting.');
+              } else {
+                setState(() {
+                  _classroomState = JitsiClassroomState.leftLocally;
+                });
+              }
             }
           },
           audioMutedChanged: (muted) {
@@ -514,6 +541,7 @@ class _JitsiLiveMeetingScreenState extends State<JitsiLiveMeetingScreen> with Ti
         });
       }
     } catch (e) {
+      _isJoinOperationInProgress = false;
       AppLogger.e('Error launching Jitsi conference: $e', error: e, tag: 'JITSI_SCREEN');
       if (mounted) {
         setState(() {

@@ -21,7 +21,7 @@ class TestResultsScreen extends StatelessWidget {
     final scaffoldBg = isDark ? AppColors.backgroundDark : Colors.white;
     final textColor = isDark ? Colors.white : AppTheme.darkSlate;
     final subtextColor = isDark ? AppColors.textDarkSecondary : Colors.grey;
-    final summaryBg = isDark ? AppColors.surfaceDark : const Color(0xFF0F172A);
+    final summaryBg = isDark ? AppColors.surfaceDark : AppTheme.primaryColor;
     final bottomBg = isDark ? AppColors.surfaceDark : Colors.white;
 
     return Scaffold(
@@ -260,7 +260,7 @@ class TestResultsScreen extends StatelessWidget {
                       onPressed: () => Navigator.pop(context),
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: isDark ? AppColors.accent : const Color(0xFF0F172A),
+                        backgroundColor: isDark ? AppColors.accent : AppTheme.primaryColor,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
