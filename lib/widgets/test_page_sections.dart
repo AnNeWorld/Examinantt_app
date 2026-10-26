@@ -38,10 +38,11 @@ class TestPageSections extends StatefulWidget {
 
 class _TestPageSectionsState extends State<TestPageSections> with SingleTickerProviderStateMixin {
   // Navigation:
-  // 0: My Test, 1: All Test, 2: Included with Batch
-  static const int tabMyTests = 0;
-  static const int tabAllTests = 1;
-  static const int tabIncludedWithBatch = 2;
+  // 0: Overview, 1: My Test, 2: All Test, 3: Included with Batch
+  static const int tabOverview = 0;
+  static const int tabMyTests = 1;
+  static const int tabAllTests = 2;
+  static const int tabIncludedWithBatch = 3;
 
   late int _activeTabIndex;
   late TabController _tabController;
@@ -49,8 +50,8 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
   @override
   void initState() {
     super.initState();
-    _activeTabIndex = widget.initialTab.clamp(0, 2);
-    _tabController = TabController(length: 3, vsync: this, initialIndex: _activeTabIndex);
+    _activeTabIndex = widget.initialTab.clamp(0, 3);
+    _tabController = TabController(length: 4, vsync: this, initialIndex: _activeTabIndex);
     _tabController.addListener(_handleTabSelection);
   }
 
@@ -98,6 +99,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
   final Set<String> _bookmarkededTestIds = {'test_01'};
 
   final List<Map<String, dynamic>> _tabs = [
+    {'title': 'Overview', 'icon': Icons.dashboard_outlined},
     {'title': 'My Test', 'icon': Icons.assignment_turned_in_outlined},
     {'title': 'All Test', 'icon': Icons.format_list_bulleted_rounded},
     {'title': 'Included with Batch', 'icon': Icons.card_giftcard_outlined},
@@ -122,6 +124,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
     String price = '499',
     String origPrice = '999',
     Color badgeColor = const Color(0xFFFFD700),
+    bool isPurchased = false,
     List<String> features = const [
       'Chapter-wise Tests',
       'Unit-wise Tests',
@@ -143,7 +146,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
           features: features,
           badgeColor: badgeColor,
           imageUrl: '',
-          isPurchased: false,
+          isPurchased: isPurchased,
         ),
       ),
     );
@@ -691,6 +694,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
           labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
           unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
           tabs: const [
+            Tab(text: 'OVERVIEW'),
             Tab(text: 'MY TEST'),
             Tab(text: 'ALL TEST'),
             Tab(text: 'INCLUDED WITH BATCH'),
@@ -702,6 +706,8 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
 
   Widget _buildActiveTabContent() {
     switch (_activeTabIndex) {
+      case tabOverview:
+        return _buildPage1Overview();
       case tabMyTests:
         return _buildPage2MySeries();
       case tabAllTests:
@@ -709,7 +715,7 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
       case tabIncludedWithBatch:
         return _buildPage3IncludedWithBatch();
       default:
-        return _buildPage2MySeries();
+        return _buildPage1Overview();
     }
   }
 
@@ -742,9 +748,21 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                 stream: FirestoreService().getUserPurchasesStream(),
                 builder: (context, pSnap) {
                   final purchases = pSnap.data ?? [];
-                  final pIds = purchases.map((p) => (p['id'] ?? p['seriesId'] ?? '').toString()).toSet();
-                  final myCount = catList.where((c) => c.price == 0 || pIds.contains(c.id)).length;
-                  final myTestSeriesCount = (myCount > 0 ? myCount : purchases.length).toString();
+                  final pIds = <String>{};
+                  final pTitles = <String>{};
+                  for (final p in purchases) {
+                    for (final key in ['id', 'itemId', 'seriesId', 'courseId', 'batchId']) {
+                      final v = p[key]?.toString().trim();
+                      if (v != null && v.isNotEmpty) {
+                        pIds.add(v);
+                        pIds.add(v.toLowerCase());
+                      }
+                    }
+                    final t = p['title']?.toString().toLowerCase().trim();
+                    if (t != null && t.isNotEmpty) pTitles.add(t);
+                  }
+                  final myCount = catList.where((c) => pIds.contains(c.id) || pIds.contains(c.id.toLowerCase()) || pTitles.contains(c.title.toLowerCase().trim())).length;
+                  final myTestSeriesCount = myCount.toString();
                   final user = Provider.of<UserProvider>(context, listen: false).user;
                   final userTestsAttempted = (user?.testsAttempted ?? 0).toString();
                   final userAvgAccuracy = user?.accuracy != null && user!.accuracy > 0
@@ -1632,29 +1650,51 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
       ),
       const SizedBox(height: 8),
       Expanded(
-        child: _mySeriesFilter == 'Individual Tests'
-            ? _buildIndividualTestsList()
-            : StreamBuilder<List<TestCategory>>(
-          stream: TestService().getCategoriesStream(),
-          builder: (context, catSnapshot) {
-            if (catSnapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator(color: Color(0xFFFFA000)));
+        child: StreamBuilder<List<Map<String, dynamic>>>(
+          stream: FirestoreService().getUserPurchasesStream(),
+          builder: (context, purchaseSnapshot) {
+            final purchases = purchaseSnapshot.data ?? [];
+            final purchasedIds = <String>{};
+            final purchasedTitles = <String>{};
+
+            for (final p in purchases) {
+              for (final key in ['id', 'itemId', 'seriesId', 'courseId', 'batchId']) {
+                final val = p[key]?.toString().trim();
+                if (val != null && val.isNotEmpty) {
+                  purchasedIds.add(val);
+                  purchasedIds.add(val.toLowerCase());
+                }
+              }
+              final title = p['title']?.toString().toLowerCase().trim();
+              if (title != null && title.isNotEmpty) {
+                purchasedTitles.add(title);
+              }
             }
 
-            final allSeries = catSnapshot.data ?? [];
-            return StreamBuilder<List<Map<String, dynamic>>>(
-              stream: FirestoreService().getUserPurchasesStream(),
-              builder: (context, purchaseSnapshot) {
-                final purchases = purchaseSnapshot.data ?? [];
-                final purchasedIds = purchases.map((p) => (p['id'] ?? p['seriesId'] ?? p['courseId'] ?? '').toString()).toSet();
-                final purchasedTitles = purchases.map((p) => (p['title'] ?? '').toString().toLowerCase()).toSet();
+            if (_mySeriesFilter == 'Individual Tests') {
+              return _buildIndividualTestsList(
+                purchasedIds: purchasedIds,
+                purchasedTitles: purchasedTitles,
+              );
+            }
 
-                List<TestCategory> mySeries = [];
-                if (allSeries.isNotEmpty) {
-                  mySeries = List<TestCategory>.from(allSeries);
-                } else {
-                  mySeries = [];
+            return StreamBuilder<List<TestCategory>>(
+              stream: TestService().getCategoriesStream(),
+              builder: (context, catSnapshot) {
+                if (catSnapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator(color: Color(0xFFFFA000)));
                 }
+
+                final allSeries = catSnapshot.data ?? [];
+
+                // Sirf vahi test series show ho jo student ne purchase ki ho
+                List<TestCategory> mySeries = allSeries.where((cat) {
+                  final catId = cat.id.trim();
+                  final catTitle = cat.title.toLowerCase().trim();
+                  return purchasedIds.contains(catId) ||
+                      purchasedIds.contains(catId.toLowerCase()) ||
+                      purchasedTitles.contains(catTitle);
+                }).toList();
 
                 if (mySeries.isEmpty) {
                   return Center(
@@ -1675,89 +1715,85 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                             style: TextStyle(color: _subColor, fontSize: 12),
                             textAlign: TextAlign.center,
                           ),
-                            const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: () => _switchTab(tabAllTests),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFFFA000),
-                                foregroundColor: Colors.black,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                              ),
-                              child: const Text('Browse All Tests', style: TextStyle(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () => _switchTab(tabAllTests),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFFFA000),
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                             ),
-                          ],
-                        ),
+                            child: const Text('Browse All Tests', style: TextStyle(fontWeight: FontWeight.bold)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                // Sort items
+                if (_mySeriesSort == 'Alphabetical') {
+                  mySeries.sort((a, b) => a.title.compareTo(b.title));
+                }
+
+                return ListView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: mySeries.length,
+                  itemBuilder: (ctx, idx) {
+                    final cat = mySeries[idx];
+                    final isGold = cat.badge.toUpperCase().contains('GOLD') || cat.title.toLowerCase().contains('gold');
+                    final isSilver = cat.badge.toUpperCase().contains('SILVER') || cat.title.toLowerCase().contains('silver');
+                    final isMock = cat.badge.toUpperCase().contains('MOCK') || cat.title.toLowerCase().contains('mock');
+
+                    final badgeColor = isGold
+                        ? const Color(0xFFFFD700)
+                        : (isSilver ? const Color(0xFFCBD5E1) : (isMock ? const Color(0xFFA78BFA) : const Color(0xFF38BDF8)));
+                    final badgeType = isGold ? 'GOLD' : (isSilver ? 'SILVER' : (isMock ? 'MOCK' : cat.badge.toUpperCase()));
+
+                    const subBadgeText = 'Purchased & Active';
+                    const subBadgeColor = Color(0xFF38BDF8);
+
+                    return _buildMySeriesBigCard(
+                      title: cat.title,
+                      iconUrl: cat.iconUrl,
+                      badgeType: badgeType,
+                      badgeColor: badgeColor,
+                      subBadgeText: subBadgeText,
+                      subBadgeColor: subBadgeColor,
+                      description: cat.description,
+                      pills: [cat.testsCount, ...cat.features.take(2)],
+                      progress: 0.0,
+                      progressFraction: '0 / ${cat.testsCount}',
+                      progressColor: subBadgeColor,
+                      onTapContinue: () => _openSeriesDetail(
+                        id: cat.id,
+                        title: cat.title,
+                        badge: badgeType,
+                        price: cat.price.toInt().toString(),
+                        origPrice: cat.originalPrice.toInt().toString(),
+                        badgeColor: badgeColor,
+                        features: cat.features,
+                        isPurchased: true,
                       ),
                     );
-                  }
-
-                  // Sort items
-                  if (_mySeriesSort == 'Alphabetical') {
-                    mySeries.sort((a, b) => a.title.compareTo(b.title));
-                  }
-
-                  return ListView.builder(
-                    physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: mySeries.length,
-                    itemBuilder: (ctx, idx) {
-                      final cat = mySeries[idx];
-                      final isGold = cat.badge.toUpperCase().contains('GOLD') || cat.title.toLowerCase().contains('gold');
-                      final isSilver = cat.badge.toUpperCase().contains('SILVER') || cat.title.toLowerCase().contains('silver');
-                      final isMock = cat.badge.toUpperCase().contains('MOCK') || cat.title.toLowerCase().contains('mock');
-
-                      final badgeColor = isGold
-                          ? const Color(0xFFFFD700)
-                          : (isSilver ? const Color(0xFFCBD5E1) : (isMock ? const Color(0xFFA78BFA) : const Color(0xFF38BDF8)));
-                      final badgeType = isGold ? 'GOLD' : (isSilver ? 'SILVER' : (isMock ? 'MOCK' : cat.badge.toUpperCase()));
-                      
-                      final isPurchased = purchasedIds.contains(cat.id) || purchasedTitles.contains(cat.title.toLowerCase());
-                      final isFree = cat.price == 0 || cat.badge.toLowerCase().contains('free');
-
-                      String subBadgeText = 'Included with Batch';
-                      Color subBadgeColor = const Color(0xFFFFA000);
-                      if (isPurchased) {
-                        subBadgeText = 'Purchased & Active';
-                        subBadgeColor = const Color(0xFF38BDF8);
-                      } else if (isFree) {
-                        subBadgeText = 'Free Access';
-                        subBadgeColor = const Color(0xFF34D399);
-                      }
-
-                      return _buildMySeriesBigCard(
-                        title: cat.title,
-                        iconUrl: cat.iconUrl,
-                        badgeType: badgeType,
-                        badgeColor: badgeColor,
-                        subBadgeText: subBadgeText,
-                        subBadgeColor: subBadgeColor,
-                        description: cat.description,
-                        pills: [cat.testsCount, ...cat.features.take(2)],
-                        progress: 0.0,
-                        progressFraction: '0 / ${cat.testsCount}',
-                        progressColor: subBadgeColor,
-                        onTapContinue: () => _openSeriesDetail(
-                          id: cat.id,
-                          title: cat.title,
-                          badge: badgeType,
-                          price: cat.price.toInt().toString(),
-                          origPrice: cat.originalPrice.toInt().toString(),
-                          badgeColor: badgeColor,
-                          features: cat.features,
-                        ),
-                      );
-                    },
-                  );
-                },
-              );
-            },
-          ),
+                  },
+                );
+              },
+            );
+          },
         ),
+      ),
       ],
     );
   }
 
-  Widget _buildIndividualTestsList({String filter = 'All', String searchQuery = ''}) {
+  Widget _buildIndividualTestsList({
+    String filter = 'All',
+    String searchQuery = '',
+    Set<String>? purchasedIds,
+    Set<String>? purchasedTitles,
+  }) {
     return StreamBuilder<List<TestItem>>(
       stream: TestService().getLatestTestsStream(),
       builder: (context, snapshot) {
@@ -1766,6 +1802,19 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
         }
 
         var tests = snapshot.data ?? [];
+
+        // If called from My Tests tab, filter to tests belonging to purchased series
+        if (purchasedIds != null) {
+          tests = tests.where((t) {
+            final cId = t.categoryId.trim();
+            final tId = t.id.trim();
+            return purchasedIds.contains(cId) ||
+                purchasedIds.contains(cId.toLowerCase()) ||
+                purchasedIds.contains(tId) ||
+                purchasedIds.contains(tId.toLowerCase()) ||
+                (purchasedTitles != null && purchasedTitles.contains(t.title.toLowerCase().trim()));
+          }).toList();
+        }
 
         // Category filter
         final f = filter.toLowerCase();
@@ -1811,31 +1860,38 @@ class _TestPageSectionsState extends State<TestPageSections> with SingleTickerPr
                       const Icon(Icons.assignment_outlined, size: 48, color: Colors.white38),
                       const SizedBox(height: 12),
                       Text(
-                        searchQuery.isNotEmpty
-                            ? 'No tests match "$searchQuery"'
-                            : (filter != 'All'
-                                ? 'No tests found in "$filter"'
-                                : 'No tests uploaded yet by admin.'),
+                        purchasedIds != null
+                            ? 'No tests enrolled yet.\nPurchase a test series to access individual tests.'
+                            : (searchQuery.isNotEmpty
+                                ? 'No tests match "$searchQuery"'
+                                : (filter != 'All'
+                                    ? 'No tests found in "$filter"'
+                                    : 'No tests uploaded yet by admin.')),
                         style: const TextStyle(color: Colors.white70, fontSize: 13),
                         textAlign: TextAlign.center,
                       ),
-                      if (filter != 'All' || searchQuery.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        ElevatedButton(
-                          onPressed: () {
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: () {
+                          if (purchasedIds != null) {
+                            _switchTab(tabAllTests);
+                          } else {
                             setState(() {
                               _allSeriesFilter = 'All';
                               _allTestsSearchQuery = '';
                             });
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFFA000),
-                            foregroundColor: Colors.black,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          ),
-                          child: const Text('Show All Tests', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFFA000),
+                          foregroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),
-                      ],
+                        child: Text(
+                          purchasedIds != null ? 'Browse All Tests' : 'Show All Tests',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                        ),
+                      ),
                     ],
                   ),
                 ),

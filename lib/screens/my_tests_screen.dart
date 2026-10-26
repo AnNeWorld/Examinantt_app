@@ -75,7 +75,7 @@ class MyTestsScreen extends StatelessWidget {
                     AppNavigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const TestSeriesScreen(initialTab: 1),
+                        builder: (context) => const TestSeriesScreen(initialTab: 2),
                       ),
                     );
                   },
